@@ -46,7 +46,8 @@ public class AssignmentManagementController {
             if (editingId == null) AppContext.get().assignmentManagementUseCase().create(dto);
             else AppContext.get().assignmentManagementUseCase().update(dto);
             clearForm(); refreshTable(); showMessage("Saved", false);
-        } catch (Exception e) { showMessage(e.getMessage(), true); }
+        } catch (IllegalArgumentException | IllegalStateException e) { showMessage(e.getMessage(), true); }
+        catch (Exception e) { showMessage("An unexpected error occurred", true); }
     }
 
     @FXML private void onDelete() {
@@ -55,7 +56,8 @@ public class AssignmentManagementController {
         try {
             AppContext.get().assignmentManagementUseCase().delete(selected.id());
             clearForm(); refreshTable(); showMessage("Deleted", false);
-        } catch (Exception e) { showMessage(e.getMessage(), true); }
+        } catch (IllegalArgumentException | IllegalStateException e) { showMessage(e.getMessage(), true); }
+        catch (Exception e) { showMessage("An unexpected error occurred", true); }
     }
 
     @FXML private void onClear() { clearForm(); }

@@ -53,7 +53,8 @@ public class AvailabilityManagementController {
                     dayCombo.getValue(), periodSpinner.getValue(), availableCheck.isSelected());
             AppContext.get().availabilityManagementUseCase().save(dto);
             clearForm(); refreshTable(); showMessage("Saved", false);
-        } catch (Exception e) { showMessage(e.getMessage(), true); }
+        } catch (IllegalArgumentException | IllegalStateException e) { showMessage(e.getMessage(), true); }
+        catch (Exception e) { showMessage("An unexpected error occurred", true); }
     }
 
     @FXML private void onDelete() {
@@ -62,7 +63,8 @@ public class AvailabilityManagementController {
         try {
             AppContext.get().availabilityManagementUseCase().delete(selected.id());
             clearForm(); refreshTable(); showMessage("Deleted", false);
-        } catch (Exception e) { showMessage(e.getMessage(), true); }
+        } catch (IllegalArgumentException | IllegalStateException e) { showMessage(e.getMessage(), true); }
+        catch (Exception e) { showMessage("An unexpected error occurred", true); }
     }
 
     @FXML private void onClear() { clearForm(); }

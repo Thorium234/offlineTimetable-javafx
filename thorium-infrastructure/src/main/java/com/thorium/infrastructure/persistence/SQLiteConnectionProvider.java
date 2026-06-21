@@ -8,17 +8,29 @@ import java.sql.SQLException;
 public class SQLiteConnectionProvider {
 
     private final String jdbcUrl;
+    private Connection sharedConnection;
 
     public SQLiteConnectionProvider(Path databasePath) {
         this.jdbcUrl = "jdbc:sqlite:" + databasePath.toAbsolutePath();
     }
 
     public Connection getConnection() throws SQLException {
-        Connection connection = DriverManager.getConnection(jdbcUrl);
-        connection.setAutoCommit(false);
-        try (var stmt = connection.createStatement()) {
-            stmt.execute("PRAGMA foreign_keys = ON");
+        if (sharedConnection == null || sharedConnection.isClosed()) {
+            sharedConnection = DriverManager.getConnection(jdbcUrl);
+            sharedConnection.setAutoCommit(false);
+            try (var stmt = sharedConnection.createStatement()) {
+                stmt.execute("PRAGMA foreign_keys = ON");
+            }
         }
-        return connection;
+        return sharedConnection;
+    }
+
+    public void close() {
+        if (sharedConnection != null) {
+            try {
+                sharedConnection.close();
+            } catch (SQLException ignored) {
+            }
+        }
     }
 }

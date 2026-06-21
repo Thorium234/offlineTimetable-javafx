@@ -16,7 +16,8 @@ CREATE TABLE IF NOT EXISTS subjects (
     name                 TEXT    NOT NULL,
     examinable           INTEGER NOT NULL DEFAULT 0 CHECK (examinable IN (0, 1)),
     cbc_default_lessons  INTEGER NOT NULL DEFAULT 5,
-    allows_double_period INTEGER NOT NULL DEFAULT 0 CHECK (allows_double_period IN (0, 1))
+    allows_double_period  INTEGER NOT NULL DEFAULT 0 CHECK (allows_double_period IN (0, 1)),
+    requires_double_period INTEGER NOT NULL DEFAULT 0 CHECK (requires_double_period IN (0, 1))
 );
 
 CREATE TABLE IF NOT EXISTS class_streams (
@@ -76,12 +77,21 @@ CREATE TABLE IF NOT EXISTS timetables (
     quality_score REAL    DEFAULT 0.0
 );
 
+CREATE TABLE IF NOT EXISTS rooms (
+    id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    code     TEXT    NOT NULL UNIQUE,
+    name     TEXT    NOT NULL,
+    type     TEXT    NOT NULL DEFAULT 'CLASSROOM' CHECK (type IN ('CLASSROOM', 'LAB')),
+    capacity INTEGER NOT NULL DEFAULT 30 CHECK (capacity > 0)
+);
+
 CREATE TABLE IF NOT EXISTS timetable_entries (
     id                     INTEGER PRIMARY KEY AUTOINCREMENT,
     timetable_id           INTEGER NOT NULL REFERENCES timetables(id) ON DELETE CASCADE,
     teaching_assignment_id INTEGER NOT NULL REFERENCES teaching_assignments(id) ON DELETE CASCADE,
     day_of_week            TEXT    NOT NULL,
     period_number          INTEGER NOT NULL CHECK (period_number > 0),
+    room_id                INTEGER REFERENCES rooms(id) ON DELETE SET NULL,
     UNIQUE (timetable_id, teaching_assignment_id, day_of_week, period_number)
 );
 

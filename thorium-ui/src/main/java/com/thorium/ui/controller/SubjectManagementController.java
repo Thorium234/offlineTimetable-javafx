@@ -18,6 +18,7 @@ public class SubjectManagementController {
     @FXML private CheckBox examinableCheck;
     @FXML private Spinner<Integer> cbcLessonsSpinner;
     @FXML private CheckBox doublePeriodCheck;
+    @FXML private CheckBox requiresDoubleCheck;
     @FXML private Label messageLabel;
 
     private Long editingId;
@@ -37,11 +38,13 @@ public class SubjectManagementController {
     @FXML private void onSave() {
         try {
             SubjectDto dto = new SubjectDto(editingId, codeField.getText().trim(), nameField.getText().trim(),
-                    examinableCheck.isSelected(), cbcLessonsSpinner.getValue(), doublePeriodCheck.isSelected());
+                    examinableCheck.isSelected(), cbcLessonsSpinner.getValue(), doublePeriodCheck.isSelected(),
+                    requiresDoubleCheck.isSelected());
             if (editingId == null) AppContext.get().subjectManagementUseCase().create(dto);
             else AppContext.get().subjectManagementUseCase().update(dto);
             clearForm(); refreshTable(); showMessage("Saved", false);
-        } catch (Exception e) { showMessage(e.getMessage(), true); }
+        } catch (IllegalArgumentException | IllegalStateException e) { showMessage(e.getMessage(), true); }
+        catch (Exception e) { showMessage("An unexpected error occurred", true); }
     }
 
     @FXML private void onDelete() {
@@ -50,7 +53,8 @@ public class SubjectManagementController {
         try {
             AppContext.get().subjectManagementUseCase().delete(selected.id());
             clearForm(); refreshTable(); showMessage("Deleted", false);
-        } catch (Exception e) { showMessage(e.getMessage(), true); }
+        } catch (IllegalArgumentException | IllegalStateException e) { showMessage(e.getMessage(), true); }
+        catch (Exception e) { showMessage("An unexpected error occurred", true); }
     }
 
     @FXML private void onClear() { clearForm(); }
@@ -65,12 +69,14 @@ public class SubjectManagementController {
         examinableCheck.setSelected(dto.examinable());
         cbcLessonsSpinner.getValueFactory().setValue(dto.cbcDefaultLessons());
         doublePeriodCheck.setSelected(dto.allowsDoublePeriod());
+        requiresDoubleCheck.setSelected(dto.requiresDoublePeriod());
     }
 
     private void clearForm() {
         editingId = null; codeField.clear(); nameField.clear();
         examinableCheck.setSelected(false); cbcLessonsSpinner.getValueFactory().setValue(5);
-        doublePeriodCheck.setSelected(false); subjectTable.getSelectionModel().clearSelection();
+        doublePeriodCheck.setSelected(false); requiresDoubleCheck.setSelected(false);
+        subjectTable.getSelectionModel().clearSelection();
     }
 
     private void showMessage(String msg, boolean error) {

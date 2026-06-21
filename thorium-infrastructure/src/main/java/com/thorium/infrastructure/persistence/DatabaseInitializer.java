@@ -1,6 +1,5 @@
 package com.thorium.infrastructure.persistence;
 
-import com.thorium.domain.model.Constraint;
 import com.thorium.domain.value.ConstraintType;
 
 import java.io.IOException;
@@ -15,6 +14,7 @@ import java.time.format.DateTimeFormatter;
 public class DatabaseInitializer {
 
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
+    private static final int SCHEMA_VERSION = 3;
 
     private final SQLiteConnectionProvider connectionProvider;
 
@@ -25,16 +25,74 @@ public class DatabaseInitializer {
     public void initialize() {
         try (Connection connection = connectionProvider.getConnection();
              Statement statement = connection.createStatement()) {
-            for (String sql : loadSchema().split(";")) {
-                String trimmed = sql.trim();
-                if (!trimmed.isEmpty()) {
-                    statement.execute(trimmed);
+            createSchemaVersionTable(statement);
+            int currentVersion = getCurrentVersion(connection);
+
+            if (currentVersion < 1) {
+                for (String sql : loadSchema().split(";")) {
+                    String trimmed = sql.trim();
+                    if (!trimmed.isEmpty()) {
+                        statement.execute(trimmed);
+                    }
                 }
+                setVersion(statement, 1);
             }
+            if (currentVersion < 2) {
+                runMigrationV2(statement);
+                setVersion(statement, 2);
+            }
+            if (currentVersion < 3) {
+                runMigrationV3(statement);
+                setVersion(statement, 3);
+            }
+
             connection.commit();
             seedDefaults();
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to initialize database", e);
+        }
+    }
+
+    private void createSchemaVersionTable(Statement statement) throws SQLException {
+        statement.execute("CREATE TABLE IF NOT EXISTS schema_version (version INTEGER NOT NULL)");
+    }
+
+    private int getCurrentVersion(Connection connection) throws SQLException {
+        try (var rs = connection.createStatement().executeQuery("SELECT MAX(version) FROM schema_version")) {
+            return rs.next() ? rs.getInt(1) : 0;
+        }
+    }
+
+    private void setVersion(Statement statement, int version) throws SQLException {
+        statement.execute("INSERT INTO schema_version (version) VALUES (" + version + ")");
+    }
+
+    private void runMigrationV2(Statement statement) throws SQLException {
+        try {
+            statement.execute("ALTER TABLE subjects ADD COLUMN requires_double_period INTEGER NOT NULL DEFAULT 0 CHECK (requires_double_period IN (0, 1))");
+        } catch (SQLException e) {
+            if (!e.getMessage().contains("duplicate column")) {
+                throw e;
+            }
+        }
+    }
+
+    private void runMigrationV3(Statement statement) throws SQLException {
+        statement.execute("""
+                CREATE TABLE IF NOT EXISTS rooms (
+                    id       INTEGER PRIMARY KEY AUTOINCREMENT,
+                    code     TEXT    NOT NULL UNIQUE,
+                    name     TEXT    NOT NULL,
+                    type     TEXT    NOT NULL DEFAULT 'CLASSROOM' CHECK (type IN ('CLASSROOM', 'LAB')),
+                    capacity INTEGER NOT NULL DEFAULT 30 CHECK (capacity > 0)
+                )
+                """);
+        try {
+            statement.execute("ALTER TABLE timetable_entries ADD COLUMN room_id INTEGER REFERENCES rooms(id) ON DELETE SET NULL");
+        } catch (SQLException e) {
+            if (!e.getMessage().contains("duplicate column")) {
+                throw e;
+            }
         }
     }
 

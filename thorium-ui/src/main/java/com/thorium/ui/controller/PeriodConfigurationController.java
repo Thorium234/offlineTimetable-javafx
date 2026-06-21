@@ -42,7 +42,8 @@ public class PeriodConfigurationController {
             if (editingId == null) AppContext.get().periodConfigurationUseCase().create(dto);
             else AppContext.get().periodConfigurationUseCase().update(dto);
             clearForm(); refreshTable(); showMessage("Saved", false);
-        } catch (Exception e) { showMessage(e.getMessage(), true); }
+        } catch (IllegalArgumentException | IllegalStateException e) { showMessage(e.getMessage(), true); }
+        catch (Exception e) { showMessage("An unexpected error occurred", true); }
     }
 
     @FXML private void onDelete() {
@@ -51,7 +52,8 @@ public class PeriodConfigurationController {
         try {
             AppContext.get().periodConfigurationUseCase().delete(selected.id());
             clearForm(); refreshTable(); showMessage("Deleted", false);
-        } catch (Exception e) { showMessage(e.getMessage(), true); }
+        } catch (IllegalArgumentException | IllegalStateException e) { showMessage(e.getMessage(), true); }
+        catch (Exception e) { showMessage("An unexpected error occurred", true); }
     }
 
     @FXML private void onClear() { clearForm(); }

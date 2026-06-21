@@ -42,7 +42,8 @@ public class BreakConfigurationController {
             if (editingId == null) AppContext.get().breakConfigurationUseCase().create(dto);
             else AppContext.get().breakConfigurationUseCase().update(dto);
             clearForm(); refreshTable(); showMessage("Saved", false);
-        } catch (Exception e) { showMessage(e.getMessage(), true); }
+        } catch (IllegalArgumentException | IllegalStateException e) { showMessage(e.getMessage(), true); }
+        catch (Exception e) { showMessage("An unexpected error occurred", true); }
     }
 
     @FXML private void onDelete() {
@@ -51,7 +52,8 @@ public class BreakConfigurationController {
         try {
             AppContext.get().breakConfigurationUseCase().delete(selected.id());
             clearForm(); refreshTable(); showMessage("Deleted", false);
-        } catch (Exception e) { showMessage(e.getMessage(), true); }
+        } catch (IllegalArgumentException | IllegalStateException e) { showMessage(e.getMessage(), true); }
+        catch (Exception e) { showMessage("An unexpected error occurred", true); }
     }
 
     @FXML private void onClear() { clearForm(); }

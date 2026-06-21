@@ -5,6 +5,8 @@ import com.thorium.domain.model.*;
 
 import java.time.format.DateTimeFormatter;
 
+import java.time.format.DateTimeFormatter;
+
 public final class EntityMapper {
 
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
@@ -41,7 +43,8 @@ public final class EntityMapper {
                 subject.getName(),
                 subject.isExaminable(),
                 subject.getCbcDefaultLessons(),
-                subject.isAllowsDoublePeriod()
+                subject.isAllowsDoublePeriod(),
+                subject.isRequiresDoublePeriod()
         );
     }
 
@@ -53,6 +56,7 @@ public final class EntityMapper {
         subject.setExaminable(dto.examinable());
         subject.setCbcDefaultLessons(dto.cbcDefaultLessons());
         subject.setAllowsDoublePeriod(dto.allowsDoublePeriod());
+        subject.setRequiresDoublePeriod(dto.requiresDoublePeriod());
         return subject;
     }
 
@@ -88,6 +92,26 @@ public final class EntityMapper {
                 breakPeriod.getDurationMinutes(),
                 breakPeriod.getSortOrder()
         );
+    }
+
+    public static RoomDto toDto(Room room) {
+        return new RoomDto(
+                room.getId(),
+                room.getCode(),
+                room.getName(),
+                room.getType(),
+                room.getCapacity()
+        );
+    }
+
+    public static Room toEntity(RoomDto dto) {
+        Room room = new Room();
+        room.setId(dto.id());
+        room.setCode(dto.code());
+        room.setName(dto.name());
+        room.setType(dto.type());
+        room.setCapacity(dto.capacity());
+        return room;
     }
 
     public static TeacherAvailabilityDto toDto(TeacherAvailability availability, String teacherName) {

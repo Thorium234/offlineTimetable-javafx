@@ -2,6 +2,7 @@ package com.thorium.domain.scheduling;
 
 import com.thorium.domain.constraint.HardConstraintValidator;
 import com.thorium.domain.constraint.SoftConstraintScorer;
+import com.thorium.domain.scheduling.optimization.HillClimbingStrategy;
 import com.thorium.domain.scheduling.optimization.OptimizationStrategy;
 
 import java.util.ArrayList;
@@ -17,7 +18,7 @@ public class TimetableGenerator {
     private final Optional<OptimizationStrategy> optimizationStrategy;
 
     public TimetableGenerator() {
-        this(null);
+        this(new HillClimbingStrategy());
     }
 
     public TimetableGenerator(OptimizationStrategy optimizationStrategy) {

@@ -22,8 +22,13 @@ public class TimetableGenerationController {
                     result.qualityScore(), result.entries().size()));
             resultLabel.getStyleClass().removeAll("error");
             resultLabel.getStyleClass().add("success");
-        } catch (Exception e) {
+        } catch (IllegalArgumentException | IllegalStateException e) {
             resultLabel.setText(e.getMessage());
+            resultLabel.getStyleClass().removeAll("success");
+            resultLabel.getStyleClass().add("error");
+            qualityLabel.setText("");
+        } catch (Exception e) {
+            resultLabel.setText("An unexpected error occurred");
             resultLabel.getStyleClass().removeAll("success");
             resultLabel.getStyleClass().add("error");
             qualityLabel.setText("");

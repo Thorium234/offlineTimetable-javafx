@@ -6,6 +6,7 @@ public record SubjectDto(
         String name,
         boolean examinable,
         int cbcDefaultLessons,
-        boolean allowsDoublePeriod
+        boolean allowsDoublePeriod,
+        boolean requiresDoublePeriod
 ) {
 }

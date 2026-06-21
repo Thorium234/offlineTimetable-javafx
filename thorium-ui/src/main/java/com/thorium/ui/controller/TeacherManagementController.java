@@ -71,8 +71,10 @@ public class TeacherManagementController {
             }
             clearForm();
             refreshTable();
-        } catch (Exception e) {
+        } catch (IllegalArgumentException | IllegalStateException e) {
             showMessage(e.getMessage(), true);
+        } catch (Exception e) {
+            showMessage("An unexpected error occurred", true);
         }
     }
 
@@ -88,8 +90,10 @@ public class TeacherManagementController {
             clearForm();
             refreshTable();
             showMessage("Teacher deleted", false);
-        } catch (Exception e) {
+        } catch (IllegalArgumentException | IllegalStateException e) {
             showMessage(e.getMessage(), true);
+        } catch (Exception e) {
+            showMessage("An unexpected error occurred", true);
         }
     }
 

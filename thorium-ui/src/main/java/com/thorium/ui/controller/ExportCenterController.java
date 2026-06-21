@@ -62,8 +62,10 @@ public class ExportCenterController {
                 AppContext.get().exportTimetableUseCase().exportExcel(selected.id(), file.toPath());
             }
             showMessage("Exported to " + file.getAbsolutePath(), false);
-        } catch (Exception e) {
+        } catch (IllegalArgumentException | IllegalStateException e) {
             showMessage(e.getMessage(), true);
+        } catch (Exception e) {
+            showMessage("An unexpected error occurred", true);
         }
     }
 

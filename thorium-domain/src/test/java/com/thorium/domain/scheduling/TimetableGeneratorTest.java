@@ -18,7 +18,7 @@ class TimetableGeneratorTest {
     @BeforeEach
     void setUp() {
         teacher = new Teacher(1L, "T001", "John Doe", 6, 30, true);
-        subject = new Subject(1L, "S001", "Geography", true, 5, false);
+        subject = new Subject(1L, "S001", "Geography", true, 5, false, false);
         classStream = new ClassStream(1L, "F1E", 1, "East", "Form 1 East");
         assignment = new TeachingAssignment(1L, 1L, 1L, 1L, 5);
     }

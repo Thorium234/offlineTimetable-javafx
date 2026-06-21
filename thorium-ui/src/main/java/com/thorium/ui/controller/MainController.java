@@ -29,6 +29,8 @@ public class MainController {
                 "Teachers",
                 "Subjects",
                 "Classes",
+                "Rooms",
+                "Assignments",
                 "Assignments",
                 "Periods",
                 "Breaks",
@@ -53,6 +55,7 @@ public class MainController {
                 case "Teachers" -> "/fxml/teachers.fxml";
                 case "Subjects" -> "/fxml/subjects.fxml";
                 case "Classes" -> "/fxml/classes.fxml";
+                case "Rooms" -> "/fxml/rooms.fxml";
                 case "Assignments" -> "/fxml/assignments.fxml";
                 case "Periods" -> "/fxml/periods.fxml";
                 case "Breaks" -> "/fxml/breaks.fxml";
@@ -69,7 +72,6 @@ public class MainController {
             statusLabel.setText(viewName);
         } catch (IOException e) {
             statusLabel.setText("Failed to load: " + viewName);
-            throw new IllegalStateException("Failed to load view: " + viewName, e);
         }
     }
 }

@@ -5,14 +5,15 @@
 <?import javafx.scene.layout.*?>
 
 <VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="com.thorium.ui.controller.SubjectManagementController" spacing="12">
+      fx:controller="com.thorium.ui.controller.RoomManagementController" spacing="12">
     <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
-    <Label text="Subject Management" styleClass="page-title"/>
-    <TableView fx:id="subjectTable" VBox.vgrow="ALWAYS">
+    <Label text="Room / Lab Management" styleClass="page-title"/>
+    <TableView fx:id="roomTable" VBox.vgrow="ALWAYS">
         <columns>
             <TableColumn fx:id="codeColumn" text="Code" prefWidth="100"/>
             <TableColumn fx:id="nameColumn" text="Name" prefWidth="200"/>
-            <TableColumn fx:id="examinableColumn" text="Examinable" prefWidth="100"/>
+            <TableColumn fx:id="typeColumn" text="Type" prefWidth="120"/>
+            <TableColumn fx:id="capacityColumn" text="Capacity" prefWidth="100"/>
         </columns>
     </TableView>
     <GridPane hgap="8" vgap="8">
@@ -20,12 +21,10 @@
         <TextField fx:id="codeField" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
         <Label text="Name" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
         <TextField fx:id="nameField" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
-        <CheckBox fx:id="examinableCheck" text="Examinable (CBC)" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
-        <Label text="Default Lessons" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
-        <Spinner fx:id="cbcLessonsSpinner" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
-        <CheckBox fx:id="doublePeriodCheck" text="Allows Double Period" GridPane.columnIndex="1" GridPane.rowIndex="4"/>
-        <Label text="Requires Double" GridPane.columnIndex="0" GridPane.rowIndex="5"/>
-        <CheckBox fx:id="requiresDoubleCheck" text="Requires Double Period" GridPane.columnIndex="1" GridPane.rowIndex="5"/>
+        <Label text="Type" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+        <ComboBox fx:id="typeCombo" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+        <Label text="Capacity" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+        <Spinner fx:id="capacitySpinner" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
     </GridPane>
     <HBox spacing="8">
         <Button text="Save" onAction="#onSave"/><Button text="Delete" onAction="#onDelete"/><Button text="Clear" onAction="#onClear"/>

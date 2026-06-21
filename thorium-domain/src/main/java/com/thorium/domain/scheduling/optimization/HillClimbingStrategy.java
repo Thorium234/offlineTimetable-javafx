@@ -3,6 +3,7 @@ package com.thorium.domain.scheduling.optimization;
 import com.thorium.domain.constraint.HardConstraintValidator;
 import com.thorium.domain.constraint.SoftConstraintScorer;
 import com.thorium.domain.model.ScheduleSlot;
+import com.thorium.domain.model.TeachingAssignment;
 import com.thorium.domain.scheduling.PartialSchedule;
 import com.thorium.domain.scheduling.PlacedLesson;
 import com.thorium.domain.scheduling.SchedulingContext;
@@ -12,17 +13,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class SimulatedAnnealingStrategy implements OptimizationStrategy {
+public class HillClimbingStrategy implements OptimizationStrategy {
 
-    private static final int MAX_ITERATIONS = 10000;
-    private static final double INITIAL_TEMPERATURE = 1.0;
-    private static final double COOLING_RATE = 0.995;
+    private static final int MAX_ITERATIONS = 5000;
+    private static final int STAGNATION_LIMIT = 200;
 
     private final HardConstraintValidator hardValidator;
     private final SoftConstraintScorer softScorer;
     private final Random random;
 
-    public SimulatedAnnealingStrategy() {
+    public HillClimbingStrategy() {
         this.hardValidator = new HardConstraintValidator();
         this.softScorer = new SoftConstraintScorer();
         this.random = new Random();
@@ -36,24 +36,25 @@ public class SimulatedAnnealingStrategy implements OptimizationStrategy {
 
         PartialSchedule current = initial.schedule().copy();
         double currentScore = softScorer.score(current, context);
-        double temperature = INITIAL_TEMPERATURE;
+        int stagnationCount = 0;
 
         for (int iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
             PartialSchedule neighbor = generateNeighbor(current, context);
             if (neighbor == null) {
-                temperature *= COOLING_RATE;
+                stagnationCount++;
+                if (stagnationCount > STAGNATION_LIMIT) break;
                 continue;
             }
 
             double neighborScore = softScorer.score(neighbor, context);
-            double delta = neighborScore - currentScore;
-
-            if (delta > 0 || random.nextDouble() < Math.exp(delta / temperature)) {
+            if (neighborScore > currentScore) {
                 current = neighbor;
                 currentScore = neighborScore;
+                stagnationCount = 0;
+            } else {
+                stagnationCount++;
+                if (stagnationCount > STAGNATION_LIMIT) break;
             }
-
-            temperature *= COOLING_RATE;
         }
 
         return TimetableGenerationResult.success(current, currentScore);

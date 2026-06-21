@@ -8,6 +8,7 @@ import com.thorium.application.usecase.classstream.ClassStreamManagementUseCase;
 import com.thorium.application.usecase.dashboard.DashboardUseCase;
 import com.thorium.application.usecase.export.ExportTimetableUseCase;
 import com.thorium.application.usecase.period.PeriodConfigurationUseCase;
+import com.thorium.application.usecase.room.RoomManagementUseCase;
 import com.thorium.application.usecase.subject.SubjectManagementUseCase;
 import com.thorium.application.usecase.teacher.TeacherManagementUseCase;
 import com.thorium.application.usecase.timetable.GenerateTimetableUseCase;
@@ -32,6 +33,7 @@ public final class ApplicationBootstrap {
     private final BreakRepository breakRepository;
     private final ConstraintRepository constraintRepository;
     private final TimetableRepository timetableRepository;
+    private final RoomRepository roomRepository;
     private final TimetableExporter timetableExporter;
 
     private ApplicationBootstrap(Path databasePath) {
@@ -47,6 +49,7 @@ public final class ApplicationBootstrap {
         this.breakRepository = new SqliteBreakRepository(connectionProvider);
         this.constraintRepository = new SqliteConstraintRepository(connectionProvider);
         this.timetableRepository = new SqliteTimetableRepository(connectionProvider);
+        this.roomRepository = new SqliteRoomRepository(connectionProvider);
 
         PdfTimetableExporter pdfExporter = new PdfTimetableExporter(assignmentRepository, subjectRepository, classStreamRepository);
         ExcelTimetableExporter excelExporter = new ExcelTimetableExporter(
@@ -93,6 +96,10 @@ public final class ApplicationBootstrap {
                 classStreamRepository, availabilityRepository, periodRepository, constraintRepository);
     }
 
+    public RoomManagementUseCase roomManagementUseCase() {
+        return new RoomManagementUseCase(roomRepository);
+    }
+
     public ExportTimetableUseCase exportTimetableUseCase() {
         return new ExportTimetableUseCase(timetableRepository, timetableExporter);
     }
@@ -109,5 +116,9 @@ public final class ApplicationBootstrap {
 
     public ConstraintRepository constraintRepository() {
         return constraintRepository;
+    }
+
+    public RoomRepository roomRepository() {
+        return roomRepository;
     }
 }

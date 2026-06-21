@@ -15,6 +15,10 @@ import java.util.Map;
 
 public class SoftConstraintScorer {
 
+    private static final double SPREAD_WEIGHT = 0.35;
+    private static final double WORKLOAD_WEIGHT = 0.40;
+    private static final double CONSECUTIVE_WEIGHT = 0.25;
+
     public double score(PartialSchedule schedule, SchedulingContext context) {
         if (schedule.isEmpty()) {
             return 0.0;
@@ -22,11 +26,11 @@ public class SoftConstraintScorer {
         double spreadScore = scoreSpread(schedule);
         double workloadScore = scoreTeacherWorkload(schedule, context);
         double consecutiveScore = scoreConsecutiveLessons(schedule);
-        return spreadScore * 0.4 + workloadScore * 0.35 + consecutiveScore * 0.25;
+        return spreadScore * SPREAD_WEIGHT + workloadScore * WORKLOAD_WEIGHT + consecutiveScore * CONSECUTIVE_WEIGHT;
     }
 
     public double scorePlacement(TeachingAssignment assignment, ScheduleSlot slot,
-                                 PartialSchedule schedule, SchedulingContext context) {
+                                  PartialSchedule schedule, SchedulingContext context) {
         PartialSchedule trial = schedule.copy();
         trial.place(new PlacedLesson(assignment, slot));
         return score(trial, context);
@@ -54,11 +58,13 @@ public class SoftConstraintScorer {
 
     private double scoreTeacherWorkload(PartialSchedule schedule, SchedulingContext context) {
         Map<Long, Map<DayOfWeek, Integer>> teacherDayLessons = new HashMap<>();
+        Map<Long, Integer> teacherTotalLessons = new HashMap<>();
         for (PlacedLesson placed : schedule.placedLessons()) {
             Long teacherId = placed.assignment().getTeacherId();
             teacherDayLessons
                     .computeIfAbsent(teacherId, k -> new EnumMap<>(DayOfWeek.class))
                     .merge(placed.slot().dayOfWeek(), 1, Integer::sum);
+            teacherTotalLessons.merge(teacherId, 1, Integer::sum);
         }
 
         double total = 0.0;
@@ -69,8 +75,14 @@ public class SoftConstraintScorer {
                 continue;
             }
             int maxDay = entry.getValue().values().stream().mapToInt(Integer::intValue).max().orElse(0);
-            double ratio = 1.0 - ((double) maxDay / Math.max(1, teacher.getMaxLessonsPerDay()));
-            total += Math.max(0.0, ratio);
+            double dayRatio = 1.0 - ((double) maxDay / Math.max(1, teacher.getMaxLessonsPerDay()));
+            double dayScore = Math.max(0.0, dayRatio);
+
+            int weeklyTotal = teacherTotalLessons.getOrDefault(entry.getKey(), 0);
+            double weekRatio = 1.0 - ((double) weeklyTotal / Math.max(1, teacher.getMaxLessonsPerWeek()));
+            double weekScore = Math.max(0.0, weekRatio);
+
+            total += (dayScore * 0.6 + weekScore * 0.4);
             teachers++;
         }
         return teachers == 0 ? 1.0 : total / teachers;

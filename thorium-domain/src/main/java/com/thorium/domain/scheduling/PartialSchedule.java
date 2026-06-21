@@ -25,6 +25,10 @@ public final class PartialSchedule {
         placedLessons.add(lesson);
     }
 
+    public void remove(PlacedLesson lesson) {
+        placedLessons.remove(lesson);
+    }
+
     public PlacedLesson removeLast() {
         if (placedLessons.isEmpty()) {
             throw new IllegalStateException("No lessons to remove");

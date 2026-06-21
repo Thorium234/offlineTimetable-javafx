@@ -30,6 +30,9 @@ public class HardConstraintValidator {
         if (violatesCbcNoDouble(assignment, slot, schedule, context)) {
             return false;
         }
+        if (violatesRequiredDouble(assignment, slot, schedule, context)) {
+            return false;
+        }
         if (exceedsWeeklyCount(assignment, schedule)) {
             return false;
         }
@@ -50,6 +53,17 @@ public class HardConstraintValidator {
                 errors.add("Assignment " + assignment.getId() + " has " + count
                         + " lessons, expected " + assignment.getLessonsPerWeek());
             }
+
+            Subject subject = context.subject(assignment.getSubjectId()).orElse(null);
+            if (subject != null && subject.isRequiresDoublePeriod()) {
+                if (count % 2 != 0) {
+                    errors.add("Assignment " + assignment.getId() + " has odd lesson count ("
+                            + count + ") but subject requires double periods");
+                }
+                if (!areLessonsPaired(schedule, assignment, context)) {
+                    errors.add("Assignment " + assignment.getId() + " has lessons not placed in consecutive pairs");
+                }
+            }
         }
 
         Set<String> teacherSlots = new HashSet<>();
@@ -66,6 +80,26 @@ public class HardConstraintValidator {
         }
 
         return errors.isEmpty() ? ValidationResult.ok() : ValidationResult.fail(errors);
+    }
+
+    private boolean areLessonsPaired(PartialSchedule schedule, TeachingAssignment assignment, SchedulingContext context) {
+        List<PlacedLesson> lessons = schedule.placedLessons().stream()
+                .filter(p -> p.assignment().getId().equals(assignment.getId()))
+                .toList();
+
+        for (PlacedLesson lesson : lessons) {
+            boolean hasPair = false;
+            for (PlacedLesson other : lessons) {
+                if (lesson == other) continue;
+                if (lesson.slot().dayOfWeek() == other.slot().dayOfWeek()
+                        && Math.abs(lesson.slot().periodNumber() - other.slot().periodNumber()) == 1) {
+                    hasPair = true;
+                    break;
+                }
+            }
+            if (!hasPair) return false;
+        }
+        return true;
     }
 
     private boolean isTeacherAvailable(TeachingAssignment assignment, ScheduleSlot slot, SchedulingContext context) {
@@ -93,6 +127,9 @@ public class HardConstraintValidator {
         if (subject == null || !subject.isCbcSubject()) {
             return false;
         }
+        if (subject.isAllowsDoublePeriod() || subject.isRequiresDoublePeriod()) {
+            return false;
+        }
         DayOfWeek day = slot.dayOfWeek();
         int period = slot.periodNumber();
 
@@ -108,6 +145,47 @@ public class HardConstraintValidator {
                 return true;
             }
         }
+        return false;
+    }
+
+    private boolean violatesRequiredDouble(TeachingAssignment assignment, ScheduleSlot slot,
+                                            PartialSchedule schedule, SchedulingContext context) {
+        Subject subject = context.subject(assignment.getSubjectId()).orElse(null);
+        if (subject == null || !subject.isRequiresDoublePeriod()) {
+            return false;
+        }
+
+        long placedCount = schedule.placedLessons().stream()
+                .filter(p -> p.assignment().getId().equals(assignment.getId()))
+                .count();
+
+        long remaining = assignment.getLessonsPerWeek() - placedCount;
+        if (remaining <= 0) {
+            return false;
+        }
+
+        boolean hasAdjacent = false;
+        for (PlacedLesson placed : schedule.placedLessons()) {
+            if (!placed.assignment().getId().equals(assignment.getId())) {
+                continue;
+            }
+            if (placed.slot().dayOfWeek() != slot.dayOfWeek()) {
+                continue;
+            }
+            if (Math.abs(placed.slot().periodNumber() - slot.periodNumber()) == 1) {
+                hasAdjacent = true;
+                break;
+            }
+        }
+
+        if (!hasAdjacent && placedCount > 0) {
+            return true;
+        }
+
+        if (remaining == 1 && placedCount > 0 && !hasAdjacent) {
+            return true;
+        }
+
         return false;
     }
 

@@ -32,8 +32,8 @@ public class SqliteSubjectRepository extends AbstractRepository implements Subje
 
     private void insert(Connection conn, Subject subject) throws SQLException {
         String sql = """
-                INSERT INTO subjects (code, name, examinable, cbc_default_lessons, allows_double_period)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO subjects (code, name, examinable, cbc_default_lessons, allows_double_period, requires_double_period)
+                VALUES (?, ?, ?, ?, ?, ?)
                 """;
         try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             bind(ps, subject);
@@ -48,12 +48,12 @@ public class SqliteSubjectRepository extends AbstractRepository implements Subje
 
     private void update(Connection conn, Subject subject) throws SQLException {
         String sql = """
-                UPDATE subjects SET code=?, name=?, examinable=?, cbc_default_lessons=?, allows_double_period=?
+                UPDATE subjects SET code=?, name=?, examinable=?, cbc_default_lessons=?, allows_double_period=?, requires_double_period=?
                 WHERE id=?
                 """;
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             bind(ps, subject);
-            ps.setLong(6, subject.getId());
+            ps.setLong(7, subject.getId());
             ps.executeUpdate();
         }
     }
@@ -64,6 +64,7 @@ public class SqliteSubjectRepository extends AbstractRepository implements Subje
         ps.setInt(3, subject.isExaminable() ? 1 : 0);
         ps.setInt(4, subject.getCbcDefaultLessons());
         ps.setInt(5, subject.isAllowsDoublePeriod() ? 1 : 0);
+        ps.setInt(6, subject.isRequiresDoublePeriod() ? 1 : 0);
     }
 
     @Override
@@ -116,13 +117,15 @@ public class SqliteSubjectRepository extends AbstractRepository implements Subje
     }
 
     private Subject map(ResultSet rs) throws SQLException {
-        return new Subject(
+        Subject subject = new Subject(
                 rs.getLong("id"),
                 rs.getString("code"),
                 rs.getString("name"),
                 rs.getInt("examinable") == 1,
                 rs.getInt("cbc_default_lessons"),
-                rs.getInt("allows_double_period") == 1
+                rs.getInt("allows_double_period") == 1,
+                rs.getInt("requires_double_period") == 1
         );
+        return subject;
     }
 }
