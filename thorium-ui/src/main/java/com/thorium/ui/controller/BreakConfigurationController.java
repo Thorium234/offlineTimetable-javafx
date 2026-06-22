@@ -1,12 +1,14 @@
 package com.thorium.ui.controller;
 
 import com.thorium.application.dto.BreakDto;
+import com.thorium.application.dto.SchoolSettingsDto;
 import com.thorium.ui.di.AppContext;
 import com.thorium.ui.util.IconUtil;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.layout.Region;
 
 public class BreakConfigurationController {
 
@@ -22,6 +24,7 @@ public class BreakConfigurationController {
     @FXML private Button saveBtn;
     @FXML private Button deleteBtn;
     @FXML private Button clearBtn;
+    @FXML private Button generateBtn;
 
     private Long editingId;
 
@@ -30,6 +33,7 @@ public class BreakConfigurationController {
         IconUtil.addIcon(saveBtn, IconUtil.SAVE, "#16a34a");
         IconUtil.addIcon(deleteBtn, IconUtil.DELETE, "#dc2626");
         IconUtil.addIcon(clearBtn, IconUtil.CLEAR, "#64748b");
+        IconUtil.addIcon(generateBtn, IconUtil.REFRESH, "#2563eb");
         nameColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().name()));
         afterColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().afterPeriod()));
         durationColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().durationMinutes()));
@@ -64,6 +68,34 @@ public class BreakConfigurationController {
     }
 
     @FXML private void onClear() { clearForm(); }
+
+    @FXML private void onGenerateDefaults() {
+        try {
+            SchoolSettingsDto s = AppContext.get().schoolSettingsUseCase().getSettings();
+            int tp = s.totalPeriods();
+            for (BreakDto b : AppContext.get().breakConfigurationUseCase().findAll()) {
+                AppContext.get().breakConfigurationUseCase().delete(b.id());
+            }
+            int sort = 1;
+            if (tp >= 3) {
+                AppContext.get().breakConfigurationUseCase().create(
+                        new BreakDto(null, "Morning Break", 2, 15, sort++));
+            }
+            if (tp >= 5) {
+                AppContext.get().breakConfigurationUseCase().create(
+                        new BreakDto(null, "Lunch Break", 4, 40, sort++));
+            }
+            if (tp >= 7) {
+                AppContext.get().breakConfigurationUseCase().create(
+                        new BreakDto(null, "Afternoon Break", tp - 2, 15, sort++));
+            }
+            clearForm();
+            refreshTable();
+            showMessage("Generated default breaks for " + tp + " periods", false);
+        } catch (Exception e) {
+            showMessage("Failed to generate breaks: " + e.getMessage(), true);
+        }
+    }
 
     private void refreshTable() {
         breakTable.setItems(FXCollections.observableArrayList(AppContext.get().breakConfigurationUseCase().findAll()));

@@ -31,6 +31,7 @@ public class PeriodConfigurationController {
     @FXML private Button saveBtn;
     @FXML private Button deleteBtn;
     @FXML private Button clearBtn;
+    @FXML private Button generateBtn;
 
     private Long editingId;
     private SchoolSettingsDto settings;
@@ -40,6 +41,7 @@ public class PeriodConfigurationController {
         IconUtil.addIcon(saveBtn, IconUtil.SAVE, "#16a34a");
         IconUtil.addIcon(deleteBtn, IconUtil.DELETE, "#dc2626");
         IconUtil.addIcon(clearBtn, IconUtil.CLEAR, "#64748b");
+        IconUtil.addIcon(generateBtn, IconUtil.REFRESH, "#2563eb");
         numberColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().periodNumber()));
         labelColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().label()));
         startColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().startTime()));
@@ -137,6 +139,37 @@ public class PeriodConfigurationController {
     }
 
     @FXML private void onClear() { clearForm(); }
+
+    @FXML private void onGenerateFromSettings() {
+        try {
+            SchoolSettingsDto s = AppContext.get().schoolSettingsUseCase().getSettings();
+            List<PeriodDto> existing = AppContext.get().periodConfigurationUseCase().findAll();
+            for (PeriodDto p : existing) {
+                AppContext.get().periodConfigurationUseCase().delete(p.id());
+            }
+            for (int i = 1; i <= s.totalPeriods(); i++) {
+                LocalTime cursor = LocalTime.parse(s.startTime(), TIME_FMT);
+                List<BreakDto> breaks = AppContext.get().breakConfigurationUseCase().findAll();
+                for (int j = 1; j < i; j++) {
+                    cursor = cursor.plusMinutes(s.periodDurationMinutes());
+                    for (BreakDto b : breaks) {
+                        if (b.afterPeriod() == j) {
+                            cursor = cursor.plusMinutes(b.durationMinutes());
+                        }
+                    }
+                }
+                String start = cursor.format(TIME_FMT);
+                String end = cursor.plusMinutes(s.periodDurationMinutes()).format(TIME_FMT);
+                AppContext.get().periodConfigurationUseCase().create(
+                        new PeriodDto(null, i, start, end, "P" + i));
+            }
+            clearForm();
+            refreshTable();
+            showMessage("Generated " + s.totalPeriods() + " periods from settings", false);
+        } catch (Exception e) {
+            showMessage("Failed to generate periods: " + e.getMessage(), true);
+        }
+    }
 
     private void refreshTable() {
         periodTable.setItems(FXCollections.observableArrayList(AppContext.get().periodConfigurationUseCase().findAll()));

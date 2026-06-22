@@ -26,6 +26,12 @@
         <Label text="End" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
         <ComboBox fx:id="endCombo" GridPane.columnIndex="1" GridPane.rowIndex="3" prefWidth="140"/>
     </GridPane>
-    <HBox spacing="8"><Button fx:id="saveBtn" text="Save" onAction="#onSave"/><Button fx:id="deleteBtn" text="Delete" onAction="#onDelete"/><Button fx:id="clearBtn" text="Clear" onAction="#onClear"/></HBox>
+    <HBox spacing="8" alignment="CENTER_LEFT">
+        <Button fx:id="saveBtn" text="Save" onAction="#onSave"/>
+        <Button fx:id="deleteBtn" text="Delete" onAction="#onDelete"/>
+        <Button fx:id="clearBtn" text="Clear" onAction="#onClear"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button fx:id="generateBtn" text="Generate from Settings" onAction="#onGenerateFromSettings"/>
+    </HBox>
     <Label fx:id="messageLabel"/>
 </VBox>
