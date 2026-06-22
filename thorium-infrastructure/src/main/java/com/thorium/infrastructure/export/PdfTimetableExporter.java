@@ -183,8 +183,10 @@ public class PdfTimetableExporter implements TimetableExporter {
                     TeachingAssignment assignment = assignmentMap.get(match.getTeachingAssignmentId());
                     if (assignment != null) {
                         String subjectCode = subjectRepository.findById(assignment.getSubjectId())
-                                .map(com.thorium.domain.model.Subject::getCode)
-                                .map(c -> c.length() > 6 ? c.substring(0, 6) : c)
+                                .map(s -> {
+                                    String n = s.getName();
+                                    return n != null ? n.trim().substring(0, Math.min(4, n.trim().length())).toUpperCase() : "?";
+                                })
                                 .orElse("?");
                         String teacherInit = teacherRepository.findById(assignment.getTeacherId())
                                 .map(t -> NameFormatter.initials(t.getName()))
