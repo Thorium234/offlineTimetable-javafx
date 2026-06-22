@@ -2,6 +2,8 @@ package com.thorium.infrastructure.export;
 
 import com.thorium.application.port.*;
 import com.thorium.application.util.NameFormatter;
+import com.thorium.domain.model.BreakPeriod;
+import com.thorium.domain.model.Period;
 import com.thorium.domain.model.TeachingAssignment;
 import com.thorium.domain.model.TimetableEntry;
 import com.thorium.domain.value.DayOfWeek;
@@ -11,11 +13,13 @@ import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
+import org.apache.pdfbox.util.Matrix;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Path;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -27,19 +31,22 @@ public class PdfTimetableExporter implements TimetableExporter {
     private final TeacherRepository teacherRepository;
     private final PeriodRepository periodRepository;
     private final RoomRepository roomRepository;
+    private final BreakRepository breakRepository;
 
     public PdfTimetableExporter(TeachingAssignmentRepository assignmentRepository,
                                 SubjectRepository subjectRepository,
                                 ClassStreamRepository classStreamRepository,
                                 TeacherRepository teacherRepository,
                                 PeriodRepository periodRepository,
-                                RoomRepository roomRepository) {
+                                RoomRepository roomRepository,
+                                BreakRepository breakRepository) {
         this.assignmentRepository = assignmentRepository;
         this.subjectRepository = subjectRepository;
         this.classStreamRepository = classStreamRepository;
         this.teacherRepository = teacherRepository;
         this.periodRepository = periodRepository;
         this.roomRepository = roomRepository;
+        this.breakRepository = breakRepository;
     }
 
     @Override
@@ -69,9 +76,16 @@ public class PdfTimetableExporter implements TimetableExporter {
         PDType1Font fontBold = new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD);
 
         try (PDDocument doc = new PDDocument()) {
-            List<com.thorium.domain.model.Period> periods = periodRepository.findAll().stream()
-                    .sorted(Comparator.comparingInt(com.thorium.domain.model.Period::getPeriodNumber))
+            List<Period> periods = periodRepository.findAll().stream()
+                    .sorted(Comparator.comparingInt(Period::getPeriodNumber))
                     .toList();
+
+            List<BreakPeriod> breaks = breakRepository.findAll().stream()
+                    .sorted(Comparator.comparingInt(BreakPeriod::getSortOrder))
+                    .toList();
+
+            Map<Long, TeachingAssignment> assignmentMap = assignmentRepository.findAll().stream()
+                    .collect(Collectors.toMap(TeachingAssignment::getId, a -> a));
 
             Map<String, List<TimetableEntry>> byClass = groupByClass(data.entries());
 
@@ -81,7 +95,8 @@ public class PdfTimetableExporter implements TimetableExporter {
                 doc.addPage(page);
 
                 try (PDPageContentStream cs = new PDPageContentStream(doc, page)) {
-                    renderClassPage(cs, pageSize, data, classEntry.getKey(), classEntry.getValue(), periods, font, fontBold);
+                    renderClassPage(cs, pageSize, data, classEntry.getKey(), classEntry.getValue(),
+                            periods, breaks, assignmentMap, font, fontBold);
                 }
             }
 
@@ -91,11 +106,34 @@ public class PdfTimetableExporter implements TimetableExporter {
         }
     }
 
+    private List<Object> buildColumns(List<Period> periods, List<BreakPeriod> breaks) {
+        List<Object> columns = new ArrayList<>();
+        for (Period p : periods) {
+            columns.add(p);
+            for (BreakPeriod b : breaks) {
+                if (b.getAfterPeriod() == p.getPeriodNumber()) {
+                    columns.add(b);
+                }
+            }
+        }
+        return columns;
+    }
+
+    private Period findPeriod(List<Period> periods, int periodNumber) {
+        for (Period p : periods) {
+            if (p.getPeriodNumber() == periodNumber) return p;
+        }
+        return null;
+    }
+
     private void renderClassPage(PDPageContentStream cs, PDRectangle pageSize,
                                  TimetableRepository.TimetableWithEntries data,
                                  String className, List<TimetableEntry> entries,
-                                 List<com.thorium.domain.model.Period> periods,
+                                 List<Period> periods, List<BreakPeriod> breaks,
+                                 Map<Long, TeachingAssignment> assignmentMap,
                                  PDType1Font font, PDType1Font fontBold) throws IOException {
+
+        List<Object> columns = buildColumns(periods, breaks);
 
         float margin = 30;
         float yTop = pageSize.getHeight() - margin;
@@ -104,8 +142,10 @@ public class PdfTimetableExporter implements TimetableExporter {
 
         // Column widths
         float dayColW = 70;
-        int numPeriods = periods.size();
-        float periodColW = (tableWidth - dayColW) / numPeriods;
+        float breakColW = 50;
+        int numBreaks = (int) columns.stream().filter(c -> c instanceof BreakPeriod).count();
+        int numPeriodCols = columns.size() - numBreaks;
+        float periodColW = (tableWidth - dayColW - numBreaks * breakColW) / numPeriodCols;
 
         // Row heights
         float titleH = 18;
@@ -116,7 +156,6 @@ public class PdfTimetableExporter implements TimetableExporter {
         cs.setFont(fontBold, 13);
         drawText(cs, tableLeft, yTop, "Thorium Timetable — " + className);
 
-        // Subtitle: timetable name
         cs.setFont(font, 9);
         drawText(cs, tableLeft, yTop - 14, data.timetable().getName());
 
@@ -126,96 +165,134 @@ public class PdfTimetableExporter implements TimetableExporter {
         drawCellBg(cs, tableLeft, y, dayColW, headerH, null);
         drawCellBorder(cs, tableLeft, y, dayColW, headerH);
 
-        for (int p = 0; p < numPeriods; p++) {
-            com.thorium.domain.model.Period period = periods.get(p);
-            float cx = tableLeft + dayColW + p * periodColW;
+        float cx = tableLeft + dayColW;
+        for (Object col : columns) {
+            float colW = col instanceof Period ? periodColW : breakColW;
 
-            drawCellBg(cs, cx, y, periodColW, headerH, null);
-            drawCellBorder(cs, cx, y, periodColW, headerH);
+            drawCellBg(cs, cx, y, colW, headerH, null);
+            drawCellBorder(cs, cx, y, colW, headerH);
 
-            cs.setFont(fontBold, 10);
-            drawTextCentered(cs, cx, cx + periodColW, y + headerH - 12,
-                    String.valueOf(period.getPeriodNumber()), fontBold, 10);
+            if (col instanceof Period p) {
+                cs.setFont(fontBold, 10);
+                drawTextCentered(cs, cx, cx + colW, y + headerH - 12,
+                        String.valueOf(p.getPeriodNumber()), fontBold, 10);
+                cs.setFont(font, 7);
+                drawTextCentered(cs, cx, cx + colW, y + headerH - 24,
+                        p.getStartTime() + " - " + p.getEndTime(), font, 7);
+            } else if (col instanceof BreakPeriod b) {
+                Period prev = findPeriod(periods, b.getAfterPeriod());
+                LocalTime breakStart = prev != null ? prev.getEndTime() : LocalTime.of(0, 0);
+                LocalTime breakEnd = breakStart.plusMinutes(b.getDurationMinutes());
+                cs.setFont(font, 6);
+                drawTextCentered(cs, cx, cx + colW, y + headerH - 12,
+                        breakStart + " - " + breakEnd, font, 6);
+                cs.setFont(fontBold, 7);
+                drawTextCentered(cs, cx, cx + colW, y + headerH - 22,
+                        b.getName().toUpperCase(), fontBold, 7);
+            }
 
-            cs.setFont(font, 7);
-            drawTextCentered(cs, cx, cx + periodColW, y + headerH - 24,
-                    period.getStartTime() + " - " + period.getEndTime(), font, 7);
+            cx += colW;
         }
 
         y -= headerH;
 
-        // Build lookup map: day_name -> period_number -> cell info
+        // Build entry lookup: day_name -> period_number -> entry
         Map<String, List<TimetableEntry>> entryLookup = new HashMap<>();
-        Map<Long, TeachingAssignment> assignmentMap = assignmentRepository.findAll().stream()
-                .collect(Collectors.toMap(TeachingAssignment::getId, a -> a));
         for (TimetableEntry entry : entries) {
             String key = entry.getDayOfWeek().name();
             entryLookup.computeIfAbsent(key, k -> new ArrayList<>()).add(entry);
         }
 
+        List<DayOfWeek> days = List.of(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY,
+                DayOfWeek.THURSDAY, DayOfWeek.FRIDAY);
+
+        // Draw break column backgrounds and vertical text (spanning all rows)
+        cx = tableLeft + dayColW;
+        for (Object col : columns) {
+            if (col instanceof BreakPeriod b) {
+                float colW = breakColW;
+                float bch = days.size() * rowH;
+                drawCellBg(cs, cx, y, colW, bch, "#EFEFEF");
+                drawCellBorder(cs, cx, y, colW, bch);
+
+                String label = b.getName().toUpperCase();
+                cs.saveGraphicsState();
+                cs.transform(Matrix.getTranslateInstance(cx + colW / 2, y - bch / 2));
+                cs.transform(Matrix.getRotateInstance(Math.toRadians(90), 0f, 0f));
+                cs.beginText();
+                cs.setFont(fontBold, 11);
+                float tw = fontBold.getStringWidth(label) / 1000f * 11;
+                cs.newLineAtOffset(-tw / 2, -3);
+                cs.showText(label);
+                cs.endText();
+                cs.restoreGraphicsState();
+            }
+            cx += col instanceof Period ? periodColW : breakColW;
+        }
+
         // ---- Day rows ----
-        List<DayOfWeek> days = List.of(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY);
+        cx = tableLeft + dayColW;
         for (int r = 0; r < days.size(); r++) {
             DayOfWeek day = days.get(r);
             boolean altRow = r % 2 == 1;
             String bgColor = altRow ? "#F9F9F9" : null;
 
-            // Day label cell
             drawCellBg(cs, tableLeft, y, dayColW, rowH, bgColor);
             drawCellBorder(cs, tableLeft, y, dayColW, rowH);
             cs.setFont(fontBold, 10);
             drawTextCentered(cs, tableLeft, tableLeft + dayColW, y + rowH / 2f + 3,
                     day.displayName(), fontBold, 10);
 
-            // Period cells
             List<TimetableEntry> dayEntries = entryLookup.getOrDefault(day.name(), List.of());
-            for (int p = 0; p < numPeriods; p++) {
-                com.thorium.domain.model.Period period = periods.get(p);
-                float cx = tableLeft + dayColW + p * periodColW;
+            float colX = tableLeft + dayColW;
+            for (Object col : columns) {
+                float colW = col instanceof Period ? periodColW : breakColW;
                 float cellMidY = y + rowH / 2f;
 
-                drawCellBg(cs, cx, y, periodColW, rowH, bgColor);
-                drawCellBorder(cs, cx, y, periodColW, rowH);
+                if (col instanceof Period p) {
+                    drawCellBg(cs, colX, y, colW, rowH, bgColor);
+                    drawCellBorder(cs, colX, y, colW, rowH);
 
-                int pn = period.getPeriodNumber();
-                TimetableEntry match = findEntry(dayEntries, pn);
-                if (match != null) {
-                    TeachingAssignment assignment = assignmentMap.get(match.getTeachingAssignmentId());
-                    if (assignment != null) {
-                        String subjectCode = subjectRepository.findById(assignment.getSubjectId())
-                                .map(s -> {
-                                    String n = s.getName();
-                                    return n != null ? n.trim().substring(0, Math.min(4, n.trim().length())).toUpperCase() : "?";
-                                })
-                                .orElse("?");
-                        String teacherInit = teacherRepository.findById(assignment.getTeacherId())
-                                .map(t -> NameFormatter.initials(t.getName()))
-                                .orElse("?");
-                        String roomCode = match.getRoomId() != null
-                                ? roomRepository.findById(match.getRoomId())
-                                    .map(com.thorium.domain.model.Room::getCode)
-                                    .orElse(null)
-                                : null;
+                    int pn = p.getPeriodNumber();
+                    TimetableEntry match = findEntry(dayEntries, pn);
+                    if (match != null) {
+                        TeachingAssignment assignment = assignmentMap.get(match.getTeachingAssignmentId());
+                        if (assignment != null) {
+                            String subjectCode = subjectRepository.findById(assignment.getSubjectId())
+                                    .map(s -> {
+                                        String n = s.getName();
+                                        return n != null ? n.trim().substring(0, Math.min(4, n.trim().length())).toUpperCase() : "?";
+                                    })
+                                    .orElse("?");
+                            String teacherInit = teacherRepository.findById(assignment.getTeacherId())
+                                    .map(t -> NameFormatter.initials(t.getName()))
+                                    .orElse("?");
+                            String roomCode = match.getRoomId() != null
+                                    ? roomRepository.findById(match.getRoomId())
+                                        .map(com.thorium.domain.model.Room::getCode)
+                                        .orElse(null)
+                                    : null;
 
-                        float pad = 4;
-                        float innerW = periodColW - 2 * pad;
-                        float innerX = cx + pad;
+                            float pad = 4;
+                            float innerX = colX + pad;
 
-                        // Subject code - bold, centered at top
-                        cs.setFont(fontBold, 9);
-                        drawTextCentered(cs, cx, cx + periodColW, cellMidY + 6, subjectCode, fontBold, 9);
+                            cs.setFont(fontBold, 9);
+                            drawTextCentered(cs, colX, colX + colW, cellMidY + 6, subjectCode, fontBold, 9);
 
-                        // Teacher initials - small, bottom-left
-                        cs.setFont(font, 7);
-                        drawText(cs, innerX, y + 9, teacherInit);
+                            cs.setFont(font, 7);
+                            drawText(cs, innerX, y + 9, teacherInit);
 
-                        // Room code - small, bottom-right
-                        if (roomCode != null) {
-                            float roomW = font.getStringWidth(roomCode) / 1000f * 7;
-                            drawText(cs, cx + periodColW - pad - roomW, y + 9, roomCode);
+                            if (roomCode != null) {
+                                float roomW = font.getStringWidth(roomCode) / 1000f * 7;
+                                drawText(cs, colX + colW - pad - roomW, y + 9, roomCode);
+                            }
                         }
                     }
+                } else {
+                    drawCellBorder(cs, colX, y, colW, rowH);
                 }
+
+                colX += colW;
             }
 
             y -= rowH;

@@ -52,7 +52,7 @@ public final class ApplicationBootstrap {
         this.timetableRepository = new SqliteTimetableRepository(connectionProvider);
         this.roomRepository = new SqliteRoomRepository(connectionProvider);
 
-        PdfTimetableExporter pdfExporter = new PdfTimetableExporter(assignmentRepository, subjectRepository, classStreamRepository, teacherRepository, periodRepository, roomRepository);
+        PdfTimetableExporter pdfExporter = new PdfTimetableExporter(assignmentRepository, subjectRepository, classStreamRepository, teacherRepository, periodRepository, roomRepository, breakRepository);
         ExcelTimetableExporter excelExporter = new ExcelTimetableExporter(
                 assignmentRepository, subjectRepository, teacherRepository, classStreamRepository);
         this.timetableExporter = new CompositeTimetableExporter(pdfExporter, excelExporter);
