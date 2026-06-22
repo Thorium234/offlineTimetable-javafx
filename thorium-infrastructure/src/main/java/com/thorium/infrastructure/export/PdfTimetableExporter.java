@@ -6,6 +6,12 @@ import com.thorium.domain.model.BreakPeriod;
 import com.thorium.domain.model.Period;
 import com.thorium.domain.model.TeachingAssignment;
 import com.thorium.domain.model.TimetableEntry;
+import com.thorium.domain.model.timeblock.BlockType;
+import com.thorium.domain.model.timeblock.BreakBlock;
+import com.thorium.domain.model.timeblock.EventBlock;
+import com.thorium.domain.model.timeblock.LessonBlock;
+import com.thorium.domain.model.timeblock.TimeBlock;
+import com.thorium.domain.scheduling.DailyTimelineGenerator;
 import com.thorium.domain.value.DayOfWeek;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
@@ -19,7 +25,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Path;
-import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -84,6 +89,8 @@ public class PdfTimetableExporter implements TimetableExporter {
                     .sorted(Comparator.comparingInt(BreakPeriod::getSortOrder))
                     .toList();
 
+            List<TimeBlock> timeline = DailyTimelineGenerator.generate(periods, breaks);
+
             Map<Long, TeachingAssignment> assignmentMap = assignmentRepository.findAll().stream()
                     .collect(Collectors.toMap(TeachingAssignment::getId, a -> a));
 
@@ -96,7 +103,7 @@ public class PdfTimetableExporter implements TimetableExporter {
 
                 try (PDPageContentStream cs = new PDPageContentStream(doc, page)) {
                     renderClassPage(cs, pageSize, data, classEntry.getKey(), classEntry.getValue(),
-                            periods, breaks, assignmentMap, font, fontBold);
+                            timeline, assignmentMap, font, fontBold);
                 }
             }
 
@@ -106,46 +113,25 @@ public class PdfTimetableExporter implements TimetableExporter {
         }
     }
 
-    private List<Object> buildColumns(List<Period> periods, List<BreakPeriod> breaks) {
-        List<Object> columns = new ArrayList<>();
-        for (Period p : periods) {
-            columns.add(p);
-            for (BreakPeriod b : breaks) {
-                if (b.getAfterPeriod() == p.getPeriodNumber()) {
-                    columns.add(b);
-                }
-            }
-        }
-        return columns;
-    }
-
-    private Period findPeriod(List<Period> periods, int periodNumber) {
-        for (Period p : periods) {
-            if (p.getPeriodNumber() == periodNumber) return p;
-        }
-        return null;
-    }
-
     private void renderClassPage(PDPageContentStream cs, PDRectangle pageSize,
                                  TimetableRepository.TimetableWithEntries data,
                                  String className, List<TimetableEntry> entries,
-                                 List<Period> periods, List<BreakPeriod> breaks,
+                                 List<TimeBlock> timeline,
                                  Map<Long, TeachingAssignment> assignmentMap,
                                  PDType1Font font, PDType1Font fontBold) throws IOException {
-
-        List<Object> columns = buildColumns(periods, breaks);
 
         float margin = 30;
         float yTop = pageSize.getHeight() - margin;
         float tableLeft = margin;
         float tableWidth = pageSize.getWidth() - 2 * margin;
 
-        // Column widths
         float dayColW = 70;
-        float breakColW = 50;
-        int numBreaks = (int) columns.stream().filter(c -> c instanceof BreakPeriod).count();
-        int numPeriodCols = columns.size() - numBreaks;
-        float periodColW = (tableWidth - dayColW - numBreaks * breakColW) / numPeriodCols;
+        float nonLessonColW = 50;
+        int numLessons = (int) timeline.stream().filter(t -> t.blockType() == BlockType.LESSON).count();
+        int numNonLessons = timeline.size() - numLessons;
+        float lessonColW = numLessons > 0
+                ? (tableWidth - dayColW - numNonLessons * nonLessonColW) / numLessons
+                : 0;
 
         // Row heights
         float titleH = 18;
@@ -166,29 +152,26 @@ public class PdfTimetableExporter implements TimetableExporter {
         drawCellBorder(cs, tableLeft, y, dayColW, headerH);
 
         float cx = tableLeft + dayColW;
-        for (Object col : columns) {
-            float colW = col instanceof Period ? periodColW : breakColW;
+        for (TimeBlock block : timeline) {
+            float colW = block.blockType() == BlockType.LESSON ? lessonColW : nonLessonColW;
 
             drawCellBg(cs, cx, y, colW, headerH, null);
             drawCellBorder(cs, cx, y, colW, headerH);
 
-            if (col instanceof Period p) {
+            if (block instanceof LessonBlock lb) {
                 cs.setFont(fontBold, 10);
                 drawTextCentered(cs, cx, cx + colW, y + headerH - 12,
-                        String.valueOf(p.getPeriodNumber()), fontBold, 10);
+                        String.valueOf(lb.periodNumber()), fontBold, 10);
                 cs.setFont(font, 7);
                 drawTextCentered(cs, cx, cx + colW, y + headerH - 24,
-                        p.getStartTime() + " - " + p.getEndTime(), font, 7);
-            } else if (col instanceof BreakPeriod b) {
-                Period prev = findPeriod(periods, b.getAfterPeriod());
-                LocalTime breakStart = prev != null ? prev.getEndTime() : LocalTime.of(0, 0);
-                LocalTime breakEnd = breakStart.plusMinutes(b.getDurationMinutes());
+                        lb.startTime() + " - " + lb.endTime(), font, 7);
+            } else {
                 cs.setFont(font, 6);
                 drawTextCentered(cs, cx, cx + colW, y + headerH - 12,
-                        breakStart + " - " + breakEnd, font, 6);
+                        block.startTime() + " - " + block.endTime(), font, 6);
                 cs.setFont(fontBold, 7);
                 drawTextCentered(cs, cx, cx + colW, y + headerH - 22,
-                        b.getName().toUpperCase(), fontBold, 7);
+                        block.label().toUpperCase(), fontBold, 7);
             }
 
             cx += colW;
@@ -206,16 +189,17 @@ public class PdfTimetableExporter implements TimetableExporter {
         List<DayOfWeek> days = List.of(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY,
                 DayOfWeek.THURSDAY, DayOfWeek.FRIDAY);
 
-        // Draw break column backgrounds and vertical text (spanning all rows)
+        // Draw non-lesson column backgrounds and vertical text (spanning all rows)
         cx = tableLeft + dayColW;
-        for (Object col : columns) {
-            if (col instanceof BreakPeriod b) {
-                float colW = breakColW;
+        for (TimeBlock block : timeline) {
+            if (block.blockType() != BlockType.LESSON) {
+                float colW = nonLessonColW;
                 float bch = days.size() * rowH;
-                drawCellBg(cs, cx, y, colW, bch, "#EFEFEF");
+                String bgColor = block.blockType() == BlockType.EVENT ? "#E8F0FE" : "#EFEFEF";
+                drawCellBg(cs, cx, y, colW, bch, bgColor);
                 drawCellBorder(cs, cx, y, colW, bch);
 
-                String label = b.getName().toUpperCase();
+                String label = block.label().toUpperCase();
                 cs.saveGraphicsState();
                 cs.transform(Matrix.getTranslateInstance(cx + colW / 2, y - bch / 2));
                 cs.transform(Matrix.getRotateInstance(Math.toRadians(90), 0f, 0f));
@@ -227,7 +211,7 @@ public class PdfTimetableExporter implements TimetableExporter {
                 cs.endText();
                 cs.restoreGraphicsState();
             }
-            cx += col instanceof Period ? periodColW : breakColW;
+            cx += block.blockType() == BlockType.LESSON ? lessonColW : nonLessonColW;
         }
 
         // ---- Day rows ----
@@ -245,15 +229,15 @@ public class PdfTimetableExporter implements TimetableExporter {
 
             List<TimetableEntry> dayEntries = entryLookup.getOrDefault(day.name(), List.of());
             float colX = tableLeft + dayColW;
-            for (Object col : columns) {
-                float colW = col instanceof Period ? periodColW : breakColW;
+            for (TimeBlock block : timeline) {
+                float colW = block.blockType() == BlockType.LESSON ? lessonColW : nonLessonColW;
                 float cellMidY = y + rowH / 2f;
 
-                if (col instanceof Period p) {
+                if (block instanceof LessonBlock lb) {
                     drawCellBg(cs, colX, y, colW, rowH, bgColor);
                     drawCellBorder(cs, colX, y, colW, rowH);
 
-                    int pn = p.getPeriodNumber();
+                    int pn = lb.periodNumber();
                     TimetableEntry match = findEntry(dayEntries, pn);
                     if (match != null) {
                         TeachingAssignment assignment = assignmentMap.get(match.getTeachingAssignmentId());
