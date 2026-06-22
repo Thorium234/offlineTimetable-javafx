@@ -14,7 +14,7 @@ import java.time.format.DateTimeFormatter;
 public class DatabaseInitializer {
 
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
-    private static final int SCHEMA_VERSION = 4;
+    private static final int SCHEMA_VERSION = 5;
 
     private final SQLiteConnectionProvider connectionProvider;
 
@@ -48,6 +48,10 @@ public class DatabaseInitializer {
             if (currentVersion < 4) {
                 runMigrationV4(statement);
                 setVersion(statement, 4);
+            }
+            if (currentVersion < 5) {
+                runMigrationV5(statement);
+                setVersion(statement, 5);
             }
 
             connection.commit();
@@ -110,9 +114,26 @@ public class DatabaseInitializer {
         }
     }
 
+    private void runMigrationV5(Statement statement) throws SQLException {
+        statement.execute("""
+                CREATE TABLE IF NOT EXISTS school_settings (
+                    id                  INTEGER PRIMARY KEY CHECK (id = 1),
+                    total_periods       INTEGER NOT NULL DEFAULT 8,
+                    school_start_time   TEXT    NOT NULL DEFAULT '08:00',
+                    period_duration_min INTEGER NOT NULL DEFAULT 40
+                )
+                """);
+    }
+
     private void seedDefaults() {
         try (Connection connection = connectionProvider.getConnection();
              Statement statement = connection.createStatement()) {
+
+            var settingsCount = connection.createStatement()
+                    .executeQuery("SELECT COUNT(*) FROM school_settings");
+            if (settingsCount.next() && settingsCount.getInt(1) == 0) {
+                statement.execute("INSERT INTO school_settings (id, total_periods, school_start_time, period_duration_min) VALUES (1, 8, '08:00', 40)");
+            }
 
             var periodCount = connection.createStatement()
                     .executeQuery("SELECT COUNT(*) FROM periods");

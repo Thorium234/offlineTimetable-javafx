@@ -8,6 +8,7 @@ import com.thorium.application.usecase.dashboard.DashboardUseCase;
 import com.thorium.application.usecase.export.ExportTimetableUseCase;
 import com.thorium.application.usecase.period.PeriodConfigurationUseCase;
 import com.thorium.application.usecase.room.RoomManagementUseCase;
+import com.thorium.application.usecase.settings.SchoolSettingsUseCase;
 import com.thorium.application.usecase.subject.SubjectManagementUseCase;
 import com.thorium.application.usecase.teacher.TeacherManagementUseCase;
 import com.thorium.application.usecase.timetable.GenerateTimetableUseCase;
@@ -82,6 +83,10 @@ public final class AppContext {
 
     public RoomManagementUseCase roomManagementUseCase() {
         return bootstrap.roomManagementUseCase();
+    }
+
+    public SchoolSettingsUseCase schoolSettingsUseCase() {
+        return bootstrap.schoolSettingsUseCase();
     }
 
     public ExportTimetableUseCase exportTimetableUseCase() {

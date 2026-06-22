@@ -1,6 +1,8 @@
 package com.thorium.ui.controller;
 
+import com.thorium.application.dto.BreakDto;
 import com.thorium.application.dto.PeriodDto;
+import com.thorium.application.dto.SchoolSettingsDto;
 import com.thorium.ui.di.AppContext;
 import com.thorium.ui.util.IconUtil;
 import javafx.beans.property.ReadOnlyObjectWrapper;
@@ -8,7 +10,13 @@ import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+
 public class PeriodConfigurationController {
+
+    private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
 
     @FXML private TableView<PeriodDto> periodTable;
     @FXML private TableColumn<PeriodDto, Number> numberColumn;
@@ -17,14 +25,15 @@ public class PeriodConfigurationController {
     @FXML private TableColumn<PeriodDto, String> endColumn;
     @FXML private Spinner<Integer> numberSpinner;
     @FXML private TextField labelField;
-    @FXML private TextField startField;
-    @FXML private TextField endField;
+    @FXML private ComboBox<String> startCombo;
+    @FXML private ComboBox<String> endCombo;
     @FXML private Label messageLabel;
     @FXML private Button saveBtn;
     @FXML private Button deleteBtn;
     @FXML private Button clearBtn;
 
     private Long editingId;
+    private SchoolSettingsDto settings;
 
     @FXML
     private void initialize() {
@@ -36,21 +45,85 @@ public class PeriodConfigurationController {
         startColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().startTime()));
         endColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().endTime()));
         numberSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 12, 1));
+        populateTimeOptions();
+        loadSettings();
+        numberSpinner.valueProperty().addListener((obs, o, n) -> autoComputeTimes(n));
         refreshTable();
         periodTable.getSelectionModel().selectedItemProperty().addListener((obs, o, s) -> {
             if (s != null) populateForm(s);
         });
     }
 
+    private void populateTimeOptions() {
+        for (int hour = 6; hour <= 20; hour++) {
+            for (int min = 0; min < 60; min += 5) {
+                String t = String.format("%02d:%02d", hour, min);
+                startCombo.getItems().add(t);
+                endCombo.getItems().add(t);
+            }
+        }
+    }
+
+    private void loadSettings() {
+        settings = AppContext.get().schoolSettingsUseCase().getSettings();
+        if (settings != null && numberSpinner.getValue() != null) {
+            autoComputeTimes(numberSpinner.getValue());
+        }
+    }
+
+    private void autoComputeTimes(Integer periodNumber) {
+        if (settings == null || periodNumber == null) return;
+        LocalTime cursor = LocalTime.parse(settings.startTime(), TIME_FMT);
+        List<BreakDto> breaks = AppContext.get().breakConfigurationUseCase().findAll();
+        for (int i = 1; i < periodNumber; i++) {
+            cursor = cursor.plusMinutes(settings.periodDurationMinutes());
+            for (BreakDto b : breaks) {
+                if (b.afterPeriod() == i) {
+                    cursor = cursor.plusMinutes(b.durationMinutes());
+                }
+            }
+        }
+        String start = cursor.format(TIME_FMT);
+        String end = cursor.plusMinutes(settings.periodDurationMinutes()).format(TIME_FMT);
+        if (!startCombo.isFocused()) startCombo.setValue(start);
+        if (!endCombo.isFocused()) endCombo.setValue(end);
+    }
+
     @FXML private void onSave() {
         try {
-            PeriodDto dto = new PeriodDto(editingId, numberSpinner.getValue(),
-                    startField.getText().trim(), endField.getText().trim(), labelField.getText().trim());
+            String start = startCombo.getValue();
+            String end = endCombo.getValue();
+            String conflict = findBreakConflict(start, end);
+            if (conflict != null) {
+                showMessage(conflict, true);
+                return;
+            }
+            int periodNumber = numberSpinner.getValue();
+            PeriodDto dto = new PeriodDto(editingId, periodNumber, start, end, labelField.getText().trim());
             if (editingId == null) AppContext.get().periodConfigurationUseCase().create(dto);
             else AppContext.get().periodConfigurationUseCase().update(dto);
             clearForm(); refreshTable(); showMessage("Saved", false);
         } catch (IllegalArgumentException | IllegalStateException e) { showMessage(e.getMessage(), true); }
         catch (Exception e) { showMessage("An unexpected error occurred", true); }
+    }
+
+    private String findBreakConflict(String startTime, String endTime) {
+        if (startTime == null || endTime == null) return "Select start and end times";
+        LocalTime start = LocalTime.parse(startTime, TIME_FMT);
+        LocalTime end = LocalTime.parse(endTime, TIME_FMT);
+        List<BreakDto> breaks = AppContext.get().breakConfigurationUseCase().findAll();
+        List<PeriodDto> periods = AppContext.get().periodConfigurationUseCase().findAll();
+        for (BreakDto b : breaks) {
+            PeriodDto breakPeriod = periods.stream()
+                    .filter(p -> p.periodNumber() == b.afterPeriod()).findFirst().orElse(null);
+            if (breakPeriod == null) continue;
+            LocalTime breakStart = LocalTime.parse(breakPeriod.endTime(), TIME_FMT);
+            LocalTime breakEnd = breakStart.plusMinutes(b.durationMinutes());
+            if (start.isBefore(breakEnd) && end.isAfter(breakStart)) {
+                return b.name() + " (after " + b.afterPeriod() + ") reserved " + breakStart.format(TIME_FMT) + "-" + breakEnd.format(TIME_FMT);
+            }
+        }
+        return null;
     }
 
     @FXML private void onDelete() {
@@ -73,14 +146,16 @@ public class PeriodConfigurationController {
         editingId = dto.id();
         numberSpinner.getValueFactory().setValue(dto.periodNumber());
         labelField.setText(dto.label());
-        startField.setText(dto.startTime());
-        endField.setText(dto.endTime());
+        startCombo.setValue(dto.startTime());
+        endCombo.setValue(dto.endTime());
     }
 
     private void clearForm() {
         editingId = null;
         numberSpinner.getValueFactory().setValue(1);
-        labelField.clear(); startField.clear(); endField.clear();
+        labelField.clear();
+        startCombo.setValue(null);
+        endCombo.setValue(null);
         periodTable.getSelectionModel().clearSelection();
     }
 

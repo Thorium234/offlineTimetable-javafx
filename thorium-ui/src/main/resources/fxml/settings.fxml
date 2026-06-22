@@ -7,8 +7,23 @@
 <VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="com.thorium.ui.controller.SettingsController" spacing="12">
     <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
-    <Label text="Settings" styleClass="page-title"/>
-    <Label text="Database Location:"/>
+    <Label text="School Settings" styleClass="page-title"/>
+    <GridPane hgap="12" vgap="10" maxWidth="500">
+        <Label text="Total Periods per Day" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+        <Spinner fx:id="totalPeriodsSpinner" GridPane.columnIndex="1" GridPane.rowIndex="0" prefWidth="120"/>
+
+        <Label text="School Start Time" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+        <ComboBox fx:id="startTimeCombo" GridPane.columnIndex="1" GridPane.rowIndex="1" prefWidth="120" editable="false"/>
+
+        <Label text="Period Duration (min)" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+        <Spinner fx:id="durationSpinner" GridPane.columnIndex="1" GridPane.rowIndex="2" prefWidth="120"/>
+    </GridPane>
+    <HBox spacing="8">
+        <Button fx:id="saveBtn" text="Save Settings" onAction="#onSave"/>
+    </HBox>
+    <Label fx:id="messageLabel"/>
+    <Separator/>
+    <Label text="Database" styleClass="page-title"/>
+    <Label text="Location:"/>
     <Label fx:id="dbPathLabel" wrapText="true"/>
-    <Label text="CBC no-double-lesson rule is enabled by default. Manage constraints in the database."/>
 </VBox>

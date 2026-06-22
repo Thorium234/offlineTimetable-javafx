@@ -21,10 +21,10 @@
         <Spinner fx:id="numberSpinner" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
         <Label text="Label" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
         <TextField fx:id="labelField" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
-        <Label text="Start (HH:mm)" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
-        <TextField fx:id="startField" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
-        <Label text="End (HH:mm)" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
-        <TextField fx:id="endField" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+        <Label text="Start" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+        <ComboBox fx:id="startCombo" GridPane.columnIndex="1" GridPane.rowIndex="2" prefWidth="140"/>
+        <Label text="End" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+        <ComboBox fx:id="endCombo" GridPane.columnIndex="1" GridPane.rowIndex="3" prefWidth="140"/>
     </GridPane>
     <HBox spacing="8"><Button fx:id="saveBtn" text="Save" onAction="#onSave"/><Button fx:id="deleteBtn" text="Delete" onAction="#onDelete"/><Button fx:id="clearBtn" text="Clear" onAction="#onClear"/></HBox>
     <Label fx:id="messageLabel"/>

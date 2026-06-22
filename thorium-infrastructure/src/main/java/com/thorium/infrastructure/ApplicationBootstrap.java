@@ -9,6 +9,7 @@ import com.thorium.application.usecase.dashboard.DashboardUseCase;
 import com.thorium.application.usecase.export.ExportTimetableUseCase;
 import com.thorium.application.usecase.period.PeriodConfigurationUseCase;
 import com.thorium.application.usecase.room.RoomManagementUseCase;
+import com.thorium.application.usecase.settings.SchoolSettingsUseCase;
 import com.thorium.application.usecase.subject.SubjectManagementUseCase;
 import com.thorium.application.usecase.teacher.TeacherManagementUseCase;
 import com.thorium.application.usecase.timetable.GenerateTimetableUseCase;
@@ -35,6 +36,8 @@ public final class ApplicationBootstrap {
     private final ConstraintRepository constraintRepository;
     private final TimetableRepository timetableRepository;
     private final RoomRepository roomRepository;
+    private final SchoolSettingsRepository schoolSettingsRepository;
+    private final SchoolSettingsUseCase schoolSettingsUseCase;
     private final TimetableExporter timetableExporter;
 
     private ApplicationBootstrap(Path databasePath) {
@@ -51,6 +54,8 @@ public final class ApplicationBootstrap {
         this.constraintRepository = new SqliteConstraintRepository(connectionProvider);
         this.timetableRepository = new SqliteTimetableRepository(connectionProvider);
         this.roomRepository = new SqliteRoomRepository(connectionProvider);
+        this.schoolSettingsRepository = new SqliteSchoolSettingsRepository(connectionProvider);
+        this.schoolSettingsUseCase = new SchoolSettingsUseCase(schoolSettingsRepository);
 
         PdfTimetableExporter pdfExporter = new PdfTimetableExporter(assignmentRepository, subjectRepository, classStreamRepository, teacherRepository, periodRepository, roomRepository, breakRepository);
         ExcelTimetableExporter excelExporter = new ExcelTimetableExporter(
@@ -129,5 +134,9 @@ public final class ApplicationBootstrap {
 
     public RoomRepository roomRepository() {
         return roomRepository;
+    }
+
+    public SchoolSettingsUseCase schoolSettingsUseCase() {
+        return schoolSettingsUseCase;
     }
 }
