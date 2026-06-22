@@ -15,8 +15,11 @@
         <Label text="School Start Time" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
         <ComboBox fx:id="startTimeCombo" GridPane.columnIndex="1" GridPane.rowIndex="1" prefWidth="120" editable="false"/>
 
-        <Label text="Period Duration (min)" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
-        <Spinner fx:id="durationSpinner" GridPane.columnIndex="1" GridPane.rowIndex="2" prefWidth="120"/>
+        <Label text="School End Time" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+        <ComboBox fx:id="endTimeCombo" GridPane.columnIndex="1" GridPane.rowIndex="2" prefWidth="120" editable="false"/>
+
+        <Label text="Period Duration (min)" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+        <Spinner fx:id="durationSpinner" GridPane.columnIndex="1" GridPane.rowIndex="3" prefWidth="120"/>
     </GridPane>
     <HBox spacing="8">
         <Button fx:id="saveBtn" text="Save Settings" onAction="#onSave"/>

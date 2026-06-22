@@ -7,15 +7,17 @@ public class SchoolSettings {
     private Long id;
     private int totalPeriods;
     private LocalTime startTime;
+    private LocalTime endTime;
     private int periodDurationMinutes;
 
     public SchoolSettings() {
     }
 
-    public SchoolSettings(Long id, int totalPeriods, LocalTime startTime, int periodDurationMinutes) {
+    public SchoolSettings(Long id, int totalPeriods, LocalTime startTime, LocalTime endTime, int periodDurationMinutes) {
         this.id = id;
         this.totalPeriods = totalPeriods;
         this.startTime = startTime;
+        this.endTime = endTime;
         this.periodDurationMinutes = periodDurationMinutes;
     }
 
@@ -25,6 +27,8 @@ public class SchoolSettings {
     public void setTotalPeriods(int totalPeriods) { this.totalPeriods = totalPeriods; }
     public LocalTime getStartTime() { return startTime; }
     public void setStartTime(LocalTime startTime) { this.startTime = startTime; }
+    public LocalTime getEndTime() { return endTime; }
+    public void setEndTime(LocalTime endTime) { this.endTime = endTime; }
     public int getPeriodDurationMinutes() { return periodDurationMinutes; }
     public void setPeriodDurationMinutes(int periodDurationMinutes) { this.periodDurationMinutes = periodDurationMinutes; }
 }

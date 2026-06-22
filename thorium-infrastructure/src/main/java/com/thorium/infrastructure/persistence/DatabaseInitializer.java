@@ -14,7 +14,7 @@ import java.time.format.DateTimeFormatter;
 public class DatabaseInitializer {
 
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
-    private static final int SCHEMA_VERSION = 5;
+    private static final int SCHEMA_VERSION = 6;
 
     private final SQLiteConnectionProvider connectionProvider;
 
@@ -52,6 +52,10 @@ public class DatabaseInitializer {
             if (currentVersion < 5) {
                 runMigrationV5(statement);
                 setVersion(statement, 5);
+            }
+            if (currentVersion < 6) {
+                runMigrationV6(statement);
+                setVersion(statement, 6);
             }
 
             connection.commit();
@@ -120,9 +124,20 @@ public class DatabaseInitializer {
                     id                  INTEGER PRIMARY KEY CHECK (id = 1),
                     total_periods       INTEGER NOT NULL DEFAULT 8,
                     school_start_time   TEXT    NOT NULL DEFAULT '08:00',
+                    school_end_time     TEXT    NOT NULL DEFAULT '16:00',
                     period_duration_min INTEGER NOT NULL DEFAULT 40
                 )
                 """);
+    }
+
+    private void runMigrationV6(Statement statement) throws SQLException {
+        try {
+            statement.execute("ALTER TABLE school_settings ADD COLUMN school_end_time TEXT NOT NULL DEFAULT '16:00'");
+        } catch (SQLException e) {
+            if (!e.getMessage().contains("duplicate column")) {
+                throw e;
+            }
+        }
     }
 
     private void seedDefaults() {
@@ -132,7 +147,7 @@ public class DatabaseInitializer {
             var settingsCount = connection.createStatement()
                     .executeQuery("SELECT COUNT(*) FROM school_settings");
             if (settingsCount.next() && settingsCount.getInt(1) == 0) {
-                statement.execute("INSERT INTO school_settings (id, total_periods, school_start_time, period_duration_min) VALUES (1, 8, '08:00', 40)");
+                statement.execute("INSERT INTO school_settings (id, total_periods, school_start_time, school_end_time, period_duration_min) VALUES (1, 8, '08:00', '16:00', 40)");
             }
 
             var periodCount = connection.createStatement()

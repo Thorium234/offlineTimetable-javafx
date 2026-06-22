@@ -35,11 +35,12 @@ public class SqliteSchoolSettingsRepository extends AbstractRepository implement
     @Override
     public SchoolSettings save(SchoolSettings settings) {
         try (Connection conn = connection()) {
-            String sql = "INSERT OR REPLACE INTO school_settings (id, total_periods, school_start_time, period_duration_min) VALUES (1, ?, ?, ?)";
+            String sql = "INSERT OR REPLACE INTO school_settings (id, total_periods, school_start_time, school_end_time, period_duration_min) VALUES (1, ?, ?, ?, ?)";
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setInt(1, settings.getTotalPeriods());
                 ps.setString(2, settings.getStartTime().format(TIME_FORMAT));
-                ps.setInt(3, settings.getPeriodDurationMinutes());
+                ps.setString(3, settings.getEndTime().format(TIME_FORMAT));
+                ps.setInt(4, settings.getPeriodDurationMinutes());
                 ps.executeUpdate();
             }
             commit(conn);
@@ -50,15 +51,19 @@ public class SqliteSchoolSettingsRepository extends AbstractRepository implement
     }
 
     private SchoolSettings map(ResultSet rs) throws SQLException {
+        LocalTime endTime = rs.getString("school_end_time") != null
+                ? LocalTime.parse(rs.getString("school_end_time"), TIME_FORMAT)
+                : LocalTime.of(16, 0);
         return new SchoolSettings(
                 rs.getLong("id"),
                 rs.getInt("total_periods"),
                 LocalTime.parse(rs.getString("school_start_time"), TIME_FORMAT),
+                endTime,
                 rs.getInt("period_duration_min")
         );
     }
 
     private SchoolSettings createDefaults() {
-        return new SchoolSettings(1L, 8, LocalTime.of(8, 0), 40);
+        return new SchoolSettings(1L, 8, LocalTime.of(8, 0), LocalTime.of(16, 0), 40);
     }
 }

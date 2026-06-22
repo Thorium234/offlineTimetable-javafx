@@ -26,6 +26,7 @@ public class SchoolSettingsUseCase {
         settings.setId(1L);
         settings.setTotalPeriods(dto.totalPeriods());
         settings.setStartTime(LocalTime.parse(dto.startTime(), TIME_FORMAT));
+        settings.setEndTime(LocalTime.parse(dto.endTime(), TIME_FORMAT));
         settings.setPeriodDurationMinutes(dto.periodDurationMinutes());
         validate(settings);
         return toDto(repository.save(settings));
@@ -38,6 +39,9 @@ public class SchoolSettingsUseCase {
         if (settings.getPeriodDurationMinutes() < 20 || settings.getPeriodDurationMinutes() > 60) {
             throw new IllegalArgumentException("Period duration must be between 20 and 60 minutes");
         }
+        if (!settings.getEndTime().isAfter(settings.getStartTime())) {
+            throw new IllegalArgumentException("End time must be after start time");
+        }
     }
 
     private static SchoolSettingsDto toDto(SchoolSettings s) {
@@ -45,6 +49,7 @@ public class SchoolSettingsUseCase {
                 s.getId() != null ? s.getId() : 1L,
                 s.getTotalPeriods(),
                 s.getStartTime().format(TIME_FORMAT),
+                s.getEndTime().format(TIME_FORMAT),
                 s.getPeriodDurationMinutes()
         );
     }

@@ -77,6 +77,8 @@ public class BreakConfigurationController {
                 AppContext.get().breakConfigurationUseCase().delete(b.id());
             }
             int sort = 1;
+            AppContext.get().breakConfigurationUseCase().create(
+                    new BreakDto(null, "Assembly", 1, 20, sort++));
             if (tp >= 3) {
                 AppContext.get().breakConfigurationUseCase().create(
                         new BreakDto(null, "Morning Break", 2, 15, sort++));
@@ -89,6 +91,8 @@ public class BreakConfigurationController {
                 AppContext.get().breakConfigurationUseCase().create(
                         new BreakDto(null, "Afternoon Break", tp - 2, 15, sort++));
             }
+            AppContext.get().breakConfigurationUseCase().create(
+                    new BreakDto(null, "Games Time", tp, 40, sort++));
             clearForm();
             refreshTable();
             showMessage("Generated default breaks for " + tp + " periods", false);

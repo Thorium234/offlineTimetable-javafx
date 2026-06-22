@@ -6,15 +6,11 @@ import com.thorium.ui.util.IconUtil;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-
 public class SettingsController {
-
-    private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
 
     @FXML private Spinner<Integer> totalPeriodsSpinner;
     @FXML private ComboBox<String> startTimeCombo;
+    @FXML private ComboBox<String> endTimeCombo;
     @FXML private Spinner<Integer> durationSpinner;
     @FXML private Label messageLabel;
     @FXML private Label dbPathLabel;
@@ -25,14 +21,15 @@ public class SettingsController {
         IconUtil.addIcon(saveBtn, IconUtil.SAVE, "#2563eb");
         totalPeriodsSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 12, 8));
         durationSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(20, 60, 40));
-        populateTimeOptions();
+        populateTimeOptions(startTimeCombo);
+        populateTimeOptions(endTimeCombo);
         loadSettings();
     }
 
-    private void populateTimeOptions() {
+    private void populateTimeOptions(ComboBox<String> combo) {
         for (int hour = 6; hour <= 20; hour++) {
             for (int min = 0; min < 60; min += 5) {
-                startTimeCombo.getItems().add(String.format("%02d:%02d", hour, min));
+                combo.getItems().add(String.format("%02d:%02d", hour, min));
             }
         }
     }
@@ -41,6 +38,7 @@ public class SettingsController {
         SchoolSettingsDto s = AppContext.get().schoolSettingsUseCase().getSettings();
         totalPeriodsSpinner.getValueFactory().setValue(s.totalPeriods());
         startTimeCombo.setValue(s.startTime());
+        endTimeCombo.setValue(s.endTime());
         durationSpinner.getValueFactory().setValue(s.periodDurationMinutes());
     }
 
@@ -51,6 +49,7 @@ public class SettingsController {
                     1L,
                     totalPeriodsSpinner.getValue(),
                     startTimeCombo.getValue(),
+                    endTimeCombo.getValue(),
                     durationSpinner.getValue()
             );
             AppContext.get().schoolSettingsUseCase().updateSettings(dto);
