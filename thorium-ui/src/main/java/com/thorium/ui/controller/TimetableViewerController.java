@@ -323,7 +323,7 @@ public class TimetableViewerController {
             final int pNum = period.periodNumber();
 
             Optional<BreakDto> activeBreak = breaks.stream()
-                    .filter(b -> b.afterPeriod() == pNum)
+                    .filter(b -> !b.isBeforePeriodOne() && b.afterPeriod() == pNum - 1)
                     .findFirst();
 
             currentRow++;

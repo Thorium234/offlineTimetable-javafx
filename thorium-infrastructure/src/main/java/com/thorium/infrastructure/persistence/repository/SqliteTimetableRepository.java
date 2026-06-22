@@ -51,8 +51,8 @@ public class SqliteTimetableRepository extends AbstractRepository implements Tim
             }
 
             String entrySql = """
-                    INSERT INTO timetable_entries (timetable_id, teaching_assignment_id, day_of_week, period_number, room_id)
-                    VALUES (?, ?, ?, ?, ?)
+                    INSERT INTO timetable_entries (timetable_id, teaching_assignment_id, day_of_week, period_number, room_id, slot_type, break_id)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
                     """;
             try (PreparedStatement ps = conn.prepareStatement(entrySql, Statement.RETURN_GENERATED_KEYS)) {
                 for (TimetableEntry entry : entries) {
@@ -64,6 +64,12 @@ public class SqliteTimetableRepository extends AbstractRepository implements Tim
                         ps.setLong(5, entry.getRoomId());
                     } else {
                         ps.setNull(5, Types.INTEGER);
+                    }
+                    ps.setString(6, entry.getSlotType() != null ? entry.getSlotType() : "PERIOD");
+                    if (entry.getBreakId() != null) {
+                        ps.setLong(7, entry.getBreakId());
+                    } else {
+                        ps.setNull(7, Types.INTEGER);
                     }
                     ps.addBatch();
                 }
@@ -182,8 +188,8 @@ public class SqliteTimetableRepository extends AbstractRepository implements Tim
 
     private void insertEntry(Connection conn, TimetableEntry entry) throws SQLException {
         String sql = """
-                INSERT INTO timetable_entries (timetable_id, teaching_assignment_id, day_of_week, period_number, room_id)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO timetable_entries (timetable_id, teaching_assignment_id, day_of_week, period_number, room_id, slot_type, break_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """;
         try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setLong(1, entry.getTimetableId());
@@ -194,6 +200,12 @@ public class SqliteTimetableRepository extends AbstractRepository implements Tim
                 ps.setLong(5, entry.getRoomId());
             } else {
                 ps.setNull(5, Types.INTEGER);
+            }
+            ps.setString(6, entry.getSlotType() != null ? entry.getSlotType() : "PERIOD");
+            if (entry.getBreakId() != null) {
+                ps.setLong(7, entry.getBreakId());
+            } else {
+                ps.setNull(7, Types.INTEGER);
             }
             ps.executeUpdate();
             try (ResultSet keys = ps.getGeneratedKeys()) {
@@ -207,7 +219,7 @@ public class SqliteTimetableRepository extends AbstractRepository implements Tim
     private void updateEntry(Connection conn, TimetableEntry entry) throws SQLException {
         String sql = """
                 UPDATE timetable_entries
-                SET teaching_assignment_id=?, day_of_week=?, period_number=?, room_id=?
+                SET teaching_assignment_id=?, day_of_week=?, period_number=?, room_id=?, slot_type=?, break_id=?
                 WHERE id=?
                 """;
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -219,7 +231,13 @@ public class SqliteTimetableRepository extends AbstractRepository implements Tim
             } else {
                 ps.setNull(4, Types.INTEGER);
             }
-            ps.setLong(5, entry.getId());
+            ps.setString(5, entry.getSlotType() != null ? entry.getSlotType() : "PERIOD");
+            if (entry.getBreakId() != null) {
+                ps.setLong(6, entry.getBreakId());
+            } else {
+                ps.setNull(6, Types.INTEGER);
+            }
+            ps.setLong(7, entry.getId());
             ps.executeUpdate();
         }
     }
@@ -256,6 +274,12 @@ public class SqliteTimetableRepository extends AbstractRepository implements Tim
         long roomId = rs.getLong("room_id");
         if (!rs.wasNull()) {
             entry.setRoomId(roomId);
+        }
+        String slotType = rs.getString("slot_type");
+        entry.setSlotType(slotType != null ? slotType : "PERIOD");
+        long breakId = rs.getLong("break_id");
+        if (!rs.wasNull()) {
+            entry.setBreakId(breakId);
         }
         return entry;
     }

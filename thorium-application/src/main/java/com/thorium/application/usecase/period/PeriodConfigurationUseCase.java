@@ -65,20 +65,31 @@ public class PeriodConfigurationUseCase {
         int periodDuration = settings.periodDurationMinutes();
         LocalTime schoolStart = parseTime(settings.startTime(), "schoolStartTime");
         LocalTime clockCursor = schoolStart;
+        int periodCounter = 0;
 
+        // Process isBeforePeriodOne breaks (slotable → Period entries; non-slotable → advance cursor)
         for (BreakDto b : breaks) {
-            if (b.isBeforePeriodOne()) {
-                LocalTime breakEnd = clockCursor;
-                LocalTime breakStart = clockCursor.minusMinutes(b.durationMinutes());
-                saveBreakTimes(b, breakStart, breakEnd);
+            if (!b.isBeforePeriodOne()) continue;
+            if (b.slotable()) {
+                periodCounter++;
+                Period period = new Period();
+                period.setPeriodNumber(periodCounter);
+                period.setStartTime(clockCursor);
+                period.setEndTime(clockCursor.plusMinutes(b.durationMinutes()));
+                period.setLabel(b.name());
+                periodRepository.save(period);
             }
+            saveBreakTimes(b, clockCursor, clockCursor.plusMinutes(b.durationMinutes()));
+            clockCursor = clockCursor.plusMinutes(b.durationMinutes());
         }
 
+        // Process regular periods P1-P10 (periodNumber shifted by slotable count)
         for (int p = 1; p <= numberOfPeriods; p++) {
+            periodCounter++;
             LocalTime periodStart = clockCursor;
             LocalTime periodEnd = clockCursor.plusMinutes(periodDuration);
             Period period = new Period();
-            period.setPeriodNumber(p);
+            period.setPeriodNumber(periodCounter);
             period.setStartTime(periodStart);
             period.setEndTime(periodEnd);
             period.setLabel("P" + p);
@@ -86,7 +97,7 @@ public class PeriodConfigurationUseCase {
             clockCursor = periodEnd;
 
             for (BreakDto b : breaks) {
-                if (b.afterPeriod() == p && !b.isBeforePeriodOne()) {
+                if (!b.isBeforePeriodOne() && b.afterPeriod() == p) {
                     LocalTime breakEnd = clockCursor.plusMinutes(b.durationMinutes());
                     saveBreakTimes(b, clockCursor, breakEnd);
                     clockCursor = breakEnd;
@@ -97,7 +108,7 @@ public class PeriodConfigurationUseCase {
 
     private void saveBreakTimes(BreakDto dto, LocalTime start, LocalTime end) {
         BreakPeriod bp = new BreakPeriod(dto.id(), dto.name(), dto.afterPeriod(), dto.durationMinutes(),
-                dto.sortOrder(), dto.isBeforePeriodOne(), start, end);
+                dto.sortOrder(), dto.isBeforePeriodOne(), dto.slotable(), start, end);
         breakRepository.save(bp);
     }
 

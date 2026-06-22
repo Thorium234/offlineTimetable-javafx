@@ -7,6 +7,7 @@ public record BreakDto(
         int durationMinutes,
         int sortOrder,
         boolean isBeforePeriodOne,
+        boolean slotable,
         String startTime,
         String endTime
 ) {

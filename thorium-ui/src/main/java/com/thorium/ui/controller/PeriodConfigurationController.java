@@ -79,16 +79,46 @@ public class PeriodConfigurationController {
 
     private void autoComputeTimes(Integer periodNumber) {
         if (settings == null || periodNumber == null) return;
+
+        List<PeriodDto> periods = AppContext.get().periodConfigurationUseCase().findAll();
+        for (PeriodDto p : periods) {
+            if (p.periodNumber() == periodNumber) {
+                if (!startCombo.isFocused()) startCombo.setValue(p.startTime());
+                if (!endCombo.isFocused()) endCombo.setValue(p.endTime());
+                return;
+            }
+        }
+
         LocalTime cursor = LocalTime.parse(settings.startTime(), TIME_FMT);
         List<BreakDto> breaks = AppContext.get().breakConfigurationUseCase().findAll();
-        for (int i = 1; i < periodNumber; i++) {
+        List<BreakDto> beforeP1 = breaks.stream().filter(BreakDto::isBeforePeriodOne).toList();
+        List<BreakDto> regular = breaks.stream().filter(b -> !b.isBeforePeriodOne()).toList();
+
+        if (periodNumber == 1) {
+            BreakDto slotableP1 = beforeP1.stream().filter(BreakDto::slotable).findFirst().orElse(null);
+            if (slotableP1 != null) {
+                if (!startCombo.isFocused()) startCombo.setValue(cursor.format(TIME_FMT));
+                if (!endCombo.isFocused()) endCombo.setValue(cursor.plusMinutes(slotableP1.durationMinutes()).format(TIME_FMT));
+                return;
+            }
+            if (!startCombo.isFocused()) startCombo.setValue(cursor.format(TIME_FMT));
+            if (!endCombo.isFocused()) endCombo.setValue(cursor.plusMinutes(settings.periodDurationMinutes()).format(TIME_FMT));
+            return;
+        }
+
+        for (BreakDto b : beforeP1) {
+            cursor = cursor.plusMinutes(b.durationMinutes());
+        }
+
+        for (int i = 1; i < periodNumber - 1; i++) {
             cursor = cursor.plusMinutes(settings.periodDurationMinutes());
-            for (BreakDto b : breaks) {
+            for (BreakDto b : regular) {
                 if (b.afterPeriod() == i) {
                     cursor = cursor.plusMinutes(b.durationMinutes());
                 }
             }
         }
+
         String start = cursor.format(TIME_FMT);
         String end = cursor.plusMinutes(settings.periodDurationMinutes()).format(TIME_FMT);
         if (!startCombo.isFocused()) startCombo.setValue(start);

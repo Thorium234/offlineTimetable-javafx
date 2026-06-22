@@ -35,7 +35,7 @@ public class SqliteBreakRepository extends AbstractRepository implements BreakRe
     }
 
     private void insert(Connection conn, BreakPeriod bp) throws SQLException {
-        String sql = "INSERT INTO breaks (name, after_period, duration_minutes, sort_order, is_before_period_one, start_time, end_time) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO breaks (name, after_period, duration_minutes, sort_order, is_before_period_one, slotable, start_time, end_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             bind(ps, bp);
             ps.executeUpdate();
@@ -48,7 +48,7 @@ public class SqliteBreakRepository extends AbstractRepository implements BreakRe
     }
 
     private void update(Connection conn, BreakPeriod bp) throws SQLException {
-        String sql = "UPDATE breaks SET name=?, after_period=?, duration_minutes=?, sort_order=?, is_before_period_one=?, start_time=?, end_time=? WHERE id=?";
+        String sql = "UPDATE breaks SET name=?, after_period=?, duration_minutes=?, sort_order=?, is_before_period_one=?, slotable=?, start_time=?, end_time=? WHERE id=?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             bind(ps, bp);
             ps.setLong(8, bp.getId());
@@ -62,8 +62,9 @@ public class SqliteBreakRepository extends AbstractRepository implements BreakRe
         ps.setInt(3, bp.getDurationMinutes());
         ps.setInt(4, bp.getSortOrder());
         ps.setInt(5, bp.isBeforePeriodOne() ? 1 : 0);
-        ps.setString(6, bp.getStartTime() != null ? bp.getStartTime().format(TIME_FMT) : null);
-        ps.setString(7, bp.getEndTime() != null ? bp.getEndTime().format(TIME_FMT) : null);
+        ps.setInt(6, bp.isSlotable() ? 1 : 0);
+        ps.setString(7, bp.getStartTime() != null ? bp.getStartTime().format(TIME_FMT) : null);
+        ps.setString(8, bp.getEndTime() != null ? bp.getEndTime().format(TIME_FMT) : null);
     }
 
     @Override
@@ -113,6 +114,7 @@ public class SqliteBreakRepository extends AbstractRepository implements BreakRe
         bp.setDurationMinutes(rs.getInt("duration_minutes"));
         bp.setSortOrder(rs.getInt("sort_order"));
         bp.setBeforePeriodOne(rs.getInt("is_before_period_one") == 1);
+        bp.setSlotable(rs.getInt("slotable") == 1);
         String st = rs.getString("start_time");
         if (st != null) bp.setStartTime(LocalTime.parse(st, TIME_FMT));
         String et = rs.getString("end_time");

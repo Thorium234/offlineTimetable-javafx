@@ -49,6 +49,7 @@ public class BreakConfigurationUseCase {
         bp.setDurationMinutes(dto.durationMinutes());
         bp.setSortOrder(dto.sortOrder());
         bp.setBeforePeriodOne(dto.isBeforePeriodOne());
+        bp.setSlotable(dto.slotable());
         if (dto.startTime() != null && !dto.startTime().isBlank()) {
             bp.setStartTime(parseTime(dto.startTime()));
         }

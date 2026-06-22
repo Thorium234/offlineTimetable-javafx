@@ -94,6 +94,7 @@ public final class EntityMapper {
                 breakPeriod.getDurationMinutes(),
                 breakPeriod.getSortOrder(),
                 breakPeriod.isBeforePeriodOne(),
+                breakPeriod.isSlotable(),
                 breakPeriod.getStartTime() != null ? breakPeriod.getStartTime().format(TIME_FORMAT) : null,
                 breakPeriod.getEndTime() != null ? breakPeriod.getEndTime().format(TIME_FORMAT) : null
         );

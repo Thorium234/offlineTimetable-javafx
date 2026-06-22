@@ -77,7 +77,7 @@ public class BreakConfigurationController {
         try {
             BreakDto dto = new BreakDto(editingId, nameField.getText().trim(),
                     afterSpinner.getValue(), durationSpinner.getValue(), sortSpinner.getValue(),
-                    beforeP1Checkbox.isSelected(),
+                    beforeP1Checkbox.isSelected(), false,
                     startCombo.getValue(), endCombo.getValue());
             if (editingId == null) AppContext.get().breakConfigurationUseCase().create(dto);
             else AppContext.get().breakConfigurationUseCase().update(dto);
@@ -109,15 +109,15 @@ public class BreakConfigurationController {
                 AppContext.get().breakConfigurationUseCase().delete(b.id());
             }
             List<BreakSpec> specs = new ArrayList<>();
-            specs.add(new BreakSpec("Assembly", 0, 50, true));
-            if (tp >= 4) specs.add(new BreakSpec("Tea Break", 3, 20, false));
-            if (tp >= 5) specs.add(new BreakSpec("Short Break", 4, 10, false));
-            if (tp >= 8) specs.add(new BreakSpec("Lunch Break", 7, 50, false));
-            specs.add(new BreakSpec("Games Time", tp, 40, false));
+            specs.add(new BreakSpec("Assembly", 0, 50, true, true));
+            if (tp >= 4) specs.add(new BreakSpec("Tea Break", 3, 20, false, false));
+            if (tp >= 5) specs.add(new BreakSpec("Short Break", 5, 10, false, false));
+            if (tp >= 8) specs.add(new BreakSpec("Lunch Break", 7, 50, false, false));
+            specs.add(new BreakSpec("Games Time", tp, 165, false, false));
             int sort = 1;
             for (BreakSpec spec : specs) {
                 AppContext.get().breakConfigurationUseCase().create(
-                        new BreakDto(null, spec.name, spec.afterPeriod, spec.duration, sort++, spec.beforeP1, null, null));
+                        new BreakDto(null, spec.name, spec.afterPeriod, spec.duration, sort++, spec.beforeP1, spec.slotable, null, null));
             }
             clearForm(); refreshTable();
             recalcPeriods();
@@ -127,7 +127,7 @@ public class BreakConfigurationController {
         }
     }
 
-    private record BreakSpec(String name, int afterPeriod, int duration, boolean beforeP1) {}
+        private record BreakSpec(String name, int afterPeriod, int duration, boolean beforeP1, boolean slotable) {}
 
     private void recalcPeriods() {
         try {
