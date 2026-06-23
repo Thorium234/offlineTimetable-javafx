@@ -5,33 +5,53 @@
 <?import javafx.scene.layout.*?>
 
 <VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="com.thorium.ui.controller.SubjectManagementController" spacing="12">
-    <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
-    <Label text="Subject Management" styleClass="page-title"/>
-    <TextField fx:id="searchField" promptText="Search subjects by name or code..."/>
-    <TableView fx:id="subjectTable" VBox.vgrow="ALWAYS">
-        <columns>
-            <TableColumn fx:id="codeColumn" text="Code" prefWidth="100"/>
-            <TableColumn fx:id="nameColumn" text="Name" prefWidth="200"/>
-            <TableColumn fx:id="examinableColumn" text="Examinable" prefWidth="100"/>
-        </columns>
-    </TableView>
-    <GridPane hgap="8" vgap="8">
-        <Label text="Code" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-        <TextField fx:id="codeField" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
-        <Label text="Name" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
-        <TextField fx:id="nameField" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
-        <CheckBox fx:id="examinableCheck" text="Examinable (CBC)" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
-        <Label text="Default Lessons" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
-        <Spinner fx:id="cbcLessonsSpinner" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
-        <CheckBox fx:id="doublePeriodCheck" text="Allows Double Period" GridPane.columnIndex="1" GridPane.rowIndex="4"/>
-        <Label text="Requires Double" GridPane.columnIndex="0" GridPane.rowIndex="5"/>
-        <CheckBox fx:id="requiresDoubleCheck" text="Requires Double Period" GridPane.columnIndex="1" GridPane.rowIndex="5"/>
-        <Label text="Color" GridPane.columnIndex="0" GridPane.rowIndex="6"/>
-        <ColorPicker fx:id="colorPicker" GridPane.columnIndex="1" GridPane.rowIndex="6"/>
-    </GridPane>
-    <HBox spacing="8">
-        <Button fx:id="saveBtn" text="Save" onAction="#onSave"/><Button fx:id="deleteBtn" text="Delete" onAction="#onDelete"/><Button fx:id="clearBtn" text="Clear" onAction="#onClear"/>
+      fx:controller="com.thorium.ui.controller.SubjectManagementController" spacing="0"
+      style="-fx-background-color: #f8fafc;">
+    <HBox alignment="CENTER_LEFT" spacing="12" style="-fx-background-color: white; -fx-padding: 16 24; -fx-border-color: #e2e8f0; -fx-border-width: 0 0 1 0;">
+        <Label text="Subjects" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #0f172a;"/>
+        <Label text="Manage school subjects with colors and lesson defaults" style="-fx-font-size: 12px; -fx-text-fill: #94a3b8; -fx-padding: 6 0 0 0;"/>
     </HBox>
-    <Label fx:id="messageLabel"/>
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent; -fx-background: transparent; -fx-border-width: 0;">
+        <VBox spacing="16" style="-fx-padding: 20 24;">
+            <TextField fx:id="searchField" promptText="Search subjects by name or code..." style="-fx-background-radius: 8; -fx-border-radius: 8; -fx-padding: 8 12; -fx-border-color: #e2e8f0; -fx-background-color: white;"/>
+            <VBox spacing="0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-border-color: #e2e8f0; -fx-border-radius: 10; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.04), 6, 0, 0, 2);">
+                <HBox alignment="CENTER_LEFT" spacing="8" style="-fx-padding: 12 16; -fx-border-color: #e2e8f0; -fx-border-width: 0 0 1 0;">
+                    <Label text="All Subjects" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                </HBox>
+                <TableView fx:id="subjectTable" VBox.vgrow="ALWAYS" prefHeight="200" style="-fx-background-radius: 0 0 10 10; -fx-border-width: 0;">
+                    <columns>
+                        <TableColumn fx:id="codeColumn" text="Code" prefWidth="100"/>
+                        <TableColumn fx:id="nameColumn" text="Name" prefWidth="200"/>
+                        <TableColumn fx:id="examinableColumn" text="Examinable" prefWidth="80"/>
+                    </columns>
+                </TableView>
+            </VBox>
+            <VBox spacing="0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-border-color: #e2e8f0; -fx-border-radius: 10; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.04), 6, 0, 0, 2);">
+                <HBox alignment="CENTER_LEFT" spacing="8" style="-fx-padding: 12 16; -fx-border-color: #e2e8f0; -fx-border-width: 0 0 1 0;">
+                    <Label text="Subject Details" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="messageLabel" style="-fx-font-size: 12px;"/>
+                </HBox>
+                <GridPane hgap="12" vgap="10" style="-fx-padding: 16;">
+                    <Label text="Code" style="-fx-font-weight: 600; -fx-text-fill: #475569;" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                    <TextField fx:id="codeField" promptText="e.g. MATH" style="-fx-background-radius: 6; -fx-border-radius: 6; -fx-padding: 8 12; -fx-border-color: #e2e8f0; -fx-background-color: #f8fafc;" GridPane.columnIndex="1" GridPane.rowIndex="0" prefWidth="250"/>
+                    <Label text="Name" style="-fx-font-weight: 600; -fx-text-fill: #475569;" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                    <TextField fx:id="nameField" promptText="e.g. Mathematics" style="-fx-background-radius: 6; -fx-border-radius: 6; -fx-padding: 8 12; -fx-border-color: #e2e8f0; -fx-background-color: #f8fafc;" GridPane.columnIndex="1" GridPane.rowIndex="1" prefWidth="250"/>
+                    <CheckBox fx:id="examinableCheck" text="Examinable (CBC)" style="-fx-font-weight: 600; -fx-text-fill: #475569;" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                    <Label text="Default Lessons" style="-fx-font-weight: 600; -fx-text-fill: #475569;" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+                    <Spinner fx:id="cbcLessonsSpinner" prefWidth="120" style="-fx-background-radius: 6; -fx-border-radius: 6;" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+                    <CheckBox fx:id="doublePeriodCheck" text="Allows Double Period" style="-fx-font-weight: 600; -fx-text-fill: #475569;" GridPane.columnIndex="1" GridPane.rowIndex="4"/>
+                    <CheckBox fx:id="requiresDoubleCheck" text="Requires Double Period" style="-fx-font-weight: 600; -fx-text-fill: #475569;" GridPane.columnIndex="1" GridPane.rowIndex="5"/>
+                    <Label text="Color" style="-fx-font-weight: 600; -fx-text-fill: #475569;" GridPane.columnIndex="0" GridPane.rowIndex="6"/>
+                    <ColorPicker fx:id="colorPicker" GridPane.columnIndex="1" GridPane.rowIndex="6" style="-fx-background-radius: 6; -fx-border-radius: 6;"/>
+                </GridPane>
+                <HBox spacing="8" style="-fx-padding: 0 16 16 16;">
+                    <Button fx:id="saveBtn" text="Save" onAction="#onSave" defaultButton="true" style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-padding: 8 20 8 20; -fx-cursor: hand;"/>
+                    <Button fx:id="deleteBtn" text="Delete" onAction="#onDelete" style="-fx-background-color: #ef4444; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-padding: 8 20 8 20; -fx-cursor: hand;"/>
+                    <Button fx:id="clearBtn" text="Clear" onAction="#onClear" style="-fx-background-color: #64748b; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-padding: 8 20 8 20; -fx-cursor: hand;"/>
+                </HBox>
+            </VBox>
+        </VBox>
+    </ScrollPane>
 </VBox>

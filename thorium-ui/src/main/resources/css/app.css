@@ -1,41 +1,7 @@
 .root {
     -fx-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
     -fx-font-size: 13px;
-    -fx-background-color: #f4f6f9;
-}
-
-.sidebar {
-    -fx-background-color: #1e293b;
-}
-
-.sidebar .label {
-    -fx-text-fill: #e2e8f0;
-}
-
-.app-title {
-    -fx-font-size: 20px;
-    -fx-font-weight: bold;
-}
-
-.app-subtitle {
-    -fx-font-size: 11px;
-    -fx-text-fill: #94a3b8;
-}
-
-.sidebar .list-view {
-    -fx-background-color: transparent;
-    -fx-control-inner-background: transparent;
-}
-
-.sidebar .list-cell {
-    -fx-background-color: transparent;
-    -fx-text-fill: #cbd5e1;
-    -fx-padding: 8 12 8 12;
-}
-
-.sidebar .list-cell:selected {
-    -fx-background-color: #334155;
-    -fx-text-fill: white;
+    -fx-background-color: #f1f5f9;
 }
 
 .content-pane {
@@ -48,33 +14,10 @@
     -fx-text-fill: #0f172a;
 }
 
-.stat-card {
-    -fx-background-color: white;
-    -fx-background-radius: 8;
-    -fx-border-color: #e2e8f0;
-    -fx-border-radius: 8;
-    -fx-padding: 16;
-    -fx-spacing: 4;
-}
-
-.stat-label {
-    -fx-text-fill: #64748b;
-    -fx-font-size: 12px;
-}
-
-.stat-value {
-    -fx-font-size: 28px;
-    -fx-font-weight: bold;
-    -fx-text-fill: #0f172a;
-}
-
-.stat-value-small {
-    -fx-font-size: 14px;
-    -fx-text-fill: #0f172a;
-}
-
 .status-bar {
-    -fx-background-color: #e2e8f0;
+    -fx-background-color: #f1f5f9;
+    -fx-border-color: #e2e8f0;
+    -fx-border-width: 1 0 0 0;
 }
 
 .primary-button {
@@ -91,11 +34,46 @@
 }
 
 .table-view {
-    -fx-background-color: white;
-    -fx-background-radius: 6;
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
 }
 
-/* Timetable Workspace & Lesson Cards */
+.table-view .column-header-background {
+    -fx-background-color: #f8fafc;
+    -fx-border-color: #e2e8f0;
+    -fx-border-width: 0 0 1 0;
+}
+
+.table-view .column-header .label {
+    -fx-text-fill: #475569;
+    -fx-font-weight: 600;
+    -fx-font-size: 12px;
+}
+
+.table-view .table-cell {
+    -fx-text-fill: #334155;
+    -fx-padding: 6 12;
+}
+
+.table-view .table-row-cell {
+    -fx-background-color: white;
+    -fx-border-color: #f1f5f9;
+    -fx-border-width: 0 0 1 0;
+}
+
+.table-view .table-row-cell:odd {
+    -fx-background-color: #fafbfc;
+}
+
+.table-view .table-row-cell:selected {
+    -fx-background-color: #eff6ff;
+}
+
+.table-view .table-row-cell:selected .table-cell {
+    -fx-text-fill: #1e40af;
+}
+
+/* Timetable Workspace */
 .editor-container {
     -fx-background-color: #f8fafc;
 }
@@ -148,3 +126,42 @@
     -fx-background-radius: 4;
 }
 
+/* Toolbar */
+.tool-bar {
+    -fx-background-color: #f8fafc;
+    -fx-border-color: #e2e8f0;
+    -fx-border-width: 0 0 1 0;
+}
+
+.scroll-pane {
+    -fx-background-color: transparent;
+}
+.scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}
+
+/* Scrollbar styling */
+.scroll-bar {
+    -fx-background-color: transparent;
+}
+.scroll-bar .thumb {
+    -fx-background-color: #cbd5e1;
+    -fx-background-radius: 4;
+}
+.scroll-bar .thumb:hover {
+    -fx-background-color: #94a3b8;
+}
+
+/* Spinner styling */
+.spinner {
+    -fx-background-color: #f8fafc;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+}
+
+.spinner .text-field {
+    -fx-background-color: transparent;
+    -fx-text-fill: #334155;
+    -fx-font-weight: 600;
+}

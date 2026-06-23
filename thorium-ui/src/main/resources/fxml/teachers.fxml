@@ -5,48 +5,77 @@
 <?import javafx.scene.layout.*?>
 
 <VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="com.thorium.ui.controller.TeacherManagementController" spacing="12">
-    <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
-    <Label text="Teacher Management" styleClass="page-title"/>
-    <TextField fx:id="searchField" promptText="Search teachers by name or code..."/>
-    <TableView fx:id="teacherTable" VBox.vgrow="ALWAYS">
-        <columns>
-            <TableColumn fx:id="codeColumn" text="Code" prefWidth="100"/>
-            <TableColumn fx:id="nameColumn" text="Name" prefWidth="200"/>
-            <TableColumn fx:id="maxDayColumn" text="Max/Day" prefWidth="80"/>
-            <TableColumn fx:id="maxWeekColumn" text="Max/Week" prefWidth="80"/>
-        </columns>
-    </TableView>
-    <GridPane hgap="8" vgap="8">
-        <Label text="Code" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-        <TextField fx:id="codeField" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
-        <Label text="Name" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
-        <TextField fx:id="nameField" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
-        <Label text="Max/Day" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
-        <Spinner fx:id="maxDaySpinner" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
-        <Label text="Max/Week" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
-        <Spinner fx:id="maxWeekSpinner" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
-        <CheckBox fx:id="activeCheck" text="Active" GridPane.columnIndex="1" GridPane.rowIndex="4"/>
-    </GridPane>
-    <HBox spacing="8">
-        <Button fx:id="saveBtn" text="Save" onAction="#onSave" defaultButton="true"/>
-        <Button fx:id="deleteBtn" text="Delete" onAction="#onDelete"/>
-        <Button fx:id="clearBtn" text="Clear" onAction="#onClear"/>
+      fx:controller="com.thorium.ui.controller.TeacherManagementController" spacing="0"
+      style="-fx-background-color: #f8fafc;">
+    <!-- Page Header -->
+    <HBox alignment="CENTER_LEFT" spacing="12" style="-fx-background-color: white; -fx-padding: 16 24; -fx-border-color: #e2e8f0; -fx-border-width: 0 0 1 0;">
+        <Label text="Teachers" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #0f172a;"/>
+        <Label text="Manage teachers and their lesson contracts" style="-fx-font-size: 12px; -fx-text-fill: #94a3b8; -fx-padding: 6 0 0 0;"/>
     </HBox>
-    <Label fx:id="messageLabel"/>
-    <Separator/>
-    <HBox alignment="CENTER_LEFT" spacing="12">
-        <Label text="Teaching Contracts (Lessons)" style="-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #0f172a;"/>
-        <Region HBox.hgrow="ALWAYS"/>
-        <Button fx:id="newLessonBtn" text="New Lesson" onAction="#onNewLesson" style="-fx-background-color: #16a34a; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-padding: 6 14 6 14; -fx-cursor: hand;"/>
-    </HBox>
-    <TableView fx:id="lessonTable" prefHeight="160">
-        <columns>
-            <TableColumn fx:id="lessonSubjectColumn" text="Subject" prefWidth="150"/>
-            <TableColumn fx:id="lessonClassColumn" text="Class" prefWidth="150"/>
-            <TableColumn fx:id="lessonCountColumn" text="Lessons/Week" prefWidth="100"/>
-            <TableColumn fx:id="lessonDurationColumn" text="Duration" prefWidth="80"/>
-            <TableColumn fx:id="lessonDeleteColumn" text="" prefWidth="50"/>
-        </columns>
-    </TableView>
+
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent; -fx-background: transparent; -fx-border-width: 0;">
+        <VBox spacing="16" style="-fx-padding: 20 24;">
+            <!-- Search -->
+            <TextField fx:id="searchField" promptText="Search teachers by name or code..." style="-fx-background-radius: 8; -fx-border-radius: 8; -fx-padding: 8 12; -fx-border-color: #e2e8f0; -fx-background-color: white;"/>
+
+            <!-- Teacher Table Card -->
+            <VBox spacing="0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-border-color: #e2e8f0; -fx-border-radius: 10; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.04), 6, 0, 0, 2);">
+                <HBox alignment="CENTER_LEFT" spacing="8" style="-fx-padding: 12 16; -fx-border-color: #e2e8f0; -fx-border-width: 0 0 1 0;">
+                    <Label text="All Teachers" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                </HBox>
+                <TableView fx:id="teacherTable" VBox.vgrow="ALWAYS" prefHeight="200" style="-fx-background-radius: 0 0 10 10; -fx-border-width: 0;">
+                    <columns>
+                        <TableColumn fx:id="codeColumn" text="Code" prefWidth="100"/>
+                        <TableColumn fx:id="nameColumn" text="Name" prefWidth="250"/>
+                        <TableColumn fx:id="maxDayColumn" text="Max/Day" prefWidth="80"/>
+                        <TableColumn fx:id="maxWeekColumn" text="Max/Week" prefWidth="80"/>
+                    </columns>
+                </TableView>
+            </VBox>
+
+            <!-- Teacher Form Card -->
+            <VBox spacing="0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-border-color: #e2e8f0; -fx-border-radius: 10; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.04), 6, 0, 0, 2);">
+                <HBox alignment="CENTER_LEFT" spacing="8" style="-fx-padding: 12 16; -fx-border-color: #e2e8f0; -fx-border-width: 0 0 1 0;">
+                    <Label text="Teacher Details" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="messageLabel" style="-fx-font-size: 12px;"/>
+                </HBox>
+                <GridPane hgap="12" vgap="10" style="-fx-padding: 16;">
+                    <Label text="Code" style="-fx-font-weight: 600; -fx-text-fill: #475569;" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                    <TextField fx:id="codeField" promptText="e.g. T001" style="-fx-background-radius: 6; -fx-border-radius: 6; -fx-padding: 8 12; -fx-border-color: #e2e8f0; -fx-background-color: #f8fafc;" GridPane.columnIndex="1" GridPane.rowIndex="0" prefWidth="250"/>
+                    <Label text="Name" style="-fx-font-weight: 600; -fx-text-fill: #475569;" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                    <TextField fx:id="nameField" promptText="e.g. John Doe" style="-fx-background-radius: 6; -fx-border-radius: 6; -fx-padding: 8 12; -fx-border-color: #e2e8f0; -fx-background-color: #f8fafc;" GridPane.columnIndex="1" GridPane.rowIndex="1" prefWidth="250"/>
+                    <Label text="Max/Day" style="-fx-font-weight: 600; -fx-text-fill: #475569;" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                    <Spinner fx:id="maxDaySpinner" prefWidth="120" style="-fx-background-radius: 6; -fx-border-radius: 6;" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                    <Label text="Max/Week" style="-fx-font-weight: 600; -fx-text-fill: #475569;" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+                    <Spinner fx:id="maxWeekSpinner" prefWidth="120" style="-fx-background-radius: 6; -fx-border-radius: 6;" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+                    <CheckBox fx:id="activeCheck" text="Active" style="-fx-font-weight: 600; -fx-text-fill: #475569;" GridPane.columnIndex="1" GridPane.rowIndex="4"/>
+                </GridPane>
+                <HBox spacing="8" style="-fx-padding: 0 16 16 16;">
+                    <Button fx:id="saveBtn" text="Save" onAction="#onSave" defaultButton="true" style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-padding: 8 20 8 20; -fx-cursor: hand;"/>
+                    <Button fx:id="deleteBtn" text="Delete" onAction="#onDelete" style="-fx-background-color: #ef4444; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-padding: 8 20 8 20; -fx-cursor: hand;"/>
+                    <Button fx:id="clearBtn" text="Clear" onAction="#onClear" style="-fx-background-color: #64748b; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-padding: 8 20 8 20; -fx-cursor: hand;"/>
+                </HBox>
+            </VBox>
+
+            <!-- Teaching Contracts Card -->
+            <VBox spacing="0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-border-color: #e2e8f0; -fx-border-radius: 10; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.04), 6, 0, 0, 2);">
+                <HBox alignment="CENTER_LEFT" spacing="12" style="-fx-padding: 12 16; -fx-border-color: #e2e8f0; -fx-border-width: 0 0 1 0;">
+                    <Label text="Teaching Contracts (Lessons)" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button fx:id="newLessonBtn" text="+ New Lesson" onAction="#onNewLesson" style="-fx-background-color: #16a34a; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-padding: 6 14 6 14; -fx-cursor: hand;"/>
+                </HBox>
+                <TableView fx:id="lessonTable" prefHeight="140" style="-fx-background-radius: 0 0 10 10; -fx-border-width: 0;">
+                    <columns>
+                        <TableColumn fx:id="lessonSubjectColumn" text="Subject" prefWidth="180"/>
+                        <TableColumn fx:id="lessonClassColumn" text="Class" prefWidth="180"/>
+                        <TableColumn fx:id="lessonCountColumn" text="Lessons/Week" prefWidth="100"/>
+                        <TableColumn fx:id="lessonDurationColumn" text="Duration" prefWidth="80"/>
+                        <TableColumn fx:id="lessonDeleteColumn" text="" prefWidth="50"/>
+                    </columns>
+                </TableView>
+            </VBox>
+        </VBox>
+    </ScrollPane>
 </VBox>
