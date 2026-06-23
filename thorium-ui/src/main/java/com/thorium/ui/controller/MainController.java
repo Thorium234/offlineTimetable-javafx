@@ -1,9 +1,13 @@
 package com.thorium.ui.controller;
 
 import com.thorium.ui.di.AppContext;
+import com.thorium.ui.util.IconUtil;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
+import javafx.scene.Node;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
@@ -14,7 +18,10 @@ import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.SVGPath;
 
+import javafx.application.Platform;
+
 import java.io.IOException;
+import java.util.prefs.Preferences;
 
 public class MainController {
 
@@ -27,7 +34,12 @@ public class MainController {
     @FXML
     private Label statusLabel;
 
+    @FXML
+    private Button themeToggleBtn;
+
     private final AppContext appContext = AppContext.get();
+    private boolean darkMode;
+    private final Preferences prefs = Preferences.userNodeForPackage(MainController.class);
 
     private static final String ICON_DASHBOARD = "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10";
     private static final String ICON_TEACHERS = "M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z";
@@ -105,6 +117,42 @@ public class MainController {
             }
         });
         navigationList.getSelectionModel().selectFirst();
+
+        darkMode = prefs.getBoolean("darkMode", false);
+        Platform.runLater(this::applyTheme);
+    }
+
+    @FXML
+    private void onToggleTheme() {
+        darkMode = !darkMode;
+        prefs.putBoolean("darkMode", darkMode);
+        applyTheme();
+    }
+
+    private void applyTheme() {
+        Scene scene = themeToggleBtn.getScene();
+        if (scene == null) return;
+
+        var stylesheets = scene.getStylesheets();
+        String darkCss = getClass().getResource("/css/dark.css").toExternalForm();
+
+        if (darkMode) {
+            if (!stylesheets.contains(darkCss)) {
+                stylesheets.add(darkCss);
+            }
+            updateThemeIcon(true);
+        } else {
+            stylesheets.remove(darkCss);
+            updateThemeIcon(false);
+        }
+    }
+
+    private void updateThemeIcon(boolean isDark) {
+        Node icon = IconUtil.createIcon(isDark ? IconUtil.SUN : IconUtil.MOON,
+                isDark ? "#fbbf24" : "#64748b", 18);
+        themeToggleBtn.setGraphic(icon);
+        themeToggleBtn.setTooltip(new javafx.scene.control.Tooltip(
+                isDark ? "Switch to Light Mode" : "Switch to Dark Mode"));
     }
 
     private void loadView(String viewName) {

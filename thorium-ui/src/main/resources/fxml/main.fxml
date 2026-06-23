@@ -22,6 +22,8 @@
         <HBox styleClass="status-bar" alignment="CENTER_LEFT">
             <padding><Insets top="6" right="12" bottom="6" left="12"/></padding>
             <Label fx:id="statusLabel" text="Ready"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button fx:id="themeToggleBtn" onAction="#onToggleTheme" style="-fx-background-color: transparent; -fx-cursor: hand; -fx-padding: 4 8;"/>
         </HBox>
     </bottom>
 </BorderPane>

@@ -21,6 +21,8 @@ public final class IconUtil {
     public static final String BLOCK = "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z M4.93 4.93l14.14 14.14";
     public static final String CHECK = "M9 16l-4-4 2-2 2 2 5-5 2 2z";
     public static final String PREVIEW = "M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z";
+    public static final String SUN = "M12 1v2 M12 21v2 M4.22 4.22l1.42 1.42 M18.36 18.36l1.42 1.42 M1 12h2 M21 12h2 M4.22 19.78l1.42-1.42 M18.36 5.64l1.42-1.42 M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10z";
+    public static final String MOON = "M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z";
 
     public static Node createIcon(String svgPath, String color, double size) {
         SVGPath path = new SVGPath();
