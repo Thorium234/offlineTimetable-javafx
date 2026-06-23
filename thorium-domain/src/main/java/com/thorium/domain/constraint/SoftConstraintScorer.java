@@ -23,7 +23,7 @@ public class SoftConstraintScorer {
         if (schedule.isEmpty()) {
             return 0.0;
         }
-        double spreadScore = scoreSpread(schedule);
+        double spreadScore = scoreSpread(schedule, context);
         double workloadScore = scoreTeacherWorkload(schedule, context);
         double consecutiveScore = scoreConsecutiveLessons(schedule, context);
         return spreadScore * SPREAD_WEIGHT + workloadScore * WORKLOAD_WEIGHT + consecutiveScore * CONSECUTIVE_WEIGHT;
@@ -36,21 +36,36 @@ public class SoftConstraintScorer {
         return score(trial, context);
     }
 
-    private double scoreSpread(PartialSchedule schedule) {
+    private double scoreSpread(PartialSchedule schedule, SchedulingContext context) {
         Map<Long, Map<DayOfWeek, Integer>> perAssignmentDayCount = new HashMap<>();
+        Map<Long, Integer> assignmentTotalLessons = new HashMap<>();
         for (PlacedLesson placed : schedule.placedLessons()) {
             perAssignmentDayCount
                     .computeIfAbsent(placed.assignment().getId(), k -> new EnumMap<>(DayOfWeek.class))
                     .merge(placed.slot().dayOfWeek(), 1, Integer::sum);
+            assignmentTotalLessons.merge(placed.assignment().getId(), 1, Integer::sum);
         }
+
+        int workingDays = context.workingDays().size();
 
         double total = 0.0;
         int groups = 0;
-        for (Map<DayOfWeek, Integer> dayCounts : perAssignmentDayCount.values()) {
-            int maxOnDay = dayCounts.values().stream().mapToInt(Integer::intValue).max().orElse(0);
+        for (var entry : perAssignmentDayCount.entrySet()) {
+            Map<DayOfWeek, Integer> dayCounts = entry.getValue();
+            int totalLpW = assignmentTotalLessons.getOrDefault(entry.getKey(), 0);
+
+            int actualMaxOnDay = dayCounts.values().stream().mapToInt(Integer::intValue).max().orElse(0);
             int distinctDays = dayCounts.size();
-            double spread = distinctDays / (double) Math.max(1, maxOnDay);
-            total += Math.min(1.0, spread);
+            int idealMaxOnDay = (int) Math.ceil((double) totalLpW / Math.max(1, workingDays));
+            int idealDistinctDays = Math.min(totalLpW, workingDays);
+
+            int deviation = Math.max(0, actualMaxOnDay - idealMaxOnDay);
+            double spreadPenalty = deviation / (double) Math.max(1, idealMaxOnDay);
+            double maxScore = 1.0 - Math.min(1.0, spreadPenalty);
+
+            double dayCoverage = (double) distinctDays / Math.max(1, idealDistinctDays);
+
+            total += (maxScore * 0.6 + dayCoverage * 0.4);
             groups++;
         }
         return groups == 0 ? 0.0 : total / groups;
