@@ -27,6 +27,7 @@ public class MainController {
     private enum NavItem {
         DASHBOARD("Dashboard", "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10", "#3b82f6", "/fxml/dashboard.fxml"),
         TEACHERS("Teachers", "M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z", "#10b981", "/fxml/teachers.fxml"),
+        ASSIGNMENTS("Assign", "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M16 13H8 M16 17H8 M10 9H8", "#f97316", "/fxml/assignments.fxml"),
         SUBJECTS("Subjects", "M4 19.5v-15a2.5 2.5 0 0 1 2.5-2.5H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5z", "#f59e0b", "/fxml/subjects.fxml"),
         CLASSES("Classes", "M22 10v6M2 10l10-5 10 5-10 5z M6 12v5c0 2 2 3 6 3s6-1 6-3v-5", "#8b5cf6", "/fxml/classes.fxml"),
         ROOMS("Rooms", "M3 20V4a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v16 M14 4h4a2 2 0 0 1 2 2v14 M2 20h20", "#ef4444", "/fxml/rooms.fxml"),

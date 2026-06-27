@@ -5,38 +5,57 @@
 <?import javafx.scene.layout.*?>
 
 <VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="com.thorium.ui.controller.PeriodConfigurationController" spacing="12">
-    <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
-    <Label text="Period Configuration" styleClass="page-title"/>
-    <TableView fx:id="periodTable" VBox.vgrow="ALWAYS">
-        <columns>
-            <TableColumn fx:id="numberColumn" text="#" prefWidth="50"/>
-            <TableColumn fx:id="labelColumn" text="Label" prefWidth="80"/>
-            <TableColumn fx:id="typeColumn" text="Type" prefWidth="60"/>
-            <TableColumn fx:id="startColumn" text="Start" prefWidth="100"/>
-            <TableColumn fx:id="endColumn" text="End" prefWidth="100"/>
-        </columns>
-    </TableView>
-    <GridPane hgap="8" vgap="8">
-        <Label text="Period #" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-        <Spinner fx:id="numberSpinner" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
-        <Label text="Label" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
-        <TextField fx:id="labelField" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
-        <Label text="Type" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
-        <ComboBox fx:id="typeCombo" GridPane.columnIndex="1" GridPane.rowIndex="2" prefWidth="140"/>
-        <Label text="Break" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
-        <ComboBox fx:id="breakCombo" GridPane.columnIndex="1" GridPane.rowIndex="3" prefWidth="140"/>
-        <Label text="Start" GridPane.columnIndex="0" GridPane.rowIndex="4"/>
-        <ComboBox fx:id="startCombo" GridPane.columnIndex="1" GridPane.rowIndex="4" prefWidth="140"/>
-        <Label text="End" GridPane.columnIndex="0" GridPane.rowIndex="5"/>
-        <ComboBox fx:id="endCombo" GridPane.columnIndex="1" GridPane.rowIndex="5" prefWidth="140"/>
-    </GridPane>
-    <HBox spacing="8" alignment="CENTER_LEFT">
-        <Button fx:id="saveBtn" text="Save" onAction="#onSave"/>
-        <Button fx:id="deleteBtn" text="Delete" onAction="#onDelete"/>
-        <Button fx:id="clearBtn" text="Clear" onAction="#onClear"/>
-        <Region HBox.hgrow="ALWAYS"/>
-        <Button fx:id="generateBtn" text="Generate from Settings" onAction="#onGenerateFromSettings"/>
+      fx:controller="com.thorium.ui.controller.PeriodConfigurationController" spacing="0"
+      styleClass="view-root">
+    <HBox alignment="CENTER_LEFT" spacing="12" styleClass="page-header">
+        <Label text="Period Configuration" styleClass="page-title"/>
+        <Label text="Configure lesson period times and types" styleClass="page-subtitle"/>
     </HBox>
-    <Label fx:id="messageLabel"/>
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="view-scroll">
+        <VBox spacing="16" styleClass="view-content">
+            <VBox spacing="0" styleClass="card">
+                <HBox alignment="CENTER_LEFT" spacing="8" styleClass="card-header">
+                    <Label text="All Periods" styleClass="card-title"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                </HBox>
+                <TableView fx:id="periodTable" VBox.vgrow="ALWAYS" prefHeight="250" styleClass="table-rounded">
+                    <columns>
+                        <TableColumn fx:id="numberColumn" text="#" prefWidth="50"/>
+                        <TableColumn fx:id="labelColumn" text="Label" prefWidth="80"/>
+                        <TableColumn fx:id="typeColumn" text="Type" prefWidth="60"/>
+                        <TableColumn fx:id="startColumn" text="Start" prefWidth="100"/>
+                        <TableColumn fx:id="endColumn" text="End" prefWidth="100"/>
+                    </columns>
+                </TableView>
+            </VBox>
+            <VBox spacing="0" styleClass="card">
+                <HBox alignment="CENTER_LEFT" spacing="8" styleClass="card-header">
+                    <Label text="Period Details" styleClass="card-title"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="messageLabel" styleClass="msg-label"/>
+                </HBox>
+                <GridPane hgap="12" vgap="10" styleClass="card-body">
+                    <Label text="Period #" styleClass="form-group-title" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                    <Spinner fx:id="numberSpinner" prefWidth="120" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                    <Label text="Label" styleClass="form-group-title" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                    <TextField fx:id="labelField" promptText="e.g. P1" styleClass="form-textfield" GridPane.columnIndex="1" GridPane.rowIndex="1" prefWidth="250"/>
+                    <Label text="Type" styleClass="form-group-title" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                    <ComboBox fx:id="typeCombo" prefWidth="140" styleClass="form-combo" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                    <Label text="Break" styleClass="form-group-title" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+                    <ComboBox fx:id="breakCombo" prefWidth="250" styleClass="form-combo" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+                    <Label text="Start" styleClass="form-group-title" GridPane.columnIndex="0" GridPane.rowIndex="4"/>
+                    <ComboBox fx:id="startCombo" prefWidth="140" styleClass="form-combo" GridPane.columnIndex="1" GridPane.rowIndex="4"/>
+                    <Label text="End" styleClass="form-group-title" GridPane.columnIndex="0" GridPane.rowIndex="5"/>
+                    <ComboBox fx:id="endCombo" prefWidth="140" styleClass="form-combo" GridPane.columnIndex="1" GridPane.rowIndex="5"/>
+                </GridPane>
+                <HBox spacing="8" styleClass="card-body" style="-fx-padding: 0 16 16 16;">
+                    <Button fx:id="saveBtn" text="Save" onAction="#onSave" defaultButton="true" styleClass="btn-primary"/>
+                    <Button fx:id="deleteBtn" text="Delete" onAction="#onDelete" styleClass="btn-danger"/>
+                    <Button fx:id="clearBtn" text="Clear" onAction="#onClear" styleClass="btn-secondary"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button fx:id="generateBtn" text="Generate from Settings" onAction="#onGenerateFromSettings" styleClass="btn-success"/>
+                </HBox>
+            </VBox>
+        </VBox>
+    </ScrollPane>
 </VBox>

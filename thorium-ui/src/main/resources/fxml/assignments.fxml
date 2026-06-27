@@ -5,27 +5,57 @@
 <?import javafx.scene.layout.*?>
 
 <VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="com.thorium.ui.controller.AssignmentManagementController" spacing="12">
-    <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
-    <Label text="Assignment Management" styleClass="page-title"/>
-    <TableView fx:id="assignmentTable" VBox.vgrow="ALWAYS">
-        <columns>
-            <TableColumn fx:id="teacherColumn" text="Teacher" prefWidth="150"/>
-            <TableColumn fx:id="subjectColumn" text="Subject" prefWidth="150"/>
-            <TableColumn fx:id="classColumn" text="Class" prefWidth="150"/>
-            <TableColumn fx:id="lessonsColumn" text="Lessons/Week" prefWidth="100"/>
-        </columns>
-    </TableView>
-    <GridPane hgap="8" vgap="8">
-        <Label text="Teacher" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-        <ComboBox fx:id="teacherCombo" GridPane.columnIndex="1" GridPane.rowIndex="0" prefWidth="250"/>
-        <Label text="Subject" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
-        <ComboBox fx:id="subjectCombo" GridPane.columnIndex="1" GridPane.rowIndex="1" prefWidth="250"/>
-        <Label text="Class" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
-        <ComboBox fx:id="classCombo" GridPane.columnIndex="1" GridPane.rowIndex="2" prefWidth="250"/>
-        <Label text="Lessons/Week" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
-        <Spinner fx:id="lessonsSpinner" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
-    </GridPane>
-    <HBox spacing="8"><Button fx:id="saveBtn" text="Save" onAction="#onSave"/><Button fx:id="deleteBtn" text="Delete" onAction="#onDelete"/><Button fx:id="clearBtn" text="Clear" onAction="#onClear"/></HBox>
-    <Label fx:id="messageLabel"/>
+      fx:controller="com.thorium.ui.controller.AssignmentManagementController" spacing="0"
+      styleClass="view-root">
+    <HBox alignment="CENTER_LEFT" spacing="12" styleClass="page-header">
+        <Label text="Assignments" styleClass="page-title"/>
+        <Label text="Two-step: link teachers to subjects, then assign to class streams" styleClass="page-subtitle"/>
+    </HBox>
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="view-scroll">
+        <VBox spacing="16" styleClass="view-content">
+
+            <!-- Step 1: Teacher-to-Subject Assignment -->
+            <VBox spacing="0" styleClass="card">
+                <HBox alignment="CENTER_LEFT" spacing="8" styleClass="card-header">
+                    <Label text="Step 1: Teacher → Subjects" styleClass="card-title"/>
+                    <Label text="Select a teacher and choose which subjects they can teach" styleClass="card-subtitle"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="step1Message" styleClass="msg-label"/>
+                </HBox>
+                <VBox spacing="12" styleClass="card-body">
+                    <HBox spacing="12" alignment="CENTER_LEFT">
+                        <ComboBox fx:id="step1TeacherCombo" prefWidth="350" styleClass="form-combo"/>
+                        <Button fx:id="saveSubjectsBtn" text="Save Selections" onAction="#onSaveSubjects" styleClass="btn-primary"/>
+                    </HBox>
+                    <FlowPane fx:id="subjectCheckboxPane" hgap="12" vgap="10" styleClass="subject-flow-pane"/>
+                    <Label fx:id="noTeacherStep1Label" text="Select a teacher above to manage their subjects" styleClass="empty-state"/>
+                </VBox>
+            </VBox>
+
+            <!-- Step 2: Stream-Based Class Assignment -->
+            <VBox spacing="0" styleClass="card">
+                <HBox alignment="CENTER_LEFT" spacing="8" styleClass="card-header">
+                    <Label text="Step 2: Teacher + Subject → Class Streams" styleClass="card-title"/>
+                    <Label text="Assign teacher-subject combinations to specific class streams" styleClass="card-subtitle"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="step2Message" styleClass="msg-label"/>
+                </HBox>
+                <VBox spacing="12" styleClass="card-body">
+                    <HBox spacing="12" alignment="CENTER_LEFT">
+                        <ComboBox fx:id="step2TeacherCombo" prefWidth="350" styleClass="form-combo"/>
+                    </HBox>
+                    <VBox fx:id="streamAssignmentContainer" spacing="12" VBox.vgrow="ALWAYS">
+                        <Label fx:id="noSubjectsStep2Label"
+                               text="Select a teacher to view their subjects, or assign subjects in Step 1 first."
+                               styleClass="empty-state"/>
+                    </VBox>
+                    <HBox spacing="8" fx:id="step2ActionBar" visible="false" managed="false">
+                        <Button fx:id="assignBtn" text="Assign Selected" onAction="#onAssign" styleClass="btn-primary"/>
+                        <Button fx:id="refreshStep2Btn" text="Refresh" onAction="#onRefreshStep2" styleClass="btn-secondary"/>
+                    </HBox>
+                </VBox>
+            </VBox>
+
+        </VBox>
+    </ScrollPane>
 </VBox>

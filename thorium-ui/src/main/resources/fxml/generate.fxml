@@ -5,15 +5,30 @@
 <?import javafx.scene.layout.*?>
 
 <VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="com.thorium.ui.controller.TimetableGenerationController" spacing="16">
-    <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
-    <Label text="Timetable Generation" styleClass="page-title"/>
-    <Label text="Configure teachers, subjects, classes, assignments, and periods before generating."/>
-    <HBox spacing="8" alignment="CENTER_LEFT">
-        <Label text="Timetable Name:"/>
-        <TextField fx:id="nameField" promptText="Optional name" prefWidth="300"/>
-        <Button fx:id="generateBtn" text="Generate Timetable" onAction="#onGenerate" styleClass="primary-button"/>
+      fx:controller="com.thorium.ui.controller.TimetableGenerationController" spacing="0"
+      styleClass="view-root">
+    <HBox alignment="CENTER_LEFT" spacing="12" styleClass="page-header">
+        <Label text="Timetable Generation" styleClass="page-title"/>
+        <Label text="Generate a complete school timetable from your data" styleClass="page-subtitle"/>
     </HBox>
-    <Label fx:id="resultLabel" wrapText="true"/>
-    <Label fx:id="qualityLabel"/>
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="view-scroll">
+        <VBox spacing="16" styleClass="view-content">
+            <VBox spacing="0" styleClass="card">
+                <HBox alignment="CENTER_LEFT" spacing="8" styleClass="card-header">
+                    <Label text="Generate Timetable" styleClass="card-title"/>
+                    <Label text="Ensure all teachers, subjects, classes, and assignments are configured first." styleClass="card-subtitle"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                </HBox>
+                <VBox spacing="12" styleClass="card-body">
+                    <HBox spacing="12" alignment="CENTER_LEFT">
+                        <Label text="Timetable Name:" styleClass="form-group-title"/>
+                        <TextField fx:id="nameField" promptText="Optional name (e.g. Term 1 2026)" prefWidth="300" styleClass="form-textfield"/>
+                        <Button fx:id="generateBtn" text="Generate Timetable" onAction="#onGenerate" styleClass="btn-success"/>
+                    </HBox>
+                    <Label fx:id="resultLabel" wrapText="true" styleClass="msg-label"/>
+                    <Label fx:id="qualityLabel" styleClass="msg-label"/>
+                </VBox>
+            </VBox>
+        </VBox>
+    </ScrollPane>
 </VBox>

@@ -1,6 +1,7 @@
 package com.thorium.ui.di;
 
 import com.thorium.application.usecase.assignment.AssignmentManagementUseCase;
+import com.thorium.application.usecase.assignment.TeacherSubjectManagementUseCase;
 import com.thorium.application.usecase.availability.AvailabilityManagementUseCase;
 import com.thorium.application.usecase.breaks.BreakConfigurationUseCase;
 import com.thorium.application.usecase.classstream.ClassStreamManagementUseCase;
@@ -59,6 +60,10 @@ public final class AppContext {
 
     public AssignmentManagementUseCase assignmentManagementUseCase() {
         return bootstrap.assignmentManagementUseCase();
+    }
+
+    public TeacherSubjectManagementUseCase teacherSubjectManagementUseCase() {
+        return bootstrap.teacherSubjectManagementUseCase();
     }
 
     public PeriodConfigurationUseCase periodConfigurationUseCase() {

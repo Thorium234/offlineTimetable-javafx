@@ -178,14 +178,17 @@ public class TeacherManagementController {
 
         ComboBox<SubjectDto> subjectCombo = new ComboBox<>();
         subjectCombo.setPrefWidth(250);
-        subjectCombo.setItems(FXCollections.observableArrayList(AppContext.get().subjectManagementUseCase().findAll()));
+        var teacherSubjects = AppContext.get().teacherSubjectManagementUseCase().findSubjectsByTeacherId(teacherId);
+        if (teacherSubjects.isEmpty()) {
+            teacherSubjects = AppContext.get().subjectManagementUseCase().findAll();
+        }
+        subjectCombo.setItems(FXCollections.observableArrayList(teacherSubjects));
         subjectCombo.setCellFactory(lv -> new ListCell<SubjectDto>() {
             @Override protected void updateItem(SubjectDto item, boolean empty) {
                 super.updateItem(item, empty);
                 setText(empty || item == null ? null : item.name() + " (" + item.code() + ")");
             }
         });
-        // Display selected value in the button area
         subjectCombo.setButtonCell(new ListCell<SubjectDto>() {
             @Override protected void updateItem(SubjectDto item, boolean empty) {
                 super.updateItem(item, empty);

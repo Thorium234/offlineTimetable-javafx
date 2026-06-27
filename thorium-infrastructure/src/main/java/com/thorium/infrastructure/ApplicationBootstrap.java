@@ -2,6 +2,7 @@ package com.thorium.infrastructure;
 
 import com.thorium.application.port.*;
 import com.thorium.application.usecase.assignment.AssignmentManagementUseCase;
+import com.thorium.application.usecase.assignment.TeacherSubjectManagementUseCase;
 import com.thorium.application.usecase.availability.AvailabilityManagementUseCase;
 import com.thorium.application.usecase.breaks.BreakConfigurationUseCase;
 import com.thorium.application.usecase.classstream.ClassStreamManagementUseCase;
@@ -30,6 +31,7 @@ public final class ApplicationBootstrap {
     private final SubjectRepository subjectRepository;
     private final ClassStreamRepository classStreamRepository;
     private final TeachingAssignmentRepository assignmentRepository;
+    private final TeacherSubjectRepository teacherSubjectRepository;
     private final TeacherAvailabilityRepository availabilityRepository;
     private final PeriodRepository periodRepository;
     private final BreakRepository breakRepository;
@@ -48,6 +50,7 @@ public final class ApplicationBootstrap {
         this.subjectRepository = new SqliteSubjectRepository(connectionProvider);
         this.classStreamRepository = new SqliteClassStreamRepository(connectionProvider);
         this.assignmentRepository = new SqliteTeachingAssignmentRepository(connectionProvider);
+        this.teacherSubjectRepository = new SqliteTeacherSubjectRepository(connectionProvider);
         this.availabilityRepository = new SqliteTeacherAvailabilityRepository(connectionProvider);
         this.periodRepository = new SqlitePeriodRepository(connectionProvider);
         this.breakRepository = new SqliteBreakRepository(connectionProvider);
@@ -82,6 +85,10 @@ public final class ApplicationBootstrap {
     public AssignmentManagementUseCase assignmentManagementUseCase() {
         return new AssignmentManagementUseCase(
                 assignmentRepository, teacherRepository, subjectRepository, classStreamRepository, periodRepository);
+    }
+
+    public TeacherSubjectManagementUseCase teacherSubjectManagementUseCase() {
+        return new TeacherSubjectManagementUseCase(teacherSubjectRepository, teacherRepository, subjectRepository);
     }
 
     public PeriodConfigurationUseCase periodConfigurationUseCase() {

@@ -18,7 +18,7 @@ public class DatabaseInitializer {
     private static final Logger LOG = Logger.getLogger(DatabaseInitializer.class.getName());
 
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
-    private static final int SCHEMA_VERSION = 12;
+    private static final int SCHEMA_VERSION = 13;
 
     private final SQLiteConnectionProvider connectionProvider;
 
@@ -110,6 +110,12 @@ public class DatabaseInitializer {
                     runMigrationV12(stmt);
                 }
                 setVersion(connection, 12);
+            }
+            if (currentVersion < 13) {
+                try (Statement stmt = connection.createStatement()) {
+                    runMigrationV13(stmt);
+                }
+                setVersion(connection, 13);
             }
 
             connection.commit();
@@ -299,6 +305,19 @@ public class DatabaseInitializer {
         } catch (SQLException e) {
             if (!e.getMessage().contains("duplicate column")) throw e;
         }
+    }
+
+    private void runMigrationV13(Statement statement) throws SQLException {
+        statement.execute("""
+                CREATE TABLE IF NOT EXISTS teacher_subjects (
+                    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                    teacher_id INTEGER NOT NULL REFERENCES teachers(id) ON DELETE CASCADE,
+                    subject_id INTEGER NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
+                    UNIQUE (teacher_id, subject_id)
+                )
+                """);
+        statement.execute("CREATE INDEX IF NOT EXISTS idx_ts_teacher ON teacher_subjects(teacher_id)");
+        statement.execute("CREATE INDEX IF NOT EXISTS idx_ts_subject ON teacher_subjects(subject_id)");
     }
 
     private void seedDefaults() {

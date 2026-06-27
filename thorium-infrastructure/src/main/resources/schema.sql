@@ -89,6 +89,13 @@ CREATE TABLE IF NOT EXISTS rooms (
     capacity INTEGER NOT NULL DEFAULT 30 CHECK (capacity > 0)
 );
 
+CREATE TABLE IF NOT EXISTS teacher_subjects (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    teacher_id INTEGER NOT NULL REFERENCES teachers(id) ON DELETE CASCADE,
+    subject_id INTEGER NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
+    UNIQUE (teacher_id, subject_id)
+);
+
 CREATE TABLE IF NOT EXISTS timetable_entries (
     id                     INTEGER PRIMARY KEY AUTOINCREMENT,
     timetable_id           INTEGER NOT NULL REFERENCES timetables(id) ON DELETE CASCADE,

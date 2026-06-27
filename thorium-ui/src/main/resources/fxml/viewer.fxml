@@ -6,46 +6,41 @@
 
 <BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.thorium.ui.controller.TimetableViewerController"
-            styleClass="editor-container" style="-fx-background-color: #f8fafc;">
+            styleClass="editor-container">
     <top>
-        <HBox spacing="16" alignment="CENTER_LEFT" style="-fx-background-color: white; -fx-padding: 12 20 12 20; -fx-border-color: #e2e8f0; -fx-border-width: 0 0 1 0;">
+        <HBox spacing="16" alignment="CENTER_LEFT" styleClass="viewer-top-bar">
             <VBox spacing="2" HBox.hgrow="ALWAYS">
-                <Label text="Interactive Timetable Workspace" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #0f172a;"/>
-                <Label fx:id="filterStatusLabel" text="Select a class, teacher, or room from the sidebar to start scheduling" style="-fx-font-size: 12px; -fx-text-fill: #64748b;"/>
+                <Label text="Interactive Timetable Workspace" styleClass="card-title" style="-fx-font-size: 18px;"/>
+                <Label fx:id="filterStatusLabel" text="Select a class, teacher, or room from the sidebar to start scheduling" styleClass="page-subtitle"/>
             </VBox>
             <HBox spacing="12" alignment="CENTER_LEFT">
-                <Label text="Timetable:" style="-fx-font-weight: 600; -fx-text-fill: #475569;"/>
-                <ComboBox fx:id="timetableCombo" prefWidth="250" style="-fx-background-radius: 6;"/>
-                <Button fx:id="refreshBtn" text="Refresh Workspace" onAction="#onRefresh" styleClass="primary-button" style="-fx-background-radius: 6; -fx-padding: 6 12 6 12; -fx-font-weight: bold; -fx-cursor: hand;"/>
-                <Button fx:id="printBtn" text="Print" onAction="#onPrint" style="-fx-background-color: #f8fafc; -fx-border-color: #cbd5e1; -fx-border-radius: 6; -fx-background-radius: 6; -fx-padding: 6 12 6 12; -fx-font-weight: bold; -fx-cursor: hand;"/>
+                <Label text="Timetable:" styleClass="form-group-title"/>
+                <ComboBox fx:id="timetableCombo" prefWidth="250" styleClass="form-combo"/>
+                <Button fx:id="refreshBtn" text="Refresh Workspace" onAction="#onRefresh" styleClass="btn-primary" style="-fx-background-radius: 6; -fx-padding: 6 12 6 12;"/>
+                <Button fx:id="printBtn" text="Print" onAction="#onPrint" styleClass="btn-secondary" style="-fx-background-radius: 6; -fx-padding: 6 12 6 12;"/>
             </HBox>
         </HBox>
     </top>
     <center>
         <SplitPane dividerPositions="0.20, 0.80" style="-fx-background-color: transparent; -fx-padding: 10;">
             <items>
-                <!-- Left Pane: Sidebar TreeView -->
-                <VBox spacing="10" style="-fx-background-color: white; -fx-background-radius: 8; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-padding: 12;">
-                    <Label text="RESOURCE EXPLORER" style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #94a3b8; -fx-padding: 0 0 4 4;"/>
+                <VBox spacing="10" styleClass="viewer-panel">
+                    <Label text="RESOURCE EXPLORER" styleClass="viewer-panel-title"/>
                     <TreeView fx:id="entityTreeView" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent; -fx-border-width: 0;"/>
                 </VBox>
-
-                <!-- Center Pane: GridPane inside a ScrollPane -->
-                <VBox spacing="12" style="-fx-background-color: white; -fx-background-radius: 8; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-padding: 16;">
+                <VBox spacing="12" styleClass="viewer-grid-panel">
                     <HBox alignment="CENTER_LEFT" spacing="10">
-                        <Label fx:id="gridTitleLabel" text="Weekly Timetable Grid" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
+                        <Label fx:id="gridTitleLabel" text="Weekly Timetable Grid" styleClass="card-title" style="-fx-font-size: 16px;"/>
                         <Region HBox.hgrow="ALWAYS"/>
                         <Label fx:id="conflictWarningLabel" text="" style="-fx-text-fill: #ef4444; -fx-font-weight: 500;"/>
                     </HBox>
-                    <ScrollPane fitToWidth="true" fitToHeight="true" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent; -fx-background: transparent; -fx-border-width: 0;">
+                    <ScrollPane fitToWidth="true" fitToHeight="true" VBox.vgrow="ALWAYS" styleClass="view-scroll">
                         <GridPane fx:id="timetableGrid" alignment="TOP_LEFT" hgap="6" vgap="6" style="-fx-background-color: transparent;"/>
                     </ScrollPane>
                 </VBox>
-
-                <!-- Right Pane: Unassigned Lessons Pool -->
-                <VBox fx:id="poolContainer" spacing="10" style="-fx-background-color: white; -fx-background-radius: 8; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-padding: 12;">
-                    <Label text="UNPLACED LESSON CARDS" style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #94a3b8;"/>
-                    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent; -fx-background: transparent; -fx-border-width: 0;">
+                <VBox fx:id="poolContainer" spacing="10" styleClass="viewer-panel">
+                    <Label text="UNPLACED LESSON CARDS" styleClass="viewer-panel-title"/>
+                    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="view-scroll">
                         <FlowPane fx:id="unassignedPool" hgap="8" vgap="8" style="-fx-background-color: transparent;"/>
                     </ScrollPane>
                 </VBox>

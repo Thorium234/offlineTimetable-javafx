@@ -5,52 +5,80 @@
 <?import javafx.scene.layout.*?>
 
 <VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="com.thorium.ui.controller.ExportCenterController" spacing="16">
-    <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
-    <Label text="Export Center" styleClass="page-title"/>
-    <HBox spacing="12" alignment="CENTER_LEFT">
-        <Label text="Timetable:"/>
-        <ComboBox fx:id="timetableCombo" prefWidth="300"/>
+      fx:controller="com.thorium.ui.controller.ExportCenterController" spacing="0"
+      styleClass="view-root">
+    <HBox alignment="CENTER_LEFT" spacing="12" styleClass="page-header">
+        <Label text="Export Center" styleClass="page-title"/>
+        <Label text="Export timetables as PDF or Excel" styleClass="page-subtitle"/>
     </HBox>
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="view-scroll">
+        <VBox spacing="16" styleClass="view-content">
 
-    <Separator/>
+            <VBox spacing="0" styleClass="card">
+                <HBox alignment="CENTER_LEFT" spacing="8" styleClass="card-header">
+                    <Label text="Timetable Selection" styleClass="card-title"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                </HBox>
+                <VBox spacing="12" styleClass="card-body">
+                    <HBox spacing="12" alignment="CENTER_LEFT">
+                        <Label text="Timetable:" styleClass="form-group-title"/>
+                        <ComboBox fx:id="timetableCombo" prefWidth="300" styleClass="form-combo"/>
+                    </HBox>
+                </VBox>
+            </VBox>
 
-    <Label text="Standard Export" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
-    <HBox spacing="12">
-        <Button fx:id="exportPdfBtn" text="Export PDF" onAction="#onExportPdf" styleClass="primary-button"/>
-        <Button fx:id="previewPdfBtn" text="Preview PDF" onAction="#onPreviewPdf"/>
-        <Button fx:id="exportExcelBtn" text="Export Excel" onAction="#onExportExcel"/>
-    </HBox>
+            <VBox spacing="0" styleClass="card">
+                <HBox alignment="CENTER_LEFT" spacing="8" styleClass="card-header">
+                    <Label text="Standard Export" styleClass="card-title"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                </HBox>
+                <HBox spacing="12" styleClass="card-body">
+                    <Button fx:id="exportPdfBtn" text="Export PDF" onAction="#onExportPdf" styleClass="btn-primary"/>
+                    <Button fx:id="previewPdfBtn" text="Preview PDF" onAction="#onPreviewPdf" styleClass="btn-secondary"/>
+                    <Button fx:id="exportExcelBtn" text="Export Excel" onAction="#onExportExcel" styleClass="btn-success"/>
+                </HBox>
+            </VBox>
 
-    <Separator/>
+            <VBox spacing="0" styleClass="card">
+                <HBox alignment="CENTER_LEFT" spacing="8" styleClass="card-header">
+                    <Label text="Per-Teacher Timetable" styleClass="card-title"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                </HBox>
+                <HBox spacing="12" alignment="CENTER_LEFT" styleClass="card-body">
+                    <Label text="Teacher:" styleClass="form-group-title"/>
+                    <ComboBox fx:id="teacherCombo" prefWidth="250" styleClass="form-combo"/>
+                    <Button fx:id="previewTeacherBtn" text="Preview" onAction="#onPreviewTeacher" styleClass="btn-secondary"/>
+                    <Button fx:id="exportTeacherBtn" text="Export PDF" onAction="#onExportTeacher" styleClass="btn-primary"/>
+                </HBox>
+            </VBox>
 
-    <Label text="Per-Teacher Timetable" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
-    <HBox spacing="12" alignment="CENTER_LEFT">
-        <Label text="Teacher:"/>
-        <ComboBox fx:id="teacherCombo" prefWidth="250"/>
-        <Button fx:id="previewTeacherBtn" text="Preview" onAction="#onPreviewTeacher"/>
-        <Button fx:id="exportTeacherBtn" text="Export PDF" onAction="#onExportTeacher" styleClass="primary-button"/>
-    </HBox>
+            <VBox spacing="0" styleClass="card">
+                <HBox alignment="CENTER_LEFT" spacing="8" styleClass="card-header">
+                    <Label text="Stream-Wise Timetable" styleClass="card-title"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                </HBox>
+                <HBox spacing="12" alignment="CENTER_LEFT" styleClass="card-body">
+                    <Label text="Stream:" styleClass="form-group-title"/>
+                    <ComboBox fx:id="streamCombo" prefWidth="250" styleClass="form-combo"/>
+                    <Button fx:id="previewStreamBtn" text="Preview" onAction="#onPreviewStream" styleClass="btn-secondary"/>
+                    <Button fx:id="exportStreamBtn" text="Export PDF" onAction="#onExportStream" styleClass="btn-primary"/>
+                </HBox>
+            </VBox>
 
-    <Separator/>
+            <VBox spacing="0" styleClass="card">
+                <HBox alignment="CENTER_LEFT" spacing="8" styleClass="card-header">
+                    <Label text="Grade-Wise Timetable" styleClass="card-title"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                </HBox>
+                <HBox spacing="12" alignment="CENTER_LEFT" styleClass="card-body">
+                    <Label text="Grade:" styleClass="form-group-title"/>
+                    <ComboBox fx:id="gradeCombo" prefWidth="250" styleClass="form-combo"/>
+                    <Button fx:id="previewGradeBtn" text="Preview" onAction="#onPreviewGrade" styleClass="btn-secondary"/>
+                    <Button fx:id="exportGradeBtn" text="Export PDF" onAction="#onExportGrade" styleClass="btn-primary"/>
+                </HBox>
+            </VBox>
 
-    <Label text="Stream-Wise Timetable" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
-    <HBox spacing="12" alignment="CENTER_LEFT">
-        <Label text="Stream:"/>
-        <ComboBox fx:id="streamCombo" prefWidth="250"/>
-        <Button fx:id="previewStreamBtn" text="Preview" onAction="#onPreviewStream"/>
-        <Button fx:id="exportStreamBtn" text="Export PDF" onAction="#onExportStream" styleClass="primary-button"/>
-    </HBox>
-
-    <Separator/>
-
-    <Label text="Grade-Wise Timetable" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
-    <HBox spacing="12" alignment="CENTER_LEFT">
-        <Label text="Grade:"/>
-        <ComboBox fx:id="gradeCombo" prefWidth="250"/>
-        <Button fx:id="previewGradeBtn" text="Preview" onAction="#onPreviewGrade"/>
-        <Button fx:id="exportGradeBtn" text="Export PDF" onAction="#onExportGrade" styleClass="primary-button"/>
-    </HBox>
-
-    <Label fx:id="messageLabel" wrapText="true"/>
+            <Label fx:id="messageLabel" styleClass="msg-label"/>
+        </VBox>
+    </ScrollPane>
 </VBox>

@@ -5,28 +5,47 @@
 <?import javafx.scene.layout.*?>
 
 <VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="com.thorium.ui.controller.SettingsController" spacing="12">
-    <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
-    <Label text="School Settings" styleClass="page-title"/>
-    <GridPane hgap="12" vgap="10" maxWidth="500">
-        <Label text="Total Periods per Day" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-        <Spinner fx:id="totalPeriodsSpinner" GridPane.columnIndex="1" GridPane.rowIndex="0" prefWidth="120"/>
-
-        <Label text="School Start Time" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
-        <ComboBox fx:id="startTimeCombo" GridPane.columnIndex="1" GridPane.rowIndex="1" prefWidth="120" editable="false"/>
-
-        <Label text="School End Time" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
-        <ComboBox fx:id="endTimeCombo" GridPane.columnIndex="1" GridPane.rowIndex="2" prefWidth="120" editable="false"/>
-
-        <Label text="Period Duration (min)" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
-        <Spinner fx:id="durationSpinner" GridPane.columnIndex="1" GridPane.rowIndex="3" prefWidth="120"/>
-    </GridPane>
-    <HBox spacing="8">
-        <Button fx:id="saveBtn" text="Save Settings" onAction="#onSave"/>
+      fx:controller="com.thorium.ui.controller.SettingsController" spacing="0"
+      styleClass="view-root">
+    <HBox alignment="CENTER_LEFT" spacing="12" styleClass="page-header">
+        <Label text="School Settings" styleClass="page-title"/>
+        <Label text="Configure school hours, period count, and duration" styleClass="page-subtitle"/>
     </HBox>
-    <Label fx:id="messageLabel"/>
-    <Separator/>
-    <Label text="Database" styleClass="page-title"/>
-    <Label text="Location:"/>
-    <Label fx:id="dbPathLabel" wrapText="true"/>
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="view-scroll">
+        <VBox spacing="16" styleClass="view-content">
+            <VBox spacing="0" styleClass="card">
+                <HBox alignment="CENTER_LEFT" spacing="8" styleClass="card-header">
+                    <Label text="School Schedule" styleClass="card-title"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                </HBox>
+                <GridPane hgap="12" vgap="10" styleClass="card-body" maxWidth="500">
+                    <Label text="Total Periods per Day" styleClass="form-group-title" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                    <Spinner fx:id="totalPeriodsSpinner" prefWidth="120" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+                    <Label text="School Start Time" styleClass="form-group-title" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                    <ComboBox fx:id="startTimeCombo" prefWidth="120" styleClass="form-combo" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+
+                    <Label text="School End Time" styleClass="form-group-title" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                    <ComboBox fx:id="endTimeCombo" prefWidth="120" styleClass="form-combo" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+
+                    <Label text="Period Duration (min)" styleClass="form-group-title" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+                    <Spinner fx:id="durationSpinner" prefWidth="120" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+                </GridPane>
+                <HBox spacing="8" styleClass="card-body" style="-fx-padding: 0 16 16 16;">
+                    <Button fx:id="saveBtn" text="Save Settings" onAction="#onSave" styleClass="btn-primary"/>
+                </HBox>
+            </VBox>
+            <VBox spacing="0" styleClass="card">
+                <HBox alignment="CENTER_LEFT" spacing="8" styleClass="card-header">
+                    <Label text="Database" styleClass="card-title"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                </HBox>
+                <VBox spacing="8" styleClass="card-body">
+                    <Label text="Location:" styleClass="form-group-title"/>
+                    <Label fx:id="dbPathLabel" wrapText="true" styleClass="card-subtitle"/>
+                </VBox>
+            </VBox>
+            <Label fx:id="messageLabel" styleClass="msg-label"/>
+        </VBox>
+    </ScrollPane>
 </VBox>

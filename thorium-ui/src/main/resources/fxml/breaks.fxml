@@ -5,41 +5,60 @@
 <?import javafx.scene.layout.*?>
 
 <VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="com.thorium.ui.controller.BreakConfigurationController" spacing="12">
-    <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
-    <Label text="Break Configuration" styleClass="page-title"/>
-    <TableView fx:id="breakTable" VBox.vgrow="ALWAYS">
-        <columns>
-            <TableColumn fx:id="nameColumn" text="Name" prefWidth="150"/>
-            <TableColumn fx:id="afterColumn" text="After Period" prefWidth="100"/>
-            <TableColumn fx:id="durationColumn" text="Duration (min)" prefWidth="100"/>
-            <TableColumn fx:id="beforeColumn" text="Before P1" prefWidth="80"/>
-            <TableColumn fx:id="startColumn" text="Start" prefWidth="80"/>
-            <TableColumn fx:id="endColumn" text="End" prefWidth="80"/>
-        </columns>
-    </TableView>
-    <GridPane hgap="8" vgap="8">
-        <Label text="Name" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-        <TextField fx:id="nameField" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
-        <Label text="After Period" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
-        <Spinner fx:id="afterSpinner" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
-        <Label text="Duration (min)" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
-        <Spinner fx:id="durationSpinner" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
-        <Label text="Start" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
-        <ComboBox fx:id="startCombo" GridPane.columnIndex="1" GridPane.rowIndex="3" prefWidth="140"/>
-        <Label text="End" GridPane.columnIndex="0" GridPane.rowIndex="4"/>
-        <ComboBox fx:id="endCombo" GridPane.columnIndex="1" GridPane.rowIndex="4" prefWidth="140"/>
-        <Label text="Sort Order" GridPane.columnIndex="0" GridPane.rowIndex="5"/>
-        <Spinner fx:id="sortSpinner" GridPane.columnIndex="1" GridPane.rowIndex="5"/>
-        <CheckBox fx:id="beforeP1Checkbox" text="Break occurs before Period 1"
-                  GridPane.columnIndex="0" GridPane.rowIndex="6" GridPane.columnSpan="2"/>
-    </GridPane>
-    <HBox spacing="8" alignment="CENTER_LEFT">
-        <Button fx:id="saveBtn" text="Save" onAction="#onSave"/>
-        <Button fx:id="deleteBtn" text="Delete" onAction="#onDelete"/>
-        <Button fx:id="clearBtn" text="Clear" onAction="#onClear"/>
-        <Region HBox.hgrow="ALWAYS"/>
-        <Button fx:id="generateBtn" text="Generate Defaults" onAction="#onGenerateDefaults"/>
+      fx:controller="com.thorium.ui.controller.BreakConfigurationController" spacing="0"
+      styleClass="view-root">
+    <HBox alignment="CENTER_LEFT" spacing="12" styleClass="page-header">
+        <Label text="Break Configuration" styleClass="page-title"/>
+        <Label text="Configure break times between periods" styleClass="page-subtitle"/>
     </HBox>
-    <Label fx:id="messageLabel"/>
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="view-scroll">
+        <VBox spacing="16" styleClass="view-content">
+            <VBox spacing="0" styleClass="card">
+                <HBox alignment="CENTER_LEFT" spacing="8" styleClass="card-header">
+                    <Label text="All Breaks" styleClass="card-title"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                </HBox>
+                <TableView fx:id="breakTable" VBox.vgrow="ALWAYS" prefHeight="250" styleClass="table-rounded">
+                    <columns>
+                        <TableColumn fx:id="nameColumn" text="Name" prefWidth="150"/>
+                        <TableColumn fx:id="afterColumn" text="After Period" prefWidth="100"/>
+                        <TableColumn fx:id="durationColumn" text="Duration (min)" prefWidth="100"/>
+                        <TableColumn fx:id="beforeColumn" text="Before P1" prefWidth="80"/>
+                        <TableColumn fx:id="startColumn" text="Start" prefWidth="80"/>
+                        <TableColumn fx:id="endColumn" text="End" prefWidth="80"/>
+                    </columns>
+                </TableView>
+            </VBox>
+            <VBox spacing="0" styleClass="card">
+                <HBox alignment="CENTER_LEFT" spacing="8" styleClass="card-header">
+                    <Label text="Break Details" styleClass="card-title"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="messageLabel" styleClass="msg-label"/>
+                </HBox>
+                <GridPane hgap="12" vgap="10" styleClass="card-body">
+                    <Label text="Name" styleClass="form-group-title" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                    <TextField fx:id="nameField" promptText="e.g. Tea Break" styleClass="form-textfield" GridPane.columnIndex="1" GridPane.rowIndex="0" prefWidth="250"/>
+                    <Label text="After Period" styleClass="form-group-title" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                    <Spinner fx:id="afterSpinner" prefWidth="120" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                    <Label text="Duration (min)" styleClass="form-group-title" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                    <Spinner fx:id="durationSpinner" prefWidth="120" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                    <Label text="Start" styleClass="form-group-title" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+                    <ComboBox fx:id="startCombo" prefWidth="140" styleClass="form-combo" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+                    <Label text="End" styleClass="form-group-title" GridPane.columnIndex="0" GridPane.rowIndex="4"/>
+                    <ComboBox fx:id="endCombo" prefWidth="140" styleClass="form-combo" GridPane.columnIndex="1" GridPane.rowIndex="4"/>
+                    <Label text="Sort Order" styleClass="form-group-title" GridPane.columnIndex="0" GridPane.rowIndex="5"/>
+                    <Spinner fx:id="sortSpinner" prefWidth="120" GridPane.columnIndex="1" GridPane.rowIndex="5"/>
+                    <CheckBox fx:id="beforeP1Checkbox" text="Break occurs before Period 1"
+                              GridPane.columnIndex="0" GridPane.rowIndex="6" GridPane.columnSpan="2"/>
+                </GridPane>
+                <HBox spacing="8" styleClass="card-body" style="-fx-padding: 0 16 16 16;">
+                    <Button fx:id="saveBtn" text="Save" onAction="#onSave" defaultButton="true" styleClass="btn-primary"/>
+                    <Button fx:id="deleteBtn" text="Delete" onAction="#onDelete" styleClass="btn-danger"/>
+                    <Button fx:id="clearBtn" text="Clear" onAction="#onClear" styleClass="btn-secondary"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button fx:id="generateBtn" text="Generate Defaults" onAction="#onGenerateDefaults" styleClass="btn-success"/>
+                </HBox>
+            </VBox>
+        </VBox>
+    </ScrollPane>
 </VBox>

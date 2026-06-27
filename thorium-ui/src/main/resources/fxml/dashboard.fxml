@@ -6,60 +6,60 @@
 
 <VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="com.thorium.ui.controller.DashboardController" spacing="0"
-      style="-fx-background-color: #f8fafc;">
-    <HBox alignment="CENTER_LEFT" spacing="12" style="-fx-background-color: white; -fx-padding: 16 24; -fx-border-color: #e2e8f0; -fx-border-width: 0 0 1 0;">
-        <Label text="Dashboard" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #0f172a;"/>
-        <Label text="Overview of your timetable data" style="-fx-font-size: 12px; -fx-text-fill: #94a3b8; -fx-padding: 6 0 0 0;"/>
+      styleClass="view-root">
+    <HBox alignment="CENTER_LEFT" spacing="12" styleClass="page-header">
+        <Label text="Dashboard" styleClass="page-title"/>
+        <Label text="Overview of your timetable data" styleClass="page-subtitle"/>
         <Region HBox.hgrow="ALWAYS"/>
-        <Button fx:id="refreshBtn" text="Refresh" onAction="#onRefresh" style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-padding: 8 16 8 16; -fx-cursor: hand;"/>
+        <Button fx:id="refreshBtn" text="Refresh" onAction="#onRefresh" styleClass="btn-primary"/>
     </HBox>
-    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent; -fx-background: transparent; -fx-border-width: 0;">
-        <VBox spacing="16" style="-fx-padding: 20 24;">
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="view-scroll">
+        <VBox spacing="16" styleClass="view-content">
             <GridPane hgap="16" vgap="16">
                 <columnConstraints>
                     <ColumnConstraints percentWidth="33"/>
                     <ColumnConstraints percentWidth="33"/>
                     <ColumnConstraints percentWidth="33"/>
                 </columnConstraints>
-                <VBox spacing="4" style="-fx-background-color: white; -fx-background-radius: 10; -fx-border-color: #e2e8f0; -fx-border-radius: 10; -fx-padding: 20; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.04), 6, 0, 0, 2);" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                <VBox spacing="4" styleClass="stat-card" GridPane.columnIndex="0" GridPane.rowIndex="0">
                     <StackPane fx:id="teachersIcon" prefWidth="32" prefHeight="32"/>
-                    <Label text="Teachers" style="-fx-text-fill: #64748b; -fx-font-size: 12px; -fx-padding: 8 0 0 0;"/>
-                    <Label fx:id="teachersCount" text="0" style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #0f172a;"/>
+                    <Label text="Teachers" styleClass="stat-label"/>
+                    <Label fx:id="teachersCount" text="0" styleClass="stat-count"/>
                 </VBox>
-                <VBox spacing="4" style="-fx-background-color: white; -fx-background-radius: 10; -fx-border-color: #e2e8f0; -fx-border-radius: 10; -fx-padding: 20; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.04), 6, 0, 0, 2);" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                <VBox spacing="4" styleClass="stat-card" GridPane.columnIndex="1" GridPane.rowIndex="0">
                     <StackPane fx:id="subjectsIcon" prefWidth="32" prefHeight="32"/>
-                    <Label text="Subjects" style="-fx-text-fill: #64748b; -fx-font-size: 12px; -fx-padding: 8 0 0 0;"/>
-                    <Label fx:id="subjectsCount" text="0" style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #0f172a;"/>
+                    <Label text="Subjects" styleClass="stat-label"/>
+                    <Label fx:id="subjectsCount" text="0" styleClass="stat-count"/>
                 </VBox>
-                <VBox spacing="4" style="-fx-background-color: white; -fx-background-radius: 10; -fx-border-color: #e2e8f0; -fx-border-radius: 10; -fx-padding: 20; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.04), 6, 0, 0, 2);" GridPane.columnIndex="2" GridPane.rowIndex="0">
+                <VBox spacing="4" styleClass="stat-card" GridPane.columnIndex="2" GridPane.rowIndex="0">
                     <StackPane fx:id="classesIcon" prefWidth="32" prefHeight="32"/>
-                    <Label text="Classes" style="-fx-text-fill: #64748b; -fx-font-size: 12px; -fx-padding: 8 0 0 0;"/>
-                    <Label fx:id="classesCount" text="0" style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #0f172a;"/>
+                    <Label text="Classes" styleClass="stat-label"/>
+                    <Label fx:id="classesCount" text="0" styleClass="stat-count"/>
                 </VBox>
-                <VBox spacing="4" style="-fx-background-color: white; -fx-background-radius: 10; -fx-border-color: #e2e8f0; -fx-border-radius: 10; -fx-padding: 20; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.04), 6, 0, 0, 2);" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                <VBox spacing="4" styleClass="stat-card" GridPane.columnIndex="0" GridPane.rowIndex="1">
                     <StackPane fx:id="assignmentsIcon" prefWidth="32" prefHeight="32"/>
-                    <Label text="Assignments" style="-fx-text-fill: #64748b; -fx-font-size: 12px; -fx-padding: 8 0 0 0;"/>
-                    <Label fx:id="assignmentsCount" text="0" style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #0f172a;"/>
+                    <Label text="Assignments" styleClass="stat-label"/>
+                    <Label fx:id="assignmentsCount" text="0" styleClass="stat-count"/>
                 </VBox>
-                <VBox spacing="4" style="-fx-background-color: white; -fx-background-radius: 10; -fx-border-color: #e2e8f0; -fx-border-radius: 10; -fx-padding: 20; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.04), 6, 0, 0, 2);" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                <VBox spacing="4" styleClass="stat-card" GridPane.columnIndex="1" GridPane.rowIndex="1">
                     <StackPane fx:id="totalLessonsIcon" prefWidth="32" prefHeight="32"/>
-                    <Label text="Total Lessons/Week" style="-fx-text-fill: #64748b; -fx-font-size: 12px; -fx-padding: 8 0 0 0;"/>
-                    <Label fx:id="totalLessonsCount" text="0" style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #0f172a;"/>
+                    <Label text="Total Lessons/Week" styleClass="stat-label"/>
+                    <Label fx:id="totalLessonsCount" text="0" styleClass="stat-count"/>
                 </VBox>
-                <VBox spacing="4" style="-fx-background-color: white; -fx-background-radius: 10; -fx-border-color: #e2e8f0; -fx-border-radius: 10; -fx-padding: 20; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.04), 6, 0, 0, 2);" GridPane.columnIndex="2" GridPane.rowIndex="1">
+                <VBox spacing="4" styleClass="stat-card" GridPane.columnIndex="2" GridPane.rowIndex="1">
                     <StackPane fx:id="roomsIcon" prefWidth="32" prefHeight="32"/>
-                    <Label text="Rooms" style="-fx-text-fill: #64748b; -fx-font-size: 12px; -fx-padding: 8 0 0 0;"/>
-                    <Label fx:id="roomsCount" text="0" style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #0f172a;"/>
+                    <Label text="Rooms" styleClass="stat-label"/>
+                    <Label fx:id="roomsCount" text="0" styleClass="stat-count"/>
                 </VBox>
-                <VBox spacing="4" style="-fx-background-color: white; -fx-background-radius: 10; -fx-border-color: #e2e8f0; -fx-border-radius: 10; -fx-padding: 20; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.04), 6, 0, 0, 2);" GridPane.columnIndex="0" GridPane.rowIndex="2">
+                <VBox spacing="4" styleClass="stat-card" GridPane.columnIndex="0" GridPane.rowIndex="2">
                     <StackPane fx:id="timetablesIcon" prefWidth="32" prefHeight="32"/>
-                    <Label text="Timetables" style="-fx-text-fill: #64748b; -fx-font-size: 12px; -fx-padding: 8 0 0 0;"/>
-                    <Label fx:id="timetablesCount" text="0" style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #0f172a;"/>
+                    <Label text="Timetables" styleClass="stat-label"/>
+                    <Label fx:id="timetablesCount" text="0" styleClass="stat-count"/>
                 </VBox>
-                <VBox spacing="4" style="-fx-background-color: white; -fx-background-radius: 10; -fx-border-color: #e2e8f0; -fx-border-radius: 10; -fx-padding: 20; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.04), 6, 0, 0, 2);" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                <VBox spacing="4" styleClass="stat-card" GridPane.columnIndex="1" GridPane.rowIndex="2">
                     <StackPane fx:id="latestIcon" prefWidth="32" prefHeight="32"/>
-                    <Label text="Latest Timetable" style="-fx-text-fill: #64748b; -fx-font-size: 12px; -fx-padding: 8 0 0 0;"/>
-                    <Label fx:id="latestTimetable" text="None" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #0f172a;"/>
+                    <Label text="Latest Timetable" styleClass="stat-label"/>
+                    <Label fx:id="latestTimetable" text="None" styleClass="stat-count" style="-fx-font-size: 14px;"/>
                 </VBox>
             </GridPane>
         </VBox>

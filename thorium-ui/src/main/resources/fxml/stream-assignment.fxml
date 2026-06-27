@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.thorium.ui.controller.StreamAssignmentController" spacing="0"
+      styleClass="view-root">
+    <HBox alignment="CENTER_LEFT" spacing="12" styleClass="page-header">
+        <Label text="Stream Assignments" styleClass="page-title"/>
+        <Label text="Step 2: Assign teacher + subject combinations to class streams" styleClass="page-subtitle"/>
+    </HBox>
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="view-scroll">
+        <VBox spacing="16" styleClass="view-content">
+            <!-- Teacher Selector -->
+            <VBox spacing="0" styleClass="card">
+                <HBox alignment="CENTER_LEFT" spacing="8" styleClass="card-header">
+                    <Label text="Select Teacher" styleClass="card-title"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="messageLabel" styleClass="msg-label"/>
+                </HBox>
+                <VBox spacing="12" styleClass="card-body">
+                    <ComboBox fx:id="teacherCombo" prefWidth="350" styleClass="form-combo"/>
+                </VBox>
+            </VBox>
+
+            <!-- Subject & Stream Assignment Cards -->
+            <VBox fx:id="assignmentContainer" spacing="12" VBox.vgrow="ALWAYS">
+                <Label fx:id="noSubjectsLabel" text="Select a teacher to view their subjects, or assign subjects in the Teacher Subjects view first."
+                       styleClass="empty-state"/>
+            </VBox>
+
+            <!-- Actions -->
+            <VBox spacing="0" styleClass="card" fx:id="actionCard" visible="false" managed="false">
+                <HBox spacing="8" styleClass="card-body">
+                    <Button fx:id="assignBtn" text="Assign Selected" onAction="#onAssign"
+                            styleClass="btn-primary"/>
+                    <Button fx:id="refreshBtn" text="Refresh" onAction="#onRefresh"
+                            styleClass="btn-secondary"/>
+                </HBox>
+            </VBox>
+        </VBox>
+    </ScrollPane>
+</VBox>
