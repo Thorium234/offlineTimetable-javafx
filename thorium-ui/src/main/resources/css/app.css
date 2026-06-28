@@ -703,6 +703,27 @@
     -fx-padding: 0 0 4 0;
 }
 
+/* Summary sections (teacher profile) */
+.summary-section {
+    -fx-background-color: #f8fafc;
+    -fx-background-radius: 8;
+    -fx-padding: 10 14;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 8;
+}
+
+.summary-subject {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1e293b;
+}
+
+.summary-stream {
+    -fx-font-size: 12px;
+    -fx-text-fill: #475569;
+    -fx-padding: 2 0 0 12;
+}
+
 /* Generate button in status bar */
 .generate-btn {
     -fx-background-color: #16a34a;

@@ -28,6 +28,9 @@ public class AssignmentManagementController {
     @FXML private FlowPane streamToggleContainer;
     @FXML private Button backToTeachersBtn;
     @FXML private Label messageLabel;
+    @FXML private VBox stepSummary;
+    @FXML private Label summaryTeacherLabel;
+    @FXML private VBox summaryContainer;
 
     private TeacherDto selectedTeacher;
     private SubjectDto selectedSubject;
@@ -245,6 +248,76 @@ public class AssignmentManagementController {
     }
 
     @FXML
+    private void onSubmit() {
+        renderSummary();
+        showStep(stepSummary);
+    }
+
+    @FXML
+    private void onBackFromSummary() {
+        showStep(stepTeachers);
+    }
+
+    private void renderSummary() {
+        summaryTeacherLabel.setText("Profile: " + selectedTeacher.name() + " (" + selectedTeacher.code() + ")");
+        summaryContainer.getChildren().clear();
+
+        var assigned = AppContext.get().teacherSubjectManagementUseCase()
+                .findByTeacherId(selectedTeacher.id());
+
+        var assignments = AppContext.get().assignmentManagementUseCase()
+                .findByTeacherId(selectedTeacher.id());
+
+        for (var ts : assigned) {
+            Long subjectId = ts.subjectId();
+            var subjectOpt = allSubjects.stream().filter(s -> s.id().equals(subjectId)).findFirst();
+            if (subjectOpt.isEmpty()) continue;
+            SubjectDto subject = subjectOpt.get();
+
+            VBox section = new VBox(4);
+            section.getStyleClass().add("summary-section");
+
+            Label subjectLabel = new Label(subject.name() + " (" + subject.code() + ")");
+            subjectLabel.getStyleClass().add("summary-subject");
+
+            List<String> streamNames = assignments.stream()
+                    .filter(a -> a.subjectId().equals(subjectId))
+                    .map(a -> findStreamName(a.classStreamId()))
+                    .filter(Objects::nonNull)
+                    .sorted()
+                    .toList();
+
+            section.getChildren().add(subjectLabel);
+            if (streamNames.isEmpty()) {
+                Label empty = new Label("  No streams assigned");
+                empty.getStyleClass().add("summary-stream");
+                section.getChildren().add(empty);
+            } else {
+                for (String name : streamNames) {
+                    Label s = new Label("  \u00B7 " + name);
+                    s.getStyleClass().add("summary-stream");
+                    section.getChildren().add(s);
+                }
+            }
+
+            summaryContainer.getChildren().add(section);
+        }
+
+        if (assigned.isEmpty()) {
+            Label empty = new Label("No subjects assigned to this teacher");
+            empty.getStyleClass().add("empty-state");
+            summaryContainer.getChildren().add(empty);
+        }
+    }
+
+    private String findStreamName(Long classStreamId) {
+        return allClassStreams.stream()
+                .filter(cs -> cs.id().equals(classStreamId))
+                .map(ClassStreamDto::displayName)
+                .findFirst().orElse("Unknown Stream");
+    }
+
+    @FXML
     private void onBackToTeachers() {
         showStep(stepTeachers);
     }
@@ -270,6 +343,8 @@ public class AssignmentManagementController {
         stepStreamSubjects.setManaged(false);
         stepStreams.setVisible(false);
         stepStreams.setManaged(false);
+        stepSummary.setVisible(false);
+        stepSummary.setManaged(false);
         step.setVisible(true);
         step.setManaged(true);
     }

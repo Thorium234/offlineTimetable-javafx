@@ -59,10 +59,23 @@
                 <HBox alignment="CENTER_LEFT" spacing="8" styleClass="card-header">
                     <Button text="&lt; Subject Cards" onAction="#onBackToStreamSubjects" styleClass="btn-back"/>
                     <Label fx:id="streamSubjectNameLabel" text="Streams for:" styleClass="card-title"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button text="Submit →" onAction="#onSubmit" styleClass="btn-primary"/>
                 </HBox>
                 <VBox spacing="12" styleClass="card-body">
                     <ComboBox fx:id="formCombo" prefWidth="200" promptText="Select Form" styleClass="form-combo"/>
                     <FlowPane fx:id="streamToggleContainer" hgap="12" vgap="12"/>
+                </VBox>
+            </VBox>
+
+            <!-- STEP 5: Teacher Profile / Assignment Summary -->
+            <VBox spacing="0" styleClass="card" fx:id="stepSummary" visible="false" managed="false">
+                <HBox alignment="CENTER_LEFT" spacing="8" styleClass="card-header">
+                    <Button text="&lt; Teachers" onAction="#onBackFromSummary" styleClass="btn-back"/>
+                    <Label fx:id="summaryTeacherLabel" text="Teacher Profile" styleClass="card-title"/>
+                </HBox>
+                <VBox spacing="12" styleClass="card-body">
+                    <VBox fx:id="summaryContainer" spacing="8"/>
                 </VBox>
             </VBox>
 
