@@ -13,8 +13,13 @@ import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
+
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class TeacherManagementController {
 
@@ -37,10 +42,27 @@ public class TeacherManagementController {
     @FXML private TableColumn<TeachingAssignmentDto, String> lessonDurationColumn;
     @FXML private TableColumn<TeachingAssignmentDto, Void> lessonDeleteColumn;
 
+    @FXML private Button viewProfileBtn;
+    @FXML private VBox normalContent;
+    @FXML private VBox profileCard;
+    @FXML private Label profileNameLabel;
+    @FXML private FlowPane profileSubjectContainer;
+    @FXML private ComboBox<SubjectDto> profileSubjectCombo;
+    @FXML private VBox profileStreamSection;
+    @FXML private ComboBox<Integer> profileFormCombo;
+    @FXML private FlowPane profileStreamContainer;
+
     private Long editingId;
     private final javafx.collections.ObservableList<TeacherDto> masterData = FXCollections.observableArrayList();
     private FilteredList<TeacherDto> filteredItems;
     private final javafx.collections.ObservableList<TeachingAssignmentDto> lessonData = FXCollections.observableArrayList();
+
+    private TeacherDto profileTeacher;
+    private SubjectDto profileSelectedSubject;
+    private List<SubjectDto> profileAllSubjects = List.of();
+    private List<ClassStreamDto> profileAllStreams = List.of();
+    private final Map<Long, ToggleButton> profileSubjectToggles = new HashMap<>();
+    private final Map<String, ToggleButton> profileStreamToggles = new HashMap<>();
 
     @FXML
     private void initialize() {
@@ -76,13 +98,17 @@ public class TeacherManagementController {
         filteredItems = new FilteredList<>(masterData, p -> true);
         teacherTable.setItems(filteredItems);
         lessonTable.setItems(lessonData);
+        viewProfileBtn.setDisable(true);
         refreshTable();
+
         teacherTable.getSelectionModel().selectedItemProperty().addListener((obs, o, selected) -> {
             if (selected != null) {
                 populateForm(selected);
                 loadLessons(selected.id());
+                viewProfileBtn.setDisable(false);
             } else {
                 lessonData.clear();
+                viewProfileBtn.setDisable(true);
             }
         });
         searchField.textProperty().addListener((obs, old, search) -> {
@@ -93,6 +119,43 @@ public class TeacherManagementController {
                     return (dto.name() != null && dto.name().toLowerCase().contains(q))
                         || (dto.code() != null && dto.code().toLowerCase().contains(q));
                 });
+            }
+        });
+
+        profileSubjectCombo.setCellFactory(lv -> new ListCell<SubjectDto>() {
+            @Override protected void updateItem(SubjectDto item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : item.name() + " (" + item.code() + ")");
+            }
+        });
+        profileSubjectCombo.setButtonCell(new ListCell<SubjectDto>() {
+            @Override protected void updateItem(SubjectDto item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : item.name() + " (" + item.code() + ")");
+            }
+        });
+        profileSubjectCombo.getSelectionModel().selectedItemProperty().addListener((obs, old, s) -> {
+            if (s != null) {
+                profileSelectedSubject = s;
+                profileStreamSection.setVisible(true);
+                profileStreamSection.setManaged(true);
+                loadProfileStreams(s);
+            } else {
+                profileStreamSection.setVisible(false);
+                profileStreamSection.setManaged(false);
+            }
+        });
+
+        profileFormCombo.getSelectionModel().selectedItemProperty().addListener((obs, old, f) -> {
+            if (f != null && profileSelectedSubject != null) {
+                Set<String> assigned = AppContext.get().assignmentManagementUseCase()
+                        .findByTeacherId(profileTeacher.id()).stream()
+                        .filter(a -> a.subjectId().equals(profileSelectedSubject.id()))
+                        .map(a -> a.classStreamId().toString())
+                        .collect(Collectors.toSet());
+                renderProfileStreams(profileAllStreams.stream()
+                        .filter(cs -> cs.form() == f)
+                        .collect(Collectors.toList()), assigned);
             }
         });
     }
@@ -169,6 +232,159 @@ public class TeacherManagementController {
 
     private void loadLessons(Long teacherId) {
         lessonData.setAll(AppContext.get().assignmentManagementUseCase().findByTeacherId(teacherId));
+    }
+
+    @FXML
+    private void onViewProfile() {
+        TeacherDto selected = teacherTable.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            showMessage("Select a teacher first", true);
+            return;
+        }
+        profileTeacher = selected;
+        profileAllSubjects = AppContext.get().subjectManagementUseCase().findAll();
+        profileAllStreams = AppContext.get().classStreamManagementUseCase().findAll();
+        profileNameLabel.setText("Profile: " + profileTeacher.name() + " (" + profileTeacher.code() + ")");
+        profileSubjectCombo.getSelectionModel().clearSelection();
+        profileStreamSection.setVisible(false);
+        profileStreamSection.setManaged(false);
+        profileSelectedSubject = null;
+        renderProfileSubjects();
+        normalContent.setVisible(false);
+        normalContent.setManaged(false);
+        profileCard.setVisible(true);
+        profileCard.setManaged(true);
+    }
+
+    @FXML
+    private void onBackFromProfile() {
+        profileCard.setVisible(false);
+        profileCard.setManaged(false);
+        normalContent.setVisible(true);
+        normalContent.setManaged(true);
+        refreshTable();
+    }
+
+    private void renderProfileSubjects() {
+        profileSubjectContainer.getChildren().clear();
+        profileSubjectToggles.clear();
+
+        var assigned = AppContext.get().teacherSubjectManagementUseCase()
+                .findByTeacherId(profileTeacher.id());
+        Set<Long> assignedIds = new HashSet<>();
+        for (var ts : assigned) {
+            assignedIds.add(ts.subjectId());
+        }
+
+        for (SubjectDto s : profileAllSubjects) {
+            ToggleButton tb = createProfileSubjectToggle(s, assignedIds.contains(s.id()));
+            profileSubjectToggles.put(s.id(), tb);
+            profileSubjectContainer.getChildren().add(tb);
+        }
+        updateProfileSubjectCombo();
+    }
+
+    private ToggleButton createProfileSubjectToggle(SubjectDto s, boolean assigned) {
+        ToggleButton tb = new ToggleButton(s.name() + " (" + s.code() + ")");
+        tb.setPrefSize(180, 70);
+        tb.setMinSize(180, 70);
+        tb.getStyleClass().addAll("toggle-card", "subject-toggle");
+        tb.setSelected(assigned);
+        tb.setUserData(s.id());
+        tb.setOnAction(e -> onProfileSubjectToggled(s, tb.isSelected()));
+        return tb;
+    }
+
+    private void onProfileSubjectToggled(SubjectDto subject, boolean selected) {
+        try {
+            if (selected) {
+                AppContext.get().teacherSubjectManagementUseCase()
+                        .assign(profileTeacher.id(), subject.id());
+            } else {
+                AppContext.get().teacherSubjectManagementUseCase()
+                        .unassign(profileTeacher.id(), subject.id());
+            }
+        } catch (Exception e) {
+            ToggleButton tb = profileSubjectToggles.get(subject.id());
+            if (tb != null) tb.setSelected(!selected);
+        }
+        updateProfileSubjectCombo();
+        if (!selected && profileSelectedSubject != null
+                && profileSelectedSubject.id().equals(subject.id())) {
+            profileSubjectCombo.getSelectionModel().clearSelection();
+            profileSelectedSubject = null;
+            profileStreamSection.setVisible(false);
+            profileStreamSection.setManaged(false);
+        }
+    }
+
+    private void updateProfileSubjectCombo() {
+        List<SubjectDto> assigned = new ArrayList<>();
+        for (SubjectDto s : profileAllSubjects) {
+            ToggleButton tb = profileSubjectToggles.get(s.id());
+            if (tb != null && tb.isSelected()) {
+                assigned.add(s);
+            }
+        }
+        profileSubjectCombo.setItems(FXCollections.observableArrayList(assigned));
+        if (profileSelectedSubject != null && !assigned.contains(profileSelectedSubject)) {
+            profileSubjectCombo.getSelectionModel().clearSelection();
+        }
+    }
+
+    private void loadProfileStreams(SubjectDto subject) {
+        Map<Integer, List<ClassStreamDto>> byForm = profileAllStreams.stream()
+                .collect(Collectors.groupingBy(ClassStreamDto::form));
+        List<Integer> forms = new ArrayList<>(byForm.keySet());
+        Collections.sort(forms);
+        profileFormCombo.setItems(FXCollections.observableArrayList(forms));
+        if (!forms.isEmpty()) {
+            profileFormCombo.getSelectionModel().select(0);
+        }
+    }
+
+    private void renderProfileStreams(List<ClassStreamDto> streams, Set<String> assigned) {
+        profileStreamContainer.getChildren().clear();
+        profileStreamToggles.clear();
+
+        for (ClassStreamDto cs : streams) {
+            ToggleButton tb = new ToggleButton(cs.displayName());
+            tb.setPrefSize(160, 60);
+            tb.setMinSize(160, 60);
+            tb.getStyleClass().addAll("toggle-card", "stream-toggle");
+            String key = cs.id().toString();
+            tb.setSelected(assigned.contains(key));
+            tb.setUserData(cs.id());
+            tb.setOnAction(e -> onProfileStreamToggled(cs, tb.isSelected()));
+            profileStreamToggles.put(key, tb);
+            profileStreamContainer.getChildren().add(tb);
+        }
+    }
+
+    private void onProfileStreamToggled(ClassStreamDto cs, boolean selected) {
+        try {
+            if (selected) {
+                TeachingAssignmentDto dto = new TeachingAssignmentDto(
+                        null, profileTeacher.id(), "",
+                        profileSelectedSubject.id(), "",
+                        cs.id(), "",
+                        profileSelectedSubject.cbcDefaultLessons(), LessonDuration.SINGLE
+                );
+                AppContext.get().assignmentManagementUseCase().create(dto);
+            } else {
+                var list = AppContext.get().assignmentManagementUseCase()
+                        .findByTeacherId(profileTeacher.id()).stream()
+                        .filter(a -> a.subjectId().equals(profileSelectedSubject.id())
+                                && a.classStreamId().equals(cs.id()))
+                        .toList();
+                for (var a : list) {
+                    AppContext.get().assignmentManagementUseCase().delete(a.id());
+                }
+            }
+        } catch (Exception e) {
+            ToggleButton tb = profileStreamToggles.get(cs.id().toString());
+            if (tb != null) tb.setSelected(!selected);
+        }
     }
 
     private void showLessonDialog(TeachingAssignmentDto existing, Long teacherId, String teacherName) {

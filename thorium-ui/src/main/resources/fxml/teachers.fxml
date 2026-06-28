@@ -13,54 +13,79 @@
     </HBox>
     <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="view-scroll">
         <VBox spacing="16" styleClass="view-content">
-            <TextField fx:id="searchField" promptText="Search teachers by name or code..." styleClass="search-field"/>
-            <VBox spacing="0" styleClass="card">
+
+            <!-- Normal Content -->
+            <VBox fx:id="normalContent" spacing="16">
+                <TextField fx:id="searchField" promptText="Search teachers by name or code..." styleClass="search-field"/>
+                <VBox spacing="0" styleClass="card">
+                    <HBox alignment="CENTER_LEFT" spacing="8" styleClass="card-header">
+                        <Label text="All Teachers" styleClass="card-title"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                    </HBox>
+                    <TableView fx:id="teacherTable" VBox.vgrow="ALWAYS" prefHeight="200" styleClass="table-rounded">
+                        <columns>
+                            <TableColumn fx:id="codeColumn" text="Code" prefWidth="100"/>
+                            <TableColumn fx:id="nameColumn" text="Name" prefWidth="250"/>
+                        </columns>
+                    </TableView>
+                </VBox>
+                <VBox spacing="0" styleClass="card">
+                    <HBox alignment="CENTER_LEFT" spacing="8" styleClass="card-header">
+                        <Label text="Teacher Details" styleClass="card-title"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="messageLabel" styleClass="msg-label"/>
+                    </HBox>
+                    <GridPane hgap="12" vgap="10" styleClass="card-body">
+                        <Label text="Code" styleClass="form-group-title" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                        <TextField fx:id="codeField" promptText="e.g. T001" styleClass="form-textfield" GridPane.columnIndex="1" GridPane.rowIndex="0" prefWidth="250"/>
+                        <Label text="Name" styleClass="form-group-title" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                        <TextField fx:id="nameField" promptText="e.g. John Doe" styleClass="form-textfield" GridPane.columnIndex="1" GridPane.rowIndex="1" prefWidth="250"/>
+                        <CheckBox fx:id="activeCheck" text="Active" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                    </GridPane>
+                    <HBox spacing="8" styleClass="card-body" style="-fx-padding: 0 16 16 16;">
+                        <Button fx:id="saveBtn" text="Save" onAction="#onSave" defaultButton="true" styleClass="btn-primary"/>
+                        <Button fx:id="deleteBtn" text="Delete" onAction="#onDelete" styleClass="btn-danger"/>
+                        <Button fx:id="viewProfileBtn" text="View Profile" onAction="#onViewProfile" styleClass="btn-secondary"/>
+                        <Button fx:id="clearBtn" text="Clear" onAction="#onClear" styleClass="btn-secondary"/>
+                    </HBox>
+                </VBox>
+                <VBox spacing="0" styleClass="card">
+                    <HBox alignment="CENTER_LEFT" spacing="12" styleClass="card-header">
+                        <Label text="Teaching Contracts (Lessons)" styleClass="card-title"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Button fx:id="newLessonBtn" text="+ New Lesson" onAction="#onNewLesson" styleClass="btn-success"/>
+                    </HBox>
+                    <TableView fx:id="lessonTable" prefHeight="140" styleClass="table-rounded">
+                        <columns>
+                            <TableColumn fx:id="lessonSubjectColumn" text="Subject" prefWidth="180"/>
+                            <TableColumn fx:id="lessonClassColumn" text="Class" prefWidth="180"/>
+                            <TableColumn fx:id="lessonCountColumn" text="Lessons/Week" prefWidth="100"/>
+                            <TableColumn fx:id="lessonDurationColumn" text="Duration" prefWidth="80"/>
+                            <TableColumn fx:id="lessonDeleteColumn" text="" prefWidth="50"/>
+                        </columns>
+                    </TableView>
+                </VBox>
+            </VBox>
+
+            <!-- Profile Card (hidden by default) -->
+            <VBox spacing="0" styleClass="card" fx:id="profileCard" visible="false" managed="false">
                 <HBox alignment="CENTER_LEFT" spacing="8" styleClass="card-header">
-                    <Label text="All Teachers" styleClass="card-title"/>
-                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button text="&lt; Back to Teachers" onAction="#onBackFromProfile" styleClass="btn-back"/>
+                    <Label fx:id="profileNameLabel" text="Teacher Profile" styleClass="card-title"/>
                 </HBox>
-                <TableView fx:id="teacherTable" VBox.vgrow="ALWAYS" prefHeight="200" styleClass="table-rounded">
-                    <columns>
-                        <TableColumn fx:id="codeColumn" text="Code" prefWidth="100"/>
-                        <TableColumn fx:id="nameColumn" text="Name" prefWidth="250"/>
-                    </columns>
-                </TableView>
+                <VBox spacing="12" styleClass="card-body">
+                    <Label text="Toggle subjects ON/OFF to assign or unassign (saves automatically)" styleClass="hint-text"/>
+                    <FlowPane fx:id="profileSubjectContainer" hgap="12" vgap="12"/>
+                    <Separator/>
+                    <Label text="Manage streams for an assigned subject" styleClass="hint-text"/>
+                    <ComboBox fx:id="profileSubjectCombo" prefWidth="350" promptText="Select a subject (only assigned subjects shown)"/>
+                    <VBox fx:id="profileStreamSection" spacing="8" visible="false" managed="false">
+                        <ComboBox fx:id="profileFormCombo" prefWidth="200" promptText="Select Form" styleClass="form-combo"/>
+                        <FlowPane fx:id="profileStreamContainer" hgap="12" vgap="12"/>
+                    </VBox>
+                </VBox>
             </VBox>
-            <VBox spacing="0" styleClass="card">
-                <HBox alignment="CENTER_LEFT" spacing="8" styleClass="card-header">
-                    <Label text="Teacher Details" styleClass="card-title"/>
-                    <Region HBox.hgrow="ALWAYS"/>
-                    <Label fx:id="messageLabel" styleClass="msg-label"/>
-                </HBox>
-                <GridPane hgap="12" vgap="10" styleClass="card-body">
-                    <Label text="Code" styleClass="form-group-title" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-                    <TextField fx:id="codeField" promptText="e.g. T001" styleClass="form-textfield" GridPane.columnIndex="1" GridPane.rowIndex="0" prefWidth="250"/>
-                    <Label text="Name" styleClass="form-group-title" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
-                    <TextField fx:id="nameField" promptText="e.g. John Doe" styleClass="form-textfield" GridPane.columnIndex="1" GridPane.rowIndex="1" prefWidth="250"/>
-                    <CheckBox fx:id="activeCheck" text="Active" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
-                </GridPane>
-                <HBox spacing="8" styleClass="card-body" style="-fx-padding: 0 16 16 16;">
-                    <Button fx:id="saveBtn" text="Save" onAction="#onSave" defaultButton="true" styleClass="btn-primary"/>
-                    <Button fx:id="deleteBtn" text="Delete" onAction="#onDelete" styleClass="btn-danger"/>
-                    <Button fx:id="clearBtn" text="Clear" onAction="#onClear" styleClass="btn-secondary"/>
-                </HBox>
-            </VBox>
-            <VBox spacing="0" styleClass="card">
-                <HBox alignment="CENTER_LEFT" spacing="12" styleClass="card-header">
-                    <Label text="Teaching Contracts (Lessons)" styleClass="card-title"/>
-                    <Region HBox.hgrow="ALWAYS"/>
-                    <Button fx:id="newLessonBtn" text="+ New Lesson" onAction="#onNewLesson" styleClass="btn-success"/>
-                </HBox>
-                <TableView fx:id="lessonTable" prefHeight="140" styleClass="table-rounded">
-                    <columns>
-                        <TableColumn fx:id="lessonSubjectColumn" text="Subject" prefWidth="180"/>
-                        <TableColumn fx:id="lessonClassColumn" text="Class" prefWidth="180"/>
-                        <TableColumn fx:id="lessonCountColumn" text="Lessons/Week" prefWidth="100"/>
-                        <TableColumn fx:id="lessonDurationColumn" text="Duration" prefWidth="80"/>
-                        <TableColumn fx:id="lessonDeleteColumn" text="" prefWidth="50"/>
-                    </columns>
-                </TableView>
-            </VBox>
+
         </VBox>
     </ScrollPane>
 </VBox>
