@@ -3,341 +3,276 @@ package com.thorium.ui.controller;
 import com.thorium.application.dto.*;
 import com.thorium.domain.model.LessonDuration;
 import com.thorium.ui.di.AppContext;
-import com.thorium.ui.util.IconUtil;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
-import javafx.geometry.Insets;
 import javafx.scene.control.*;
-import javafx.scene.layout.FlowPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class AssignmentManagementController {
 
-    // Step 1: Teacher → Subject
-    @FXML private ComboBox<TeacherDto> step1TeacherCombo;
-    @FXML private FlowPane subjectCheckboxPane;
-    @FXML private Label step1Message;
-    @FXML private Label noTeacherStep1Label;
-    @FXML private Button saveSubjectsBtn;
+    @FXML private VBox stepTeachers;
+    @FXML private FlowPane teacherCardContainer;
+    @FXML private VBox stepSubjects;
+    @FXML private Label selectedTeacherLabel;
+    @FXML private FlowPane subjectToggleContainer;
+    @FXML private Button continueToStreamsBtn;
+    @FXML private VBox stepStreamSubjects;
+    @FXML private Label streamSubjectTeacherLabel;
+    @FXML private FlowPane subjectCardContainer;
+    @FXML private VBox stepStreams;
+    @FXML private Label streamSubjectNameLabel;
+    @FXML private ComboBox<Integer> formCombo;
+    @FXML private FlowPane streamToggleContainer;
+    @FXML private Button backToTeachersBtn;
+    @FXML private Label messageLabel;
 
-    // Step 2: Teacher + Subject → Streams
-    @FXML private ComboBox<TeacherDto> step2TeacherCombo;
-    @FXML private VBox streamAssignmentContainer;
-    @FXML private Label step2Message;
-    @FXML private Label noSubjectsStep2Label;
-    @FXML private VBox step2ActionBar;
-    @FXML private Button assignBtn;
-    @FXML private Button refreshStep2Btn;
-
-    private Long currentTeacherId;
-    private final Map<Long, CheckBox> subjectCheckboxes = new HashMap<>();
+    private TeacherDto selectedTeacher;
+    private SubjectDto selectedSubject;
+    private List<TeacherDto> allTeachers = List.of();
     private List<SubjectDto> allSubjects = List.of();
-
-    private Long step2TeacherId;
-    private List<SubjectDto> step2Subjects = List.of();
     private List<ClassStreamDto> allClassStreams = List.of();
-    private final Map<String, CheckBox> streamCheckBoxes = new HashMap<>();
+    private final Map<Long, ToggleButton> subjectToggles = new HashMap<>();
+    private final Map<String, ToggleButton> streamToggles = new HashMap<>();
 
     @FXML
     private void initialize() {
-        IconUtil.addIcon(saveSubjectsBtn, IconUtil.SAVE, "#ffffff");
-        IconUtil.addIcon(assignBtn, IconUtil.SAVE, "#ffffff");
-        IconUtil.addIcon(refreshStep2Btn, IconUtil.REFRESH, "#475569");
-
+        allTeachers = AppContext.get().teacherManagementUseCase().findAll();
         allSubjects = AppContext.get().subjectManagementUseCase().findAll();
         allClassStreams = AppContext.get().classStreamManagementUseCase().findAll();
-        buildSubjectCheckboxes();
 
-        var teachers = AppContext.get().teacherManagementUseCase().findAll();
-
-        setupTeacherCombo(step1TeacherCombo, teachers, (obs, old, selected) -> {
-            if (selected != null) {
-                currentTeacherId = selected.id();
-                loadAssignedSubjects(selected.id());
-                noTeacherStep1Label.setVisible(false);
-                subjectCheckboxPane.setVisible(true);
-            } else {
-                currentTeacherId = null;
-                clearCheckboxes();
-                noTeacherStep1Label.setVisible(true);
-                subjectCheckboxPane.setVisible(false);
+        formCombo.getSelectionModel().selectedItemProperty().addListener((obs, old, f) -> {
+            if (f != null && selectedSubject != null) {
+                Set<String> assigned = AppContext.get().assignmentManagementUseCase()
+                        .findByTeacherId(selectedTeacher.id()).stream()
+                        .filter(a -> a.subjectId().equals(selectedSubject.id()))
+                        .map(a -> a.classStreamId().toString())
+                        .collect(Collectors.toSet());
+                renderStreamToggles(allClassStreams.stream()
+                        .filter(cs -> cs.form() == f)
+                        .collect(Collectors.toList()), assigned);
             }
         });
 
-        setupTeacherCombo(step2TeacherCombo, teachers, (obs, old, selected) -> {
-            if (selected != null) {
-                step2TeacherId = selected.id();
-                loadTeacherSubjectsForStep2(selected.id());
-            } else {
-                step2TeacherId = null;
-                streamAssignmentContainer.getChildren().clear();
-                noSubjectsStep2Label.setVisible(true);
-                step2ActionBar.setVisible(false);
-                step2ActionBar.setManaged(false);
-            }
-        });
-
-        noTeacherStep1Label.setVisible(true);
-        subjectCheckboxPane.setVisible(false);
-        noSubjectsStep2Label.setVisible(true);
-        step2ActionBar.setVisible(false);
-        step2ActionBar.setManaged(false);
+        renderTeacherCards();
+        showStep(stepTeachers);
     }
 
-    private void setupTeacherCombo(ComboBox<TeacherDto> combo, List<TeacherDto> teachers,
-                                    javafx.beans.value.ChangeListener<TeacherDto> listener) {
-        combo.setItems(FXCollections.observableArrayList(teachers));
-        combo.setCellFactory(lv -> new ListCell<TeacherDto>() {
-            @Override protected void updateItem(TeacherDto item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(empty || item == null ? null : item.name() + " (" + item.code() + ")");
-            }
-        });
-        combo.getSelectionModel().selectedItemProperty().addListener(listener);
-    }
-
-    // ========== STEP 1: Teacher → Subject ==========
-
-    private void buildSubjectCheckboxes() {
-        subjectCheckboxes.clear();
-        subjectCheckboxPane.getChildren().clear();
-        for (SubjectDto s : allSubjects) {
-            CheckBox cb = new CheckBox(s.name() + " (" + s.code() + ")");
-            cb.setUserData(s.id());
-            cb.getStyleClass().add("subject-checkbox");
-            subjectCheckboxes.put(s.id(), cb);
-            subjectCheckboxPane.getChildren().add(cb);
+    private void renderTeacherCards() {
+        teacherCardContainer.getChildren().clear();
+        for (TeacherDto t : allTeachers) {
+            teacherCardContainer.getChildren().add(createTeacherCard(t));
         }
     }
 
-    private void loadAssignedSubjects(Long teacherId) {
-        clearCheckboxes();
-        var assigned = AppContext.get().teacherSubjectManagementUseCase().findByTeacherId(teacherId);
+    private VBox createTeacherCard(TeacherDto t) {
+        VBox card = new VBox(8);
+        card.setPrefSize(200, 110);
+        card.setMinSize(200, 110);
+        card.getStyleClass().addAll("card", "teacher-card");
+        card.setUserData(t);
+
+        Label name = new Label(t.name());
+        name.getStyleClass().add("card-title");
+        Label code = new Label(t.code());
+        code.getStyleClass().add("card-subtitle");
+
+        card.getChildren().addAll(name, code);
+        card.setOnMouseClicked(e -> onTeacherSelected(t));
+        return card;
+    }
+
+    private void onTeacherSelected(TeacherDto t) {
+        selectedTeacher = t;
+        selectedTeacherLabel.setText("Subjects for: " + t.name() + " (" + t.code() + ")");
+        streamSubjectTeacherLabel.setText("Streams for: " + t.name());
+        renderSubjectToggles();
+        showStep(stepSubjects);
+    }
+
+    private void renderSubjectToggles() {
+        subjectToggleContainer.getChildren().clear();
+        subjectToggles.clear();
+
+        var assigned = AppContext.get().teacherSubjectManagementUseCase()
+                .findByTeacherId(selectedTeacher.id());
         Set<Long> assignedIds = new HashSet<>();
         for (var ts : assigned) {
             assignedIds.add(ts.subjectId());
         }
-        for (Map.Entry<Long, CheckBox> entry : subjectCheckboxes.entrySet()) {
-            if (assignedIds.contains(entry.getKey())) {
-                entry.getValue().setSelected(true);
-            }
+
+        for (SubjectDto s : allSubjects) {
+            ToggleButton tb = createSubjectToggle(s, assignedIds.contains(s.id()));
+            subjectToggles.put(s.id(), tb);
+            subjectToggleContainer.getChildren().add(tb);
         }
     }
 
-    private void clearCheckboxes() {
-        for (CheckBox cb : subjectCheckboxes.values()) {
-            cb.setSelected(false);
+    private ToggleButton createSubjectToggle(SubjectDto s, boolean assigned) {
+        ToggleButton tb = new ToggleButton(s.name() + " (" + s.code() + ")");
+        tb.setPrefSize(180, 70);
+        tb.setMinSize(180, 70);
+        tb.getStyleClass().addAll("toggle-card", "subject-toggle");
+        tb.setSelected(assigned);
+        tb.setUserData(s.id());
+        tb.setOnAction(e -> onSubjectToggled(s, tb.isSelected()));
+        return tb;
+    }
+
+    private void onSubjectToggled(SubjectDto subject, boolean selected) {
+        try {
+            if (selected) {
+                AppContext.get().teacherSubjectManagementUseCase()
+                        .assign(selectedTeacher.id(), subject.id());
+            } else {
+                AppContext.get().teacherSubjectManagementUseCase()
+                        .unassign(selectedTeacher.id(), subject.id());
+            }
+        } catch (Exception e) {
+            showMessage(e.getMessage(), true);
+            ToggleButton tb = subjectToggles.get(subject.id());
+            if (tb != null) tb.setSelected(!selected);
         }
     }
 
     @FXML
-    private void onSaveSubjects() {
-        if (currentTeacherId == null) {
-            showStep1Message("Select a teacher first", true);
+    private void onContinueToStreams() {
+        boolean hasAssigned = subjectToggles.values().stream().anyMatch(ToggleButton::isSelected);
+        if (!hasAssigned) {
+            showMessage("Assign at least one subject first", true);
             return;
         }
-        try {
-            Set<Long> currentlyAssigned = new HashSet<>();
-            for (var ts : AppContext.get().teacherSubjectManagementUseCase()
-                    .findByTeacherId(currentTeacherId)) {
-                currentlyAssigned.add(ts.subjectId());
-            }
+        renderSubjectCards();
+        showStep(stepStreamSubjects);
+    }
 
-            Set<Long> selected = new HashSet<>();
-            for (CheckBox cb : subjectCheckboxes.values()) {
-                if (cb.isSelected()) selected.add((Long) cb.getUserData());
-            }
-
-            for (Long subjectId : selected) {
-                if (!currentlyAssigned.contains(subjectId)) {
-                    AppContext.get().teacherSubjectManagementUseCase().assign(currentTeacherId, subjectId);
-                }
-            }
-            for (Long subjectId : currentlyAssigned) {
-                if (!selected.contains(subjectId)) {
-                    AppContext.get().teacherSubjectManagementUseCase().unassign(currentTeacherId, subjectId);
-                }
-            }
-
-            showStep1Message("Subjects saved for teacher", false);
-            syncStep2Teacher();
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            showStep1Message(e.getMessage(), true);
-        } catch (Exception e) {
-            showStep1Message("An unexpected error occurred", true);
+    private void renderSubjectCards() {
+        subjectCardContainer.getChildren().clear();
+        for (SubjectDto s : allSubjects) {
+            ToggleButton tb = subjectToggles.get(s.id());
+            if (tb == null || !tb.isSelected()) continue;
+            subjectCardContainer.getChildren().add(createSubjectCard(s));
         }
     }
 
-    private void showStep1Message(String msg, boolean error) {
-        step1Message.setText(msg);
-        step1Message.getStyleClass().removeAll("msg-error", "msg-success");
-        step1Message.getStyleClass().add(error ? "msg-error" : "msg-success");
-    }
+    private VBox createSubjectCard(SubjectDto s) {
+        VBox card = new VBox(8);
+        card.setPrefSize(200, 110);
+        card.setMinSize(200, 110);
+        card.getStyleClass().addAll("card", "subject-card");
+        card.setUserData(s);
 
-    // ========== STEP 2: Teacher + Subject → Streams ==========
+        Label name = new Label(s.name());
+        name.getStyleClass().add("card-title");
+        Label code = new Label(s.code());
+        code.getStyleClass().add("card-subtitle");
 
-    private void loadTeacherSubjectsForStep2(Long teacherId) {
-        step2Subjects = AppContext.get().teacherSubjectManagementUseCase().findSubjectsByTeacherId(teacherId);
-        if (step2Subjects.isEmpty()) {
-            noSubjectsStep2Label.setText("This teacher has no subjects assigned. Use Step 1 to assign subjects first.");
-            noSubjectsStep2Label.setVisible(true);
-            streamAssignmentContainer.getChildren().clear();
-            step2ActionBar.setVisible(false);
-            step2ActionBar.setManaged(false);
-            return;
-        }
-        noSubjectsStep2Label.setVisible(false);
-
-        Map<Integer, List<ClassStreamDto>> streamsByForm = allClassStreams.stream()
-                .collect(Collectors.groupingBy(ClassStreamDto::form));
-
-        Set<String> existingAssignments = AppContext.get().assignmentManagementUseCase()
-                .findByTeacherId(teacherId).stream()
-                .map(a -> a.subjectId() + "|" + a.classStreamId())
-                .collect(Collectors.toSet());
-
-        streamAssignmentContainer.getChildren().clear();
-        streamCheckBoxes.clear();
-
-        List<Integer> sortedForms = new ArrayList<>(streamsByForm.keySet());
-        Collections.sort(sortedForms);
-
-        for (SubjectDto subject : step2Subjects) {
-            VBox subjectCard = createSubjectCard(subject, streamsByForm, sortedForms, existingAssignments);
-            streamAssignmentContainer.getChildren().add(subjectCard);
-        }
-
-        step2ActionBar.setVisible(true);
-        step2ActionBar.setManaged(true);
-    }
-
-    private VBox createSubjectCard(SubjectDto subject,
-                                    Map<Integer, List<ClassStreamDto>> streamsByForm,
-                                    List<Integer> sortedForms,
-                                    Set<String> existingAssignments) {
-        VBox card = new VBox(0);
-        card.getStyleClass().add("card");
-
-        HBox header = new HBox(8);
-        header.getStyleClass().add("card-header");
-        Label subjectLabel = new Label(subject.name() + " (" + subject.code() + ")");
-        subjectLabel.getStyleClass().add("card-title");
-        Label lessonsLabel = new Label(subject.cbcDefaultLessons() + " lessons/week");
-        lessonsLabel.getStyleClass().add("card-subtitle");
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-        header.getChildren().addAll(subjectLabel, lessonsLabel, spacer);
-        card.getChildren().add(header);
-
-        VBox body = new VBox(12);
-        body.getStyleClass().add("card-body");
-        body.setPadding(new Insets(12));
-
-        for (Integer form : sortedForms) {
-            List<ClassStreamDto> streams = streamsByForm.get(form);
-            if (streams == null) continue;
-
-            VBox formGroup = new VBox(6);
-            formGroup.getStyleClass().add("form-group");
-
-            Label formLabel = new Label("Form " + form);
-            formLabel.getStyleClass().add("form-group-title");
-            formGroup.getChildren().add(formLabel);
-
-            FlowPane streamPane = new FlowPane(10, 8);
-            streamPane.getStyleClass().add("stream-flow-pane");
-
-            for (ClassStreamDto cs : streams) {
-                String key = subject.id() + "|" + cs.id();
-                CheckBox cb = new CheckBox(cs.displayName());
-                cb.setUserData(new Object[]{subject.id(), cs.id()});
-                cb.getStyleClass().add("stream-checkbox");
-                if (existingAssignments.contains(key)) {
-                    cb.setSelected(true);
-                }
-                streamCheckBoxes.put(key, cb);
-                streamPane.getChildren().add(cb);
-            }
-            formGroup.getChildren().add(streamPane);
-            body.getChildren().add(formGroup);
-        }
-        card.getChildren().add(body);
+        card.getChildren().addAll(name, code);
+        card.setOnMouseClicked(e -> onSubjectCardClicked(s));
         return card;
     }
 
-    @FXML
-    private void onAssign() {
-        if (step2TeacherId == null) {
-            showStep2Message("Select a teacher first", true);
-            return;
+    private void onSubjectCardClicked(SubjectDto s) {
+        selectedSubject = s;
+        streamSubjectNameLabel.setText("Streams for: " + s.name() + " (" + s.code() + ")");
+        loadStreams(s);
+        showStep(stepStreams);
+    }
+
+    private void loadStreams(SubjectDto subject) {
+        Map<Integer, List<ClassStreamDto>> byForm = allClassStreams.stream()
+                .collect(Collectors.groupingBy(ClassStreamDto::form));
+
+        List<Integer> forms = new ArrayList<>(byForm.keySet());
+        Collections.sort(forms);
+
+        formCombo.setItems(FXCollections.observableArrayList(forms));
+        if (!forms.isEmpty()) {
+            formCombo.getSelectionModel().select(0);
         }
+    }
+
+    private void renderStreamToggles(List<ClassStreamDto> streams, Set<String> assigned) {
+        streamToggleContainer.getChildren().clear();
+        streamToggles.clear();
+
+        for (ClassStreamDto cs : streams) {
+            ToggleButton tb = new ToggleButton(cs.displayName());
+            tb.setPrefSize(160, 60);
+            tb.setMinSize(160, 60);
+            tb.getStyleClass().addAll("toggle-card", "stream-toggle");
+            String key = cs.id().toString();
+            tb.setSelected(assigned.contains(key));
+            tb.setUserData(cs.id());
+            tb.setOnAction(e -> onStreamToggled(cs, tb.isSelected()));
+            streamToggles.put(key, tb);
+            streamToggleContainer.getChildren().add(tb);
+        }
+    }
+
+    private void onStreamToggled(ClassStreamDto cs, boolean selected) {
         try {
-            Set<String> currentlyAssigned = AppContext.get().assignmentManagementUseCase()
-                    .findByTeacherId(step2TeacherId).stream()
-                    .map(a -> a.subjectId() + "|" + a.classStreamId())
-                    .collect(Collectors.toSet());
-
-            for (Map.Entry<String, CheckBox> entry : streamCheckBoxes.entrySet()) {
-                String key = entry.getKey();
-                CheckBox cb = entry.getValue();
-                Object[] data = (Object[]) cb.getUserData();
-                Long subjectId = (Long) data[0];
-                Long classStreamId = (Long) data[1];
-
-                if (cb.isSelected() && !currentlyAssigned.contains(key)) {
-                    SubjectDto subject = step2Subjects.stream()
-                            .filter(s -> s.id().equals(subjectId))
-                            .findFirst().orElse(null);
-                    int lessonsPerWeek = subject != null ? subject.cbcDefaultLessons() : 5;
-
-                    TeachingAssignmentDto dto = new TeachingAssignmentDto(
-                            null, step2TeacherId, "",
-                            subjectId, "",
-                            classStreamId, "",
-                            lessonsPerWeek, LessonDuration.SINGLE
-                    );
-                    AppContext.get().assignmentManagementUseCase().create(dto);
-                } else if (!cb.isSelected() && currentlyAssigned.contains(key)) {
-                    var assignment = AppContext.get().assignmentManagementUseCase().findByTeacherId(step2TeacherId)
-                            .stream()
-                            .filter(a -> a.subjectId().equals(subjectId) && a.classStreamId().equals(classStreamId))
-                            .findFirst();
-                    assignment.ifPresent(a -> AppContext.get().assignmentManagementUseCase().delete(a.id()));
+            if (selected) {
+                TeachingAssignmentDto dto = new TeachingAssignmentDto(
+                        null, selectedTeacher.id(), "",
+                        selectedSubject.id(), "",
+                        cs.id(), "",
+                        selectedSubject.cbcDefaultLessons(), LessonDuration.SINGLE
+                );
+                AppContext.get().assignmentManagementUseCase().create(dto);
+            } else {
+                var list = AppContext.get().assignmentManagementUseCase()
+                        .findByTeacherId(selectedTeacher.id()).stream()
+                        .filter(a -> a.subjectId().equals(selectedSubject.id())
+                                && a.classStreamId().equals(cs.id()))
+                        .toList();
+                for (var a : list) {
+                    AppContext.get().assignmentManagementUseCase().delete(a.id());
                 }
             }
-
-            showStep2Message("Assignments saved successfully", false);
-            loadTeacherSubjectsForStep2(step2TeacherId);
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            showStep2Message(e.getMessage(), true);
         } catch (Exception e) {
-            showStep2Message("An unexpected error occurred", true);
+            showMessage(e.getMessage(), true);
+            ToggleButton tb = streamToggles.get(cs.id().toString());
+            if (tb != null) tb.setSelected(!selected);
         }
     }
 
     @FXML
-    private void onRefreshStep2() {
-        if (step2TeacherId != null) {
-            loadTeacherSubjectsForStep2(step2TeacherId);
-        }
+    private void onBackToTeachers() {
+        showStep(stepTeachers);
     }
 
-    private void syncStep2Teacher() {
-        TeacherDto selected = step2TeacherCombo.getSelectionModel().getSelectedItem();
-        if (selected != null) {
-            loadTeacherSubjectsForStep2(selected.id());
-        }
+    @FXML
+    private void onBackToSubjects() {
+        renderSubjectToggles();
+        showStep(stepSubjects);
     }
 
-    private void showStep2Message(String msg, boolean error) {
-        step2Message.setText(msg);
-        step2Message.getStyleClass().removeAll("msg-error", "msg-success");
-        step2Message.getStyleClass().add(error ? "msg-error" : "msg-success");
+    @FXML
+    private void onBackToStreamSubjects() {
+        renderSubjectCards();
+        showStep(stepStreamSubjects);
+    }
+
+    private void showStep(VBox step) {
+        stepTeachers.setVisible(false);
+        stepTeachers.setManaged(false);
+        stepSubjects.setVisible(false);
+        stepSubjects.setManaged(false);
+        stepStreamSubjects.setVisible(false);
+        stepStreamSubjects.setManaged(false);
+        stepStreams.setVisible(false);
+        stepStreams.setManaged(false);
+        step.setVisible(true);
+        step.setManaged(true);
+    }
+
+    private void showMessage(String msg, boolean error) {
+        messageLabel.setText(msg);
+        messageLabel.getStyleClass().removeAll("msg-error", "msg-success");
+        messageLabel.getStyleClass().add(error ? "msg-error" : "msg-success");
+        messageLabel.setManaged(true);
     }
 }

@@ -597,6 +597,112 @@
     -fx-text-fill: #0f172a;
 }
 
+/* Toggle cards (subject/stream toggles styled as cards) */
+.toggle-card {
+    -fx-background-color: white;
+    -fx-background-radius: 10;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 10;
+    -fx-border-width: 2;
+    -fx-text-fill: #334155;
+    -fx-font-size: 12px;
+    -fx-font-weight: 600;
+    -fx-cursor: hand;
+    -fx-content-display: center;
+    -fx-wrap-text: true;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.03), 4, 0, 0, 1);
+}
+
+.toggle-card:selected {
+    -fx-background-color: #eff6ff;
+    -fx-border-color: #3b82f6;
+    -fx-text-fill: #1e40af;
+}
+
+.toggle-card:hover {
+    -fx-border-color: #94a3b8;
+    -fx-background-color: #f8fafc;
+}
+
+.toggle-card:selected:hover {
+    -fx-border-color: #2563eb;
+    -fx-background-color: #dbeafe;
+}
+
+/* Subject toggle card */
+.subject-toggle {
+    -fx-font-size: 12px;
+}
+
+/* Stream toggle card */
+.stream-toggle {
+    -fx-font-size: 11px;
+}
+
+/* Teacher cards (clickable) */
+.teacher-card {
+    -fx-cursor: hand;
+    -fx-alignment: center;
+    -fx-padding: 16;
+    -fx-background-color: white;
+    -fx-background-radius: 10;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 10;
+    -fx-border-width: 2;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.04), 6, 0, 0, 2);
+}
+
+.teacher-card:hover {
+    -fx-border-color: #3b82f6;
+    -fx-background-color: #f8faff;
+    -fx-effect: dropshadow(three-pass-box, rgba(59,130,246,0.1), 8, 0, 0, 2);
+}
+
+/* Subject cards (for stream assignment step) */
+.subject-card {
+    -fx-cursor: hand;
+    -fx-alignment: center;
+    -fx-padding: 16;
+    -fx-background-color: white;
+    -fx-background-radius: 10;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 10;
+    -fx-border-width: 2;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.04), 6, 0, 0, 2);
+}
+
+.subject-card:hover {
+    -fx-border-color: #f97316;
+    -fx-background-color: #fffaf5;
+    -fx-effect: dropshadow(three-pass-box, rgba(249,115,22,0.1), 8, 0, 0, 2);
+}
+
+/* Back navigation button */
+.btn-back {
+    -fx-background-color: transparent;
+    -fx-text-fill: #64748b;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+    -fx-padding: 4 10;
+    -fx-background-radius: 6;
+    -fx-cursor: hand;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 6;
+    -fx-border-width: 1;
+}
+
+.btn-back:hover {
+    -fx-background-color: #f1f5f9;
+    -fx-text-fill: #334155;
+}
+
+/* Hint text */
+.hint-text {
+    -fx-font-size: 12px;
+    -fx-text-fill: #94a3b8;
+    -fx-padding: 0 0 4 0;
+}
+
 /* Generate button in status bar */
 .generate-btn {
     -fx-background-color: #16a34a;

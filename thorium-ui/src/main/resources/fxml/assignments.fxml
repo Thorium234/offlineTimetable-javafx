@@ -9,50 +9,60 @@
       styleClass="view-root">
     <HBox alignment="CENTER_LEFT" spacing="12" styleClass="page-header">
         <Label text="Assignments" styleClass="page-title"/>
-        <Label text="Two-step: link teachers to subjects, then assign to class streams" styleClass="page-subtitle"/>
+        <Label text="Assign teachers to subjects and class streams" styleClass="page-subtitle"/>
     </HBox>
+
     <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="view-scroll">
         <VBox spacing="16" styleClass="view-content">
 
-            <!-- Step 1: Teacher-to-Subject Assignment -->
-            <VBox spacing="0" styleClass="card">
+            <Label fx:id="messageLabel" styleClass="msg-label" managed="false"/>
+
+            <!-- STEP 1: Teacher Cards -->
+            <VBox spacing="0" styleClass="card" fx:id="stepTeachers">
                 <HBox alignment="CENTER_LEFT" spacing="8" styleClass="card-header">
-                    <Label text="Step 1: Teacher → Subjects" styleClass="card-title"/>
-                    <Label text="Select a teacher and choose which subjects they can teach" styleClass="card-subtitle"/>
-                    <Region HBox.hgrow="ALWAYS"/>
-                    <Label fx:id="step1Message" styleClass="msg-label"/>
+                    <Label text="Select Teacher" styleClass="card-title"/>
+                    <Label text="Choose a teacher to manage their subjects and streams" styleClass="card-subtitle"/>
                 </HBox>
                 <VBox spacing="12" styleClass="card-body">
-                    <HBox spacing="12" alignment="CENTER_LEFT">
-                        <ComboBox fx:id="step1TeacherCombo" prefWidth="350" styleClass="form-combo"/>
-                        <Button fx:id="saveSubjectsBtn" text="Save Selections" onAction="#onSaveSubjects" styleClass="btn-primary"/>
-                    </HBox>
-                    <FlowPane fx:id="subjectCheckboxPane" hgap="12" vgap="10" styleClass="subject-flow-pane"/>
-                    <Label fx:id="noTeacherStep1Label" text="Select a teacher above to manage their subjects" styleClass="empty-state"/>
+                    <FlowPane fx:id="teacherCardContainer" hgap="16" vgap="16"/>
                 </VBox>
             </VBox>
 
-            <!-- Step 2: Stream-Based Class Assignment -->
-            <VBox spacing="0" styleClass="card">
+            <!-- STEP 2: Subject Toggles -->
+            <VBox spacing="0" styleClass="card" fx:id="stepSubjects" visible="false" managed="false">
                 <HBox alignment="CENTER_LEFT" spacing="8" styleClass="card-header">
-                    <Label text="Step 2: Teacher + Subject → Class Streams" styleClass="card-title"/>
-                    <Label text="Assign teacher-subject combinations to specific class streams" styleClass="card-subtitle"/>
+                    <Button fx:id="backToTeachersBtn" text="&lt; Teachers" onAction="#onBackToTeachers" styleClass="btn-back"/>
+                    <Label fx:id="selectedTeacherLabel" text="Subjects for:" styleClass="card-title"/>
                     <Region HBox.hgrow="ALWAYS"/>
-                    <Label fx:id="step2Message" styleClass="msg-label"/>
+                    <Button fx:id="continueToStreamsBtn" text="Continue to Streams →" onAction="#onContinueToStreams" styleClass="btn-primary"/>
                 </HBox>
                 <VBox spacing="12" styleClass="card-body">
-                    <HBox spacing="12" alignment="CENTER_LEFT">
-                        <ComboBox fx:id="step2TeacherCombo" prefWidth="350" styleClass="form-combo"/>
-                    </HBox>
-                    <VBox fx:id="streamAssignmentContainer" spacing="12" VBox.vgrow="ALWAYS">
-                        <Label fx:id="noSubjectsStep2Label"
-                               text="Select a teacher to view their subjects, or assign subjects in Step 1 first."
-                               styleClass="empty-state"/>
-                    </VBox>
-                    <HBox spacing="8" fx:id="step2ActionBar" visible="false" managed="false">
-                        <Button fx:id="assignBtn" text="Assign Selected" onAction="#onAssign" styleClass="btn-primary"/>
-                        <Button fx:id="refreshStep2Btn" text="Refresh" onAction="#onRefreshStep2" styleClass="btn-secondary"/>
-                    </HBox>
+                    <Label text="Toggle subjects to assign or unassign (saves automatically)" styleClass="hint-text"/>
+                    <FlowPane fx:id="subjectToggleContainer" hgap="12" vgap="12"/>
+                </VBox>
+            </VBox>
+
+            <!-- STEP 3: Subject Cards for Stream Assignment -->
+            <VBox spacing="0" styleClass="card" fx:id="stepStreamSubjects" visible="false" managed="false">
+                <HBox alignment="CENTER_LEFT" spacing="8" styleClass="card-header">
+                    <Button text="&lt; Subjects" onAction="#onBackToSubjects" styleClass="btn-back"/>
+                    <Label fx:id="streamSubjectTeacherLabel" text="Streams for:" styleClass="card-title"/>
+                    <Label text="Click a subject card to assign its class streams" styleClass="card-subtitle"/>
+                </HBox>
+                <VBox spacing="12" styleClass="card-body">
+                    <FlowPane fx:id="subjectCardContainer" hgap="16" vgap="16"/>
+                </VBox>
+            </VBox>
+
+            <!-- STEP 4: Stream Toggles -->
+            <VBox spacing="0" styleClass="card" fx:id="stepStreams" visible="false" managed="false">
+                <HBox alignment="CENTER_LEFT" spacing="8" styleClass="card-header">
+                    <Button text="&lt; Subject Cards" onAction="#onBackToStreamSubjects" styleClass="btn-back"/>
+                    <Label fx:id="streamSubjectNameLabel" text="Streams for:" styleClass="card-title"/>
+                </HBox>
+                <VBox spacing="12" styleClass="card-body">
+                    <ComboBox fx:id="formCombo" prefWidth="200" promptText="Select Form" styleClass="form-combo"/>
+                    <FlowPane fx:id="streamToggleContainer" hgap="12" vgap="12"/>
                 </VBox>
             </VBox>
 
