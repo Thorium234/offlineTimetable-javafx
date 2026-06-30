@@ -37,7 +37,11 @@ public class BacktrackingScheduler {
 
         LOG.fine("STRICT tier failed, attempting RELAXED tier");
         result = tryResolve(context, initial, Tier.RELAXED);
-        if (result != null) return result;
+        if (result != null) {
+            int placed = result.schedule().size();
+            LOG.warning("RELAXED tier placed " + placed + " lessons (partial result)");
+            return result;
+        }
 
         LOG.warning("Backtracking solver failed under all constraint tiers");
         return TimetableGenerationResult.failure(
@@ -102,6 +106,11 @@ public class BacktrackingScheduler {
 
         if (iterations[0] >= MAX_ITERATIONS) {
             warnings.add("Backtracking stopped after reaching safety limit of " + MAX_ITERATIONS + " search steps.");
+            if (tier == Tier.RELAXED && schedule.size() > 0) {
+                LOG.warning("RELAXED tier hit iteration limit with " + schedule.size()
+                        + " lessons placed, returning partial result");
+                success = true;
+            }
         }
 
         if (!success) return null;
@@ -127,7 +136,7 @@ public class BacktrackingScheduler {
     }
 
     private boolean search(DomainTracker tracker, PartialSchedule schedule,
-                           SchedulingContext context, int[] iterations, Tier tier) {
+                            SchedulingContext context, int[] iterations, Tier tier) {
         if (tracker.allAssigned()) return true;
 
         iterations[0]++;
@@ -136,6 +145,7 @@ public class BacktrackingScheduler {
         GreedyScheduler.AssignmentWorkItem item = tracker.selectMRV();
         if (item == null) {
             LOG.fine("MRV returned null at iteration " + iterations[0] + " (empty domain detected)");
+            if (tier == Tier.RELAXED) return true;
             return false;
         }
 
@@ -143,6 +153,10 @@ public class BacktrackingScheduler {
         if (domain == null || domain.isEmpty()) {
             LOG.fine("Empty domain for item " + item.assignment().getId()
                     + " (lessonIndex=" + item.lessonIndex() + ") at iteration " + iterations[0]);
+            if (tier == Tier.RELAXED) {
+                tracker.markSkipped(item);
+                return search(tracker, schedule, context, iterations, tier);
+            }
             return false;
         }
 
@@ -193,6 +207,13 @@ public class BacktrackingScheduler {
             }
         }
 
+        if (tier == Tier.RELAXED) {
+            LOG.fine("RELAXED: no valid slot for item " + item.assignment().getId()
+                    + " (lessonIndex=" + item.lessonIndex()
+                    + "), skipping. Placed so far: " + schedule.size());
+            tracker.markSkipped(item);
+            return search(tracker, schedule, context, iterations, tier);
+        }
         return false;
     }
 
@@ -338,6 +359,15 @@ public class BacktrackingScheduler {
             assigned.add(item);
             Set<ScheduleSlot> d = domains.get(item);
             if (d != null) d.clear();
+        }
+
+        void markSkipped(GreedyScheduler.AssignmentWorkItem item) {
+            assigned.add(item);
+            Set<ScheduleSlot> d = domains.get(item);
+            if (d != null) d.clear();
+            LOG.fine("Skipped item teacher=" + item.assignment().getTeacherId()
+                    + " subject=" + item.assignment().getSubjectId()
+                    + " lessonIndex=" + item.lessonIndex());
         }
 
         void pruneBySlotStatic(long teacherId, long classId, ScheduleSlot slot) {
