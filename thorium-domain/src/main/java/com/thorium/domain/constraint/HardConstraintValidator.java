@@ -136,12 +136,16 @@ public class HardConstraintValidator {
 
         for (PlacedLesson lesson : lessons) {
             boolean hasPair = false;
+            int lessonIdx = context.indexOfLessonPeriod(lesson.slot().periodNumber());
+            if (lessonIdx < 0) continue;
             for (PlacedLesson other : lessons) {
                 if (lesson.equals(other)) continue;
-                if (lesson.slot().dayOfWeek() == other.slot().dayOfWeek()
-                        && Math.abs(lesson.slot().periodNumber() - other.slot().periodNumber()) == 1) {
-                    hasPair = true;
-                    break;
+                if (lesson.slot().dayOfWeek() == other.slot().dayOfWeek()) {
+                    int otherIdx = context.indexOfLessonPeriod(other.slot().periodNumber());
+                    if (otherIdx >= 0 && Math.abs(lessonIdx - otherIdx) == 1) {
+                        hasPair = true;
+                        break;
+                    }
                 }
             }
             if (!hasPair) return false;
@@ -194,7 +198,8 @@ public class HardConstraintValidator {
             return false;
         }
         DayOfWeek day = slot.dayOfWeek();
-        int period = slot.periodNumber();
+        int periodIdx = context.indexOfLessonPeriod(slot.periodNumber());
+        if (periodIdx < 0) return false;
 
         for (PlacedLesson placed : schedule.placedLessons()) {
             if (!placed.assignment().getId().equals(assignment.getId())) {
@@ -203,8 +208,8 @@ public class HardConstraintValidator {
             if (placed.slot().dayOfWeek() != day) {
                 continue;
             }
-            int otherPeriod = placed.slot().periodNumber();
-            if (Math.abs(otherPeriod - period) == 1) {
+            int otherIdx = context.indexOfLessonPeriod(placed.slot().periodNumber());
+            if (otherIdx >= 0 && Math.abs(otherIdx - periodIdx) == 1) {
                 return true;
             }
         }
@@ -227,6 +232,9 @@ public class HardConstraintValidator {
             return false;
         }
 
+        int slotIdx = context.indexOfLessonPeriod(slot.periodNumber());
+        if (slotIdx < 0) return true;
+
         boolean hasAdjacent = false;
         for (PlacedLesson placed : schedule.placedLessons()) {
             if (!placed.assignment().getId().equals(assignment.getId())) {
@@ -235,7 +243,8 @@ public class HardConstraintValidator {
             if (placed.slot().dayOfWeek() != slot.dayOfWeek()) {
                 continue;
             }
-            if (Math.abs(placed.slot().periodNumber() - slot.periodNumber()) == 1) {
+            int placedIdx = context.indexOfLessonPeriod(placed.slot().periodNumber());
+            if (placedIdx >= 0 && Math.abs(placedIdx - slotIdx) == 1) {
                 hasAdjacent = true;
                 break;
             }

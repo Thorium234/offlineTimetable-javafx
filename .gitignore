@@ -7,3 +7,4 @@ target/
 *.db
 .DS_Store
 .ai/
+start.txt
