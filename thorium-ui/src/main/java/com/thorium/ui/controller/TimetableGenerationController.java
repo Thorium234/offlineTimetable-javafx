@@ -25,19 +25,27 @@ public class TimetableGenerationController {
         try {
             TimetableDto result = AppContext.get().generateTimetableUseCase()
                     .execute(nameField.getText().trim());
-            resultLabel.setText("Generated: " + result.name() + " (ID: " + result.id() + ")");
-            qualityLabel.setText(String.format("Quality score: %.2f | Entries: %d",
-                    result.qualityScore(), result.entries().size()));
-            resultLabel.getStyleClass().removeAll("error");
-            resultLabel.getStyleClass().add("success");
+            String coverage = String.format("%.2f", result.qualityScore());
+            qualityLabel.setText(String.format("Quality: %s | Entries: %d",
+                    coverage, result.entries().size()));
+            resultLabel.getStyleClass().removeAll("error", "success");
+            if (result.status() == com.thorium.domain.value.TimetableStatus.DRAFT) {
+                resultLabel.setText("Partial: " + result.name() + " (saved as DRAFT)");
+                qualityLabel.setText(String.format("Quality: %s | Entries: %d (incomplete)",
+                        coverage, result.entries().size()));
+                resultLabel.getStyleClass().add("warning");
+            } else {
+                resultLabel.setText("Generated: " + result.name());
+                resultLabel.getStyleClass().add("success");
+            }
         } catch (IllegalArgumentException | IllegalStateException e) {
             resultLabel.setText(e.getMessage());
-            resultLabel.getStyleClass().removeAll("success");
+            resultLabel.getStyleClass().removeAll("success", "warning");
             resultLabel.getStyleClass().add("error");
             qualityLabel.setText("");
         } catch (Exception e) {
             resultLabel.setText("An unexpected error occurred");
-            resultLabel.getStyleClass().removeAll("success");
+            resultLabel.getStyleClass().removeAll("success", "warning");
             resultLabel.getStyleClass().add("error");
             qualityLabel.setText("");
         }

@@ -96,6 +96,10 @@
     -fx-text-fill: #4ade80;
 }
 
+.msg-warning {
+    -fx-text-fill: #facc15;
+}
+
 .empty-state {
     -fx-text-fill: #64748b;
 }

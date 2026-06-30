@@ -142,6 +142,10 @@
     -fx-text-fill: #16a34a;
 }
 
+.msg-warning {
+    -fx-text-fill: #ca8a04;
+}
+
 .empty-state {
     -fx-text-fill: #94a3b8;
     -fx-font-size: 13px;

@@ -17,8 +17,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 public class GenerateTimetableUseCase {
+
+    private static final Logger LOG = Logger.getLogger(GenerateTimetableUseCase.class.getName());
 
     private static final DateTimeFormatter NAME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
@@ -76,18 +79,23 @@ public class GenerateTimetableUseCase {
                 .build();
 
         List<String> preflight = generator.preflightChecks(context);
-        TimetableGenerationResult result = generator.generate(context);
+        LOG.info(() -> "Preflight: " + String.join("; ", preflight));
 
-        if (!result.isSuccess() && !result.isComplete(context)) {
-            List<String> messages = new ArrayList<>(result.errors());
-            messages.addAll(result.warnings());
-            messages.addAll(preflight);
-            throw new IllegalStateException("Timetable generation failed: " + String.join("; ", messages));
+        TimetableGenerationResult result = generator.generate(context);
+        boolean complete = result.isComplete(context);
+
+        if (!result.isSuccess() && !complete) {
+            if (result.schedule().placedLessons().isEmpty()) {
+                List<String> messages = new ArrayList<>(result.errors());
+                messages.addAll(result.warnings());
+                messages.addAll(preflight);
+                throw new IllegalStateException("Timetable generation failed: " + String.join("; ", messages));
+            }
         }
 
         Timetable timetable = new Timetable();
         timetable.setName(name != null && !name.isBlank() ? name : "Timetable " + LocalDateTime.now().format(NAME_FORMAT));
-        timetable.setStatus(TimetableStatus.GENERATED);
+        timetable.setStatus(complete ? TimetableStatus.GENERATED : TimetableStatus.DRAFT);
         timetable.setCreatedAt(LocalDateTime.now());
         timetable.setQualityScore(result.qualityScore());
 
