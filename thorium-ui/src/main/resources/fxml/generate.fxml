@@ -9,24 +9,78 @@
       styleClass="view-root">
     <HBox alignment="CENTER_LEFT" spacing="12" styleClass="page-header">
         <Label text="Timetable Generation" styleClass="page-title"/>
-        <Label text="Generate a complete school timetable from your data" styleClass="page-subtitle"/>
+        <Label text="Generate, diagnose, and fix your school timetable" styleClass="page-subtitle"/>
     </HBox>
     <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="view-scroll">
         <VBox spacing="16" styleClass="view-content">
             <VBox spacing="0" styleClass="card">
                 <HBox alignment="CENTER_LEFT" spacing="8" styleClass="card-header">
                     <Label text="Generate Timetable" styleClass="card-title"/>
-                    <Label text="Ensure all teachers, subjects, classes, and assignments are configured first." styleClass="card-subtitle"/>
                     <Region HBox.hgrow="ALWAYS"/>
+                    <ProgressIndicator fx:id="progressIndicator" visible="false" prefWidth="24" prefHeight="24"/>
                 </HBox>
                 <VBox spacing="12" styleClass="card-body">
-                    <HBox spacing="12" alignment="CENTER_LEFT">
+                    <HBox spacing="12" alignment="CENTER_LEFT" wrapText="true">
                         <Label text="Timetable Name:" styleClass="form-group-title"/>
-                        <TextField fx:id="nameField" promptText="Optional name (e.g. Term 1 2026)" prefWidth="300" styleClass="form-textfield"/>
-                        <Button fx:id="generateBtn" text="Generate Timetable" onAction="#onGenerate" styleClass="btn-success"/>
+                        <TextField fx:id="nameField" promptText="Optional name (e.g. Term 1 2026)" prefWidth="280" styleClass="form-textfield"/>
+                        <Button fx:id="generateBtn" text="Generate" onAction="#onGenerate" styleClass="btn-success"/>
+                        <Button fx:id="stopBtn" text="Stop" onAction="#onStop" visible="false" styleClass="btn-danger"/>
                     </HBox>
                     <Label fx:id="resultLabel" wrapText="true" styleClass="msg-label"/>
-                    <Label fx:id="qualityLabel" styleClass="msg-label"/>
+                    <Label fx:id="qualityLabel" wrapText="true" styleClass="msg-label"/>
+                </VBox>
+            </VBox>
+
+            <VBox spacing="0" styleClass="card">
+                <HBox alignment="CENTER_LEFT" spacing="8" styleClass="card-header" onMouseClicked="#toggleLogSection">
+                    <Label text="Live Log" styleClass="card-title"/>
+                    <Label text="Detailed generation diagnostics in real time" styleClass="card-subtitle"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="logToggleIcon" text="▾" styleClass="card-toggle"/>
+                </HBox>
+                <VBox fx:id="logSection" spacing="8" styleClass="card-body" managed="true" visible="true">
+                    <TextArea fx:id="logArea" editable="false" wrapText="true" prefHeight="300"
+                              styleClass="log-area" promptText="Generation diagnostics will appear here..."/>
+                    <HBox spacing="8" alignment="CENTER_RIGHT">
+                        <Button text="Clear Log" onAction="#onClearLog" styleClass="btn-secondary"/>
+                        <Button text="Copy Log" onAction="#onCopyLog" styleClass="btn-secondary"/>
+                    </HBox>
+                </VBox>
+            </VBox>
+
+            <VBox spacing="0" styleClass="card">
+                <HBox alignment="CENTER_LEFT" spacing="8" styleClass="card-header" onMouseClicked="#toggleAdvisorSection">
+                    <Label text="Advisor" styleClass="card-title"/>
+                    <Label text="Analysis and suggestions for improving your timetable" styleClass="card-subtitle"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="advisorToggleIcon" text="▸" styleClass="card-toggle"/>
+                </HBox>
+                <VBox fx:id="advisorSection" spacing="8" styleClass="card-body" managed="false" visible="false">
+                    <VBox fx:id="advisorContent" spacing="6">
+                        <Label text="Run generation first to see analysis here." styleClass="msg-label" wrapText="true"/>
+                    </VBox>
+                </VBox>
+            </VBox>
+
+            <VBox spacing="0" styleClass="card">
+                <HBox alignment="CENTER_LEFT" spacing="8" styleClass="card-header" onMouseClicked="#toggleSolverSection">
+                    <Label text="Solver" styleClass="card-title"/>
+                    <Label text="Automated fixes for common scheduling problems" styleClass="card-subtitle"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="solverToggleIcon" text="▸" styleClass="card-toggle"/>
+                </HBox>
+                <VBox fx:id="solverSection" spacing="8" styleClass="card-body" managed="false" visible="false">
+                    <VBox spacing="8">
+                        <Label text="Solver Actions:" styleClass="form-group-title"/>
+                        <Button text="Reduce Overloaded Teachers" onAction="#onReduceTeacherLoad"
+                                styleClass="btn-secondary" prefWidth="300"/>
+                        <Button text="Relax Constraint Tiers" onAction="#onRelaxConstraints"
+                                styleClass="btn-secondary" prefWidth="300"/>
+                        <Button text="Balance Subject Distribution" onAction="#onBalanceSubjects"
+                                styleClass="btn-secondary" prefWidth="300"/>
+                        <Label text="Run generation first to see solver diagnostics." styleClass="msg-label"
+                               wrapText="true"/>
+                    </VBox>
                 </VBox>
             </VBox>
         </VBox>

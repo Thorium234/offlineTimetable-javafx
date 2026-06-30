@@ -24,10 +24,15 @@ public class GreedyScheduler {
     }
 
     public PartialSchedule schedule(SchedulingContext context) {
+        return schedule(context, null);
+    }
+
+    public PartialSchedule schedule(SchedulingContext context, GenerationProgressCallback callback) {
         PartialSchedule schedule = new PartialSchedule();
         List<AssignmentWorkItem> workItems = expandAssignments(context);
         workItems.sort(Comparator.comparingInt(AssignmentWorkItem::difficulty).reversed());
 
+        int required = context.assignments().stream().mapToInt(a -> a.getLessonsPerWeek()).sum();
         int rejectedCount = 0;
         for (int i = 0; i < workItems.size(); i++) {
             AssignmentWorkItem item = workItems.get(i);
@@ -38,44 +43,59 @@ public class GreedyScheduler {
                     ScheduleSlot second = new ScheduleSlot(bestSlot.dayOfWeek(), bestSlot.periodNumber() + 1);
                     schedule.place(new PlacedLesson(item.assignment(), second));
                 }
+                if (callback != null) {
+                    callback.progress(schedule.size(), required);
+                }
             } else {
                 rejectedCount++;
+                String summary = "teacher=" + item.assignment().getTeacherId()
+                        + " subject=" + item.assignment().getSubjectId()
+                        + " class=" + item.assignment().getClassStreamId()
+                        + " lessonIndex=" + item.lessonIndex();
+                if (callback != null) {
+                    callback.itemRejected(summary, "no valid slot found");
+                }
                 if (rejectedCount == 1) {
-                    LOG.warning("No slot found for first item (teacher=" + item.assignment().getTeacherId()
-                            + ", subject=" + item.assignment().getSubjectId()
-                            + ", class=" + item.assignment().getClassStreamId()
+                    LOG.warning("No slot found for first item (" + summary
                             + ", lessons=" + item.assignment().getLessonsPerWeek()
                             + ") difficulty=" + item.difficulty);
-                    logSlotDiagnostics(item.assignment(), context);
+                    logSlotDiagnostics(item.assignment(), context, callback);
                 } else if (rejectedCount <= 5 || i == workItems.size() - 1) {
                     LOG.warning("No slot for assignment " + item.assignment().getId()
-                            + " (teacher=" + item.assignment().getTeacherId()
-                            + ", subject=" + item.assignment().getSubjectId()
-                            + ", class=" + item.assignment().getClassStreamId()
-                            + ") after " + schedule.size() + " placed");
+                            + " (" + summary + ") after " + schedule.size() + " placed");
                 }
             }
         }
         if (rejectedCount > 0) {
-            LOG.warning("Greedy scheduler: " + rejectedCount + "/" + workItems.size()
-                    + " items could not be placed (" + schedule.size() + " placed)");
+            String msg = "Greedy scheduler: " + rejectedCount + "/" + workItems.size()
+                    + " items could not be placed (" + schedule.size() + " placed)";
+            LOG.warning(msg);
+            if (callback != null) callback.log("WARN", msg);
         }
+        if (callback != null) callback.progress(schedule.size(), required);
         return schedule;
     }
 
-    private void logSlotDiagnostics(TeachingAssignment assignment, SchedulingContext context) {
-        LOG.warning("Diagnosing all " + context.allSlots().size() + " slots for assignment " + assignment.getId());
+    private void logSlotDiagnostics(TeachingAssignment assignment, SchedulingContext context,
+                                     GenerationProgressCallback callback) {
+        String msg = "Diagnosing all " + context.allSlots().size() + " slots for assignment " + assignment.getId();
+        LOG.warning(msg);
+        if (callback != null) callback.log("INFO", msg);
         int rejected = 0;
         for (ScheduleSlot slot : context.allSlots()) {
             String reason = hardValidator.canPlaceReason(assignment, slot, new PartialSchedule(), context);
             if (reason != null) {
                 rejected++;
+                String line = "  Slot " + slot + " rejected: " + reason;
                 if (rejected <= 5) {
-                    LOG.warning("  Slot " + slot + " rejected: " + reason);
+                    LOG.warning(line);
+                    if (callback != null) callback.log("WARN", line);
                 }
             }
         }
-        LOG.warning("Diagnostic: " + rejected + "/" + context.allSlots().size() + " slots rejected for first item");
+        String summary = "Diagnostic: " + rejected + "/" + context.allSlots().size() + " slots rejected for first item";
+        LOG.warning(summary);
+        if (callback != null) callback.log("WARN", summary);
     }
 
     public List<AssignmentWorkItem> expandAssignments(SchedulingContext context) {

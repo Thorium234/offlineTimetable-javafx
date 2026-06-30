@@ -31,12 +31,19 @@ public class BacktrackingScheduler {
     }
 
     public TimetableGenerationResult resolve(SchedulingContext context, PartialSchedule initial) {
+        return resolve(context, initial, null);
+    }
+
+    public TimetableGenerationResult resolve(SchedulingContext context, PartialSchedule initial,
+                                              GenerationProgressCallback callback) {
+        if (callback != null) callback.tierChange("STRICT");
         LOG.fine("Attempting STRICT tier backtracking (initial=" + initial.size() + " placed)");
-        TimetableGenerationResult result = tryResolve(context, initial, Tier.STRICT);
+        TimetableGenerationResult result = tryResolve(context, initial, Tier.STRICT, callback);
         if (result != null) return result;
 
+        if (callback != null) callback.tierChange("RELAXED");
         LOG.fine("STRICT tier failed, attempting RELAXED tier");
-        result = tryResolve(context, initial, Tier.RELAXED);
+        result = tryResolve(context, initial, Tier.RELAXED, callback);
         if (result != null) {
             int placed = result.schedule().size();
             LOG.warning("RELAXED tier placed " + placed + " lessons (partial result)");
@@ -48,7 +55,8 @@ public class BacktrackingScheduler {
                 List.of("Backtracking solver failed to find a valid layout under any constraint tier."));
     }
 
-    private TimetableGenerationResult tryResolve(SchedulingContext context, PartialSchedule initial, Tier tier) {
+    private TimetableGenerationResult tryResolve(SchedulingContext context, PartialSchedule initial, Tier tier,
+                                                  GenerationProgressCallback callback) {
         Map<Long, Long> placedCounts = new HashMap<>();
         for (var lesson : initial.placedLessons()) {
             placedCounts.merge(lesson.assignment().getId(), 1L, Long::sum);
@@ -102,7 +110,14 @@ public class BacktrackingScheduler {
         int[] iterations = new int[1];
         List<String> warnings = new ArrayList<>();
 
-        boolean success = search(tracker, schedule, context, iterations, tier);
+        if (callback != null) {
+            int required = context.assignments().stream().mapToInt(a -> a.getLessonsPerWeek()).sum();
+            callback.log("INFO", tier + " tier: " + totalItems + " open items, "
+                    + "min domain=" + (minDomain == Integer.MAX_VALUE ? "N/A" : minDomain)
+                    + ", avg=" + (totalItems > 0 ? String.format("%.1f", (double) totalDomainSize / totalItems) : "N/A"));
+        }
+
+        boolean success = search(tracker, schedule, context, iterations, tier, callback);
 
         if (iterations[0] >= MAX_ITERATIONS) {
             warnings.add("Backtracking stopped after reaching safety limit of " + MAX_ITERATIONS + " search steps.");
@@ -136,7 +151,8 @@ public class BacktrackingScheduler {
     }
 
     private boolean search(DomainTracker tracker, PartialSchedule schedule,
-                            SchedulingContext context, int[] iterations, Tier tier) {
+                            SchedulingContext context, int[] iterations, Tier tier,
+                            GenerationProgressCallback callback) {
         if (tracker.allAssigned()) return true;
 
         iterations[0]++;
@@ -144,18 +160,22 @@ public class BacktrackingScheduler {
 
         GreedyScheduler.AssignmentWorkItem item = tracker.selectMRV();
         if (item == null) {
-            LOG.fine("MRV returned null at iteration " + iterations[0] + " (empty domain detected)");
+            String msg = "MRV returned null at iteration " + iterations[0] + " (empty domain detected)";
+            LOG.fine(msg);
+            if (callback != null) callback.log("WARN", msg);
             if (tier == Tier.RELAXED) return true;
             return false;
         }
 
         Set<ScheduleSlot> domain = tracker.domains.get(item);
         if (domain == null || domain.isEmpty()) {
-            LOG.fine("Empty domain for item " + item.assignment().getId()
-                    + " (lessonIndex=" + item.lessonIndex() + ") at iteration " + iterations[0]);
+            String msg = "Empty domain for item " + item.assignment().getId()
+                    + " (lessonIndex=" + item.lessonIndex() + ") at iteration " + iterations[0];
+            LOG.fine(msg);
             if (tier == Tier.RELAXED) {
+                if (callback != null) callback.log("WARN", "Skipping " + itemSummary(item) + " — " + msg);
                 tracker.markSkipped(item);
-                return search(tracker, schedule, context, iterations, tier);
+                return search(tracker, schedule, context, iterations, tier, callback);
             }
             return false;
         }
@@ -179,6 +199,15 @@ public class BacktrackingScheduler {
                         .thenComparingDouble(slot -> (double) tracker.countPrunedByPlacement(item, slot)))
                 .toList();
 
+        if (tier == Tier.RELAXED && candidates.isEmpty()) {
+            if (callback != null) callback.log("WARN", "Skipping " + itemSummary(item)
+                    + " — no candidates after core filter");
+            tracker.markSkipped(item);
+            int required = context.assignments().stream().mapToInt(a -> a.getLessonsPerWeek()).sum();
+            if (callback != null) callback.progress(schedule.size(), required);
+            return search(tracker, schedule, context, iterations, tier, callback);
+        }
+
         for (ScheduleSlot slot : candidates) {
             PlacedLesson placed = new PlacedLesson(item.assignment(), slot);
             schedule.place(placed);
@@ -194,8 +223,15 @@ public class BacktrackingScheduler {
 
             List<PrunedPair> pruned = tracker.placeAndPrune(item, slot);
 
+            if (iterations[0] % 1000 == 0 && callback != null) {
+                int required = context.assignments().stream().mapToInt(a -> a.getLessonsPerWeek()).sum();
+                callback.progress(schedule.size(), required);
+                callback.log("INFO", "Search iteration " + iterations[0] + ": placed=" + schedule.size()
+                        + " trying " + itemSummary(item) + " at " + slot);
+            }
+
             if (!tracker.hasEmptyDomain()) {
-                if (search(tracker, schedule, context, iterations, tier)) {
+                if (search(tracker, schedule, context, iterations, tier, callback)) {
                     return true;
                 }
             }
@@ -212,9 +248,18 @@ public class BacktrackingScheduler {
                     + " (lessonIndex=" + item.lessonIndex()
                     + "), skipping. Placed so far: " + schedule.size());
             tracker.markSkipped(item);
-            return search(tracker, schedule, context, iterations, tier);
+            int required = context.assignments().stream().mapToInt(a -> a.getLessonsPerWeek()).sum();
+            if (callback != null) callback.progress(schedule.size(), required);
+            return search(tracker, schedule, context, iterations, tier, callback);
         }
         return false;
+    }
+
+    private String itemSummary(GreedyScheduler.AssignmentWorkItem item) {
+        return "t=" + item.assignment().getTeacherId()
+                + " s=" + item.assignment().getSubjectId()
+                + " c=" + item.assignment().getClassStreamId()
+                + " l=" + item.lessonIndex();
     }
 
     private enum Tier { STRICT, RELAXED }

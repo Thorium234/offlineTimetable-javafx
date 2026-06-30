@@ -5,6 +5,7 @@ import com.thorium.application.dto.TimetableEntryDto;
 import com.thorium.application.port.*;
 import com.thorium.application.util.NameFormatter;
 import com.thorium.domain.model.*;
+import com.thorium.domain.scheduling.GenerationProgressCallback;
 import com.thorium.domain.scheduling.SchedulingContext;
 import com.thorium.domain.scheduling.TimetableGenerationResult;
 import com.thorium.domain.scheduling.TimetableGenerator;
@@ -58,6 +59,10 @@ public class GenerateTimetableUseCase {
     }
 
     public TimetableDto execute(String name) {
+        return execute(name, null);
+    }
+
+    public TimetableDto execute(String name, GenerationProgressCallback callback) {
         List<TeachingAssignment> assignments = assignmentRepository.findAll();
         if (assignments.isEmpty()) {
             throw new IllegalStateException("No teaching assignments defined");
@@ -79,9 +84,16 @@ public class GenerateTimetableUseCase {
                 .build();
 
         List<String> preflight = generator.preflightChecks(context);
-        LOG.info(() -> "Preflight: " + String.join("; ", preflight));
+        if (!preflight.isEmpty()) {
+            LOG.info("Preflight: " + String.join("; ", preflight));
+            if (callback != null) {
+                for (String issue : preflight) {
+                    callback.log("WARN", issue);
+                }
+            }
+        }
 
-        TimetableGenerationResult result = generator.generate(context);
+        TimetableGenerationResult result = generator.generate(context, callback);
         boolean complete = result.isComplete(context);
 
         if (!result.isSuccess() && !complete) {

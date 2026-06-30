@@ -146,6 +146,22 @@
     -fx-text-fill: #ca8a04;
 }
 
+.log-area {
+    -fx-font-family: "Courier New", monospace;
+    -fx-font-size: 11px;
+    -fx-background-color: #1e293b;
+    -fx-text-fill: #e2e8f0;
+    -fx-control-inner-background: #1e293b;
+    -fx-highlight-fill: #334155;
+}
+
+.card-toggle {
+    -fx-font-size: 16px;
+    -fx-text-fill: #64748b;
+    -fx-cursor: hand;
+    -fx-padding: 0 4;
+}
+
 .empty-state {
     -fx-text-fill: #94a3b8;
     -fx-font-size: 13px;
