@@ -244,6 +244,7 @@ public class DatabaseInitializer {
             if (!e.getMessage().contains("duplicate column")) throw e;
         }
         statement.execute("UPDATE breaks SET slotable = 1 WHERE name = 'Assembly'");
+        statement.execute("CREATE TABLE IF NOT EXISTS timetable_entries_backup AS SELECT * FROM timetable_entries");
         statement.execute("""
                 CREATE TABLE timetable_entries_v2 (
                     id                     INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -262,6 +263,7 @@ public class DatabaseInitializer {
         statement.execute("ALTER TABLE timetable_entries_v2 RENAME TO timetable_entries");
         statement.execute("CREATE INDEX IF NOT EXISTS idx_tt_entries_timetable ON timetable_entries(timetable_id)");
         statement.execute("CREATE INDEX IF NOT EXISTS idx_tt_entries_slot ON timetable_entries(timetable_id, day_of_week, period_number)");
+        statement.execute("CREATE TABLE IF NOT EXISTS teacher_availability_backup AS SELECT * FROM teacher_availability");
         statement.execute("""
                 CREATE TABLE teacher_availability_v2 (
                     id            INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -19,15 +19,39 @@ public final class SchedulingContext {
     private final boolean cbcNoDoubleLessonEnabled;
 
     private SchedulingContext(Builder builder) {
-        this.assignments = List.copyOf(builder.assignments);
-        this.teachersById = Map.copyOf(builder.teachersById);
-        this.subjectsById = Map.copyOf(builder.subjectsById);
-        this.classStreamsById = Map.copyOf(builder.classStreamsById);
-        this.unavailableByTeacher = Map.copyOf(builder.unavailableByTeacher);
-        this.workingDays = List.copyOf(builder.workingDays);
+        this.assignments = copyOrWrap(builder.assignments);
+        this.teachersById = copyOrWrapMap(builder.teachersById);
+        this.subjectsById = copyOrWrapMap(builder.subjectsById);
+        this.classStreamsById = copyOrWrapMap(builder.classStreamsById);
+        this.unavailableByTeacher = copyOrWrapMapOfSets(builder.unavailableByTeacher);
+        this.workingDays = copyOrWrap(builder.workingDays);
         this.periodsPerDay = builder.periodsPerDay;
-        this.lessonPeriodNumbers = List.copyOf(builder.lessonPeriodNumbers);
+        this.lessonPeriodNumbers = copyOrWrap(builder.lessonPeriodNumbers);
         this.cbcNoDoubleLessonEnabled = builder.cbcNoDoubleLessonEnabled;
+    }
+
+    private static <T> List<T> copyOrWrap(List<T> list) {
+        return list instanceof List<T> l && l.getClass() != ArrayList.class ? l : List.copyOf(list);
+    }
+
+    private static <K, V> Map<K, V> copyOrWrapMap(Map<K, V> map) {
+        return map instanceof Map<K, V> m && m.getClass() != HashMap.class ? m : Map.copyOf(map);
+    }
+
+    private static <K> Map<K, Set<ScheduleSlot>> copyOrWrapMapOfSets(Map<K, Set<ScheduleSlot>> map) {
+        if (map instanceof Map<?, ?> m && m.getClass() != HashMap.class) {
+            Map<K, Set<ScheduleSlot>> result = new HashMap<>();
+            for (var entry : map.entrySet()) {
+                result.put(entry.getKey(), entry.getValue() instanceof Set<?> s && s.getClass() != HashSet.class
+                        ? entry.getValue() : new HashSet<>(entry.getValue()));
+            }
+            return result;
+        }
+        Map<K, Set<ScheduleSlot>> result = new HashMap<>();
+        for (var entry : map.entrySet()) {
+            result.put(entry.getKey(), new HashSet<>(entry.getValue()));
+        }
+        return result;
     }
 
     public List<TeachingAssignment> assignments() {
@@ -93,6 +117,26 @@ public final class SchedulingContext {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public static SchedulingContext dummy() {
+        return dummyContext;
+    }
+
+    private static final SchedulingContext dummyContext = createDummy();
+
+    private static SchedulingContext createDummy() {
+        try {
+            return builder()
+                    .assignments(List.of(new TeachingAssignment(-1L, -1L, -1L, -1L, 1)))
+                    .teachers(List.of(new Teacher(-1L, "X", "Dummy", true)))
+                    .subjects(List.of(new Subject(-1L, "X", "Dummy", false, 1, false, false, null)))
+                    .classStreams(List.of(new ClassStream(-1L, "X", 0, "X", "Dummy")))
+                    .periodsPerDay(8)
+                    .build();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public static final class Builder {
@@ -175,6 +219,14 @@ public final class SchedulingContext {
 
         public Builder cbcNoDoubleLessonEnabled(boolean enabled) {
             this.cbcNoDoubleLessonEnabled = enabled;
+            return this;
+        }
+
+        public Builder schoolSettings(SchoolSettings settings) {
+            if (settings != null) {
+                this.periodsPerDay = settings.getTotalPeriods();
+                this.lessonPeriodNumbers = defaultLessonPeriodNumbers(settings.getTotalPeriods());
+            }
             return this;
         }
 

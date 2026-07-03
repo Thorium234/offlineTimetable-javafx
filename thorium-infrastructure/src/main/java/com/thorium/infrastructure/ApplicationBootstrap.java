@@ -24,7 +24,7 @@ import com.thorium.infrastructure.persistence.repository.*;
 
 import java.nio.file.Path;
 
-public final class ApplicationBootstrap {
+public final class ApplicationBootstrap implements Bootstrap {
 
     private final SQLiteConnectionProvider connectionProvider;
     private final TeacherRepository teacherRepository;

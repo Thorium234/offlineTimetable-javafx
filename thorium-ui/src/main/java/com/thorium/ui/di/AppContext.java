@@ -1,5 +1,6 @@
 package com.thorium.ui.di;
 
+import com.thorium.application.port.Bootstrap;
 import com.thorium.application.usecase.assignment.AssignmentManagementUseCase;
 import com.thorium.application.usecase.assignment.TeacherSubjectManagementUseCase;
 import com.thorium.application.usecase.availability.AvailabilityManagementUseCase;
@@ -14,23 +15,20 @@ import com.thorium.application.usecase.subject.SubjectManagementUseCase;
 import com.thorium.application.usecase.teacher.TeacherManagementUseCase;
 import com.thorium.application.usecase.timetable.GenerateTimetableUseCase;
 import com.thorium.application.usecase.timetable.TimetableEditorUseCase;
-import com.thorium.infrastructure.ApplicationBootstrap;
-
-import java.nio.file.Path;
 
 public final class AppContext {
 
     private static AppContext instance;
 
-    private final ApplicationBootstrap bootstrap;
+    private final Bootstrap bootstrap;
 
-    private AppContext(Path databasePath) {
-        this.bootstrap = ApplicationBootstrap.create(databasePath);
+    private AppContext(Bootstrap bootstrap) {
+        this.bootstrap = bootstrap;
     }
 
-    public static synchronized AppContext initialize(Path databasePath) {
+    public static synchronized AppContext initialize(Bootstrap bootstrap) {
         if (instance == null) {
-            instance = new AppContext(databasePath);
+            instance = new AppContext(bootstrap);
         }
         return instance;
     }

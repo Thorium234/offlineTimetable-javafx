@@ -3,7 +3,7 @@ package com.thorium.domain.scheduling;
 import com.thorium.domain.constraint.HardConstraintValidator;
 import com.thorium.domain.constraint.SoftConstraintScorer;
 import com.thorium.domain.model.Teacher;
-import com.thorium.domain.scheduling.optimization.HillClimbingStrategy;
+import com.thorium.domain.scheduling.optimization.HybridMetaheuristicStrategy;
 import com.thorium.domain.scheduling.optimization.OptimizationStrategy;
 
 import java.util.ArrayList;
@@ -24,7 +24,7 @@ public class TimetableGenerator {
     private final Optional<OptimizationStrategy> optimizationStrategy;
 
     public TimetableGenerator() {
-        this(new HillClimbingStrategy());
+        this(new HybridMetaheuristicStrategy());
     }
 
     public TimetableGenerator(OptimizationStrategy optimizationStrategy) {
@@ -48,38 +48,67 @@ public class TimetableGenerator {
         int required = context.assignments().stream()
                 .mapToInt(a -> a.getLessonsPerWeek()).sum();
 
+        if (callback != null && callback.isCancelled()) {
+            callback.log("INFO", "Generation cancelled before greedy phase");
+            return TimetableGenerationResult.failure(List.of("Cancelled"));
+        }
+
         if (callback != null) callback.tierChange("GREEDY");
         PartialSchedule greedyResult = greedyScheduler.schedule(context, callback);
         LOG.fine("Greedy scheduler placed " + greedyResult.size() + "/" + required + " lessons");
         if (callback != null) callback.log("INFO", "Greedy scheduler placed "
                 + greedyResult.size() + "/" + required + " lessons");
 
+        HardConstraintValidator.ValidationResult greedyValidation = hardValidator.validateComplete(greedyResult, context);
+        if (!greedyValidation.isValid() && callback != null) {
+            for (String err : greedyValidation.errors()) {
+                callback.log("WARN", "Greedy validation: " + err);
+            }
+        }
+
         TimetableGenerationResult result;
-        if (greedyResult.size() >= required) {
-            HardConstraintValidator.ValidationResult validation =
-                    hardValidator.validateComplete(greedyResult, context);
-            if (validation.isValid()) {
-                double quality = softScorer.score(greedyResult, context);
-                result = TimetableGenerationResult.success(greedyResult, quality);
-                if (callback != null) callback.log("INFO", "Greedy schedule succeeded (quality="
-                        + String.format("%.3f", quality) + ")");
-                LOG.info("Greedy schedule succeeded (quality=" + String.format("%.3f", quality) + ")");
-            } else {
+        if (greedyResult.size() >= required && greedyValidation.isValid()) {
+            double quality = softScorer.score(greedyResult, context);
+            result = TimetableGenerationResult.success(greedyResult, quality);
+            if (callback != null) callback.log("INFO", "Greedy schedule succeeded (quality="
+                    + String.format("%.3f", quality) + ")");
+            LOG.info("Greedy schedule succeeded (quality=" + String.format("%.3f", quality) + ")");
+        } else {
+            if (greedyResult.size() >= required && !greedyValidation.isValid()) {
                 if (callback != null) callback.log("WARN", "Greedy validation failed, trying backtracking from scratch");
                 LOG.fine("Greedy validation failed, falling back to backtracking from scratch");
                 result = backtrackingScheduler.resolve(context, new PartialSchedule(), callback);
+            } else {
+                if (callback != null) callback.log("INFO", "Greedy incomplete ("
+                        + greedyResult.size() + "/" + required + "), resolving with backtracking");
+                LOG.fine("Greedy incomplete (" + greedyResult.size() + "/" + required + "), resolving with backtracking");
+                result = backtrackingScheduler.resolve(context, greedyResult, callback);
             }
-        } else {
-            if (callback != null) callback.log("INFO", "Greedy incomplete ("
-                    + greedyResult.size() + "/" + required + "), resolving with backtracking");
-            LOG.fine("Greedy incomplete (" + greedyResult.size() + "/" + required + "), resolving with backtracking");
-            result = backtrackingScheduler.resolve(context, greedyResult, callback);
         }
 
-        if (result.isSuccess() && optimizationStrategy.isPresent()) {
+        HardConstraintValidator.ValidationResult backtrackValidation = hardValidator.validateComplete(result.schedule(), context);
+        if (!backtrackValidation.isValid() && callback != null) {
+            for (String err : backtrackValidation.errors()) {
+                callback.log("WARN", "Backtrack validation: " + err);
+            }
+        }
+
+        if (callback != null && callback.isCancelled()) {
+            callback.log("INFO", "Generation cancelled before optimization phase");
+            return result;
+        }
+
+        if (optimizationStrategy.isPresent()) {
             LOG.fine("Running optimization strategy");
             if (callback != null) callback.log("INFO", "Running optimization strategy");
             result = optimizationStrategy.get().optimize(result, context);
+
+            HardConstraintValidator.ValidationResult optValidation = hardValidator.validateComplete(result.schedule(), context);
+            if (!optValidation.isValid() && callback != null) {
+                for (String err : optValidation.errors()) {
+                    callback.log("WARN", "Post-optimization validation: " + err);
+                }
+            }
         }
 
         long elapsed = System.currentTimeMillis() - start;

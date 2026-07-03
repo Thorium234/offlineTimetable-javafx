@@ -111,6 +111,19 @@ public class SqliteTimetableRepository extends AbstractRepository implements Tim
     }
 
     @Override
+    public Optional<Timetable> findByName(String name) {
+        try (Connection conn = connection();
+             PreparedStatement ps = conn.prepareStatement("SELECT * FROM timetables WHERE name = ?")) {
+            ps.setString(1, name);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? Optional.of(mapTimetable(rs)) : Optional.empty();
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to find timetable by name", e);
+        }
+    }
+
+    @Override
     public Optional<Timetable> findById(Long id) {
         try (Connection conn = connection();
              PreparedStatement ps = conn.prepareStatement("SELECT * FROM timetables WHERE id = ?")) {

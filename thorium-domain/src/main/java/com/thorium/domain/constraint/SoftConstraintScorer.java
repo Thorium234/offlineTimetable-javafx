@@ -15,8 +15,24 @@ import java.util.Map;
 
 public class SoftConstraintScorer {
 
-    private static final double SPREAD_WEIGHT = 0.55;
-    private static final double CONSECUTIVE_WEIGHT = 0.45;
+    private final double spreadWeight;
+    private final double consecutiveWeight;
+    private final double balanceWeight;
+
+    public SoftConstraintScorer() {
+        this(0.50, 0.40, 0.10);
+    }
+
+    public SoftConstraintScorer(double spreadWeight, double consecutiveWeight) {
+        this(spreadWeight, consecutiveWeight, 0.10);
+    }
+
+    public SoftConstraintScorer(double spreadWeight, double consecutiveWeight, double balanceWeight) {
+        double total = spreadWeight + consecutiveWeight + balanceWeight;
+        this.spreadWeight = spreadWeight / total;
+        this.consecutiveWeight = consecutiveWeight / total;
+        this.balanceWeight = balanceWeight / total;
+    }
 
     public double score(PartialSchedule schedule, SchedulingContext context) {
         if (schedule.isEmpty()) {
@@ -24,7 +40,8 @@ public class SoftConstraintScorer {
         }
         double spreadScore = scoreSpread(schedule, context);
         double consecutiveScore = scoreConsecutiveLessons(schedule, context);
-        return spreadScore * SPREAD_WEIGHT + consecutiveScore * CONSECUTIVE_WEIGHT;
+        double balanceScore = scoreTeacherBalance(schedule, context);
+        return spreadScore * spreadWeight + consecutiveScore * consecutiveWeight + balanceScore * balanceWeight;
     }
 
     public double scorePlacement(TeachingAssignment assignment, ScheduleSlot slot,
@@ -32,6 +49,29 @@ public class SoftConstraintScorer {
         PartialSchedule trial = schedule.copy();
         trial.place(new PlacedLesson(assignment, slot));
         return score(trial, context);
+    }
+
+    private double scoreTeacherBalance(PartialSchedule schedule, SchedulingContext context) {
+        Map<Long, Map<DayOfWeek, Integer>> teacherDailyLoad = new HashMap<>();
+        for (PlacedLesson placed : schedule.placedLessons()) {
+            teacherDailyLoad
+                    .computeIfAbsent(placed.assignment().getTeacherId(), k -> new EnumMap<>(DayOfWeek.class))
+                    .merge(placed.slot().dayOfWeek(), 1, Integer::sum);
+        }
+        if (teacherDailyLoad.isEmpty()) return 1.0;
+        double totalDeviation = 0.0;
+        int teacherCount = 0;
+        for (var entry : teacherDailyLoad.entrySet()) {
+            var dayCounts = entry.getValue();
+            if (dayCounts.size() <= 1) continue;
+            int min = dayCounts.values().stream().mapToInt(Integer::intValue).min().orElse(0);
+            int max = dayCounts.values().stream().mapToInt(Integer::intValue).max().orElse(0);
+            int range = max - min;
+            int days = context.workingDays().size();
+            totalDeviation += (double) range / Math.max(1, days);
+            teacherCount++;
+        }
+        return teacherCount > 0 ? 1.0 - Math.min(1.0, totalDeviation / teacherCount) : 1.0;
     }
 
     private double scoreSpread(PartialSchedule schedule, SchedulingContext context) {

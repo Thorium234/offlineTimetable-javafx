@@ -11,9 +11,6 @@ import java.util.Optional;
 
 public class SqliteTeacherRepository extends AbstractRepository implements TeacherRepository {
 
-    private static final int DEFAULT_MAX_PER_DAY = 99;
-    private static final int DEFAULT_MAX_PER_WEEK = 999;
-
     public SqliteTeacherRepository(SQLiteConnectionProvider connectionProvider) {
         super(connectionProvider);
     }
@@ -67,8 +64,8 @@ public class SqliteTeacherRepository extends AbstractRepository implements Teach
     private void bind(PreparedStatement ps, Teacher teacher) throws SQLException {
         ps.setString(1, teacher.getCode());
         ps.setString(2, teacher.getName());
-        ps.setInt(3, DEFAULT_MAX_PER_DAY);
-        ps.setInt(4, DEFAULT_MAX_PER_WEEK);
+        ps.setInt(3, teacher.getMaxLessonsPerDay());
+        ps.setInt(4, teacher.getMaxLessonsPerWeek());
         ps.setInt(5, teacher.isActive() ? 1 : 0);
     }
 
@@ -136,7 +133,9 @@ public class SqliteTeacherRepository extends AbstractRepository implements Teach
                 rs.getLong("id"),
                 rs.getString("code"),
                 rs.getString("name"),
-                rs.getInt("active") == 1
+                rs.getInt("active") == 1,
+                rs.getInt("max_lessons_per_day"),
+                rs.getInt("max_lessons_per_week")
         );
     }
 }

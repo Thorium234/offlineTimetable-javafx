@@ -2,6 +2,7 @@ package com.thorium.domain.scheduling;
 
 import com.thorium.domain.constraint.HardConstraintValidator;
 import com.thorium.domain.constraint.SoftConstraintScorer;
+import com.thorium.domain.exception.SchedulingException;
 import com.thorium.domain.model.ScheduleSlot;
 import com.thorium.domain.model.TeachingAssignment;
 
@@ -50,9 +51,14 @@ public class BacktrackingScheduler {
             return result;
         }
 
-        LOG.warning("Backtracking solver failed under all constraint tiers");
-        return TimetableGenerationResult.failure(
-                List.of("Backtracking solver failed to find a valid layout under any constraint tier."));
+        String msg = "Backtracking solver failed under all constraint tiers";
+        LOG.warning(msg);
+        SchedulingException ex = new SchedulingException(msg);
+        if (callback != null) {
+            callback.log("ERROR", msg);
+            callback.complete(false, initial.size(), 0, 0.0);
+        }
+        return TimetableGenerationResult.failure(List.of(msg));
     }
 
     private TimetableGenerationResult tryResolve(SchedulingContext context, PartialSchedule initial, Tier tier,
@@ -157,6 +163,12 @@ public class BacktrackingScheduler {
 
         iterations[0]++;
         if (iterations[0] >= MAX_ITERATIONS) return false;
+
+        if (callback != null && callback.isCancelled()) {
+            LOG.info("Backtracking search cancelled at iteration " + iterations[0]);
+            if (callback != null) callback.log("INFO", "Backtracking search cancelled");
+            return false;
+        }
 
         GreedyScheduler.AssignmentWorkItem item = tracker.selectMRV();
         if (item == null) {

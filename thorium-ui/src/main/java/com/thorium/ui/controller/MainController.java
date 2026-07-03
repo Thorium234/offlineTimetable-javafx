@@ -9,6 +9,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.ToolBar;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.HBox;
@@ -72,6 +73,8 @@ public class MainController {
     private final Preferences prefs = Preferences.userNodeForPackage(MainController.class);
     private NavItem currentView = null;
 
+    private final ToggleGroup navGroup = new ToggleGroup();
+
     @FXML
     private void initialize() {
         navToolbar.getItems().add(createSeparator(4));
@@ -130,23 +133,16 @@ public class MainController {
         btn.setUserData(nav);
         btn.getStyleClass().addAll("toggle-button", "nav-btn");
         btn.setTooltip(new Tooltip(nav.label));
+        btn.setToggleGroup(navGroup);
 
         btn.selectedProperty().addListener((obs, was, is) -> {
             if (is) {
                 btn.getStyleClass().add("nav-btn-selected");
                 l.getStyleClass().add("nav-label-selected");
+                loadView(nav);
             } else {
                 btn.getStyleClass().remove("nav-btn-selected");
                 l.getStyleClass().remove("nav-label-selected");
-            }
-        });
-
-        btn.setOnAction(e -> {
-            loadView(nav);
-            for (var item : navToolbar.getItems()) {
-                if (item instanceof ToggleButton other && other != btn) {
-                    other.setSelected(false);
-                }
             }
         });
 

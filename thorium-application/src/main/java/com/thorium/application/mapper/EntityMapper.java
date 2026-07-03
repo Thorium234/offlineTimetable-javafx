@@ -19,7 +19,9 @@ public final class EntityMapper {
                 teacher.getId(),
                 teacher.getCode(),
                 teacher.getName(),
-                teacher.isActive()
+                teacher.isActive(),
+                teacher.getMaxLessonsPerDay(),
+                teacher.getMaxLessonsPerWeek()
         );
     }
 
@@ -29,6 +31,8 @@ public final class EntityMapper {
         teacher.setCode(dto.code());
         teacher.setName(dto.name());
         teacher.setActive(dto.active());
+        teacher.setMaxLessonsPerDay(dto.maxLessonsPerDay());
+        teacher.setMaxLessonsPerWeek(dto.maxLessonsPerWeek());
         return teacher;
     }
 

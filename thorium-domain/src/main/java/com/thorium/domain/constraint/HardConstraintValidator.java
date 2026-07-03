@@ -9,11 +9,7 @@ import com.thorium.domain.scheduling.PartialSchedule;
 import com.thorium.domain.scheduling.SchedulingContext;
 import com.thorium.domain.value.DayOfWeek;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class HardConstraintValidator {
 
@@ -86,9 +82,8 @@ public class HardConstraintValidator {
     }
 
     public ValidationResult validateComplete(PartialSchedule schedule, SchedulingContext context) {
-        List<String> errors = new java.util.ArrayList<>();
+        List<String> errors = new ArrayList<>();
 
-        // Per-assignment checks
         Map<Long, Integer> assignmentCounts = new HashMap<>();
         for (PlacedLesson placed : schedule.placedLessons()) {
             assignmentCounts.merge(placed.assignment().getId(), 1, Integer::sum);
@@ -113,20 +108,52 @@ public class HardConstraintValidator {
             }
         }
 
-        Set<String> teacherSlots = new HashSet<>();
-        Set<String> classSlots = new HashSet<>();
-        for (PlacedLesson placed : schedule.placedLessons()) {
-            String teacherKey = placed.assignment().getTeacherId() + "|" + placed.slot();
-            if (!teacherSlots.add(teacherKey)) {
-                errors.add("Teacher clash at " + placed.slot());
+        var teacherSlotMap = buildTeacherSlotIndex(schedule);
+        var classSlotMap = buildClassSlotIndex(schedule);
+        for (var entry : teacherSlotMap.entrySet()) {
+            if (entry.getValue().size() > 1) {
+                errors.add("Teacher clash at " + entry.getKey());
             }
-            String classKey = placed.assignment().getClassStreamId() + "|" + placed.slot();
-            if (!classSlots.add(classKey)) {
-                errors.add("Class clash at " + placed.slot());
+        }
+        for (var entry : classSlotMap.entrySet()) {
+            if (entry.getValue().size() > 1) {
+                errors.add("Class clash at " + entry.getKey());
             }
         }
 
         return errors.isEmpty() ? ValidationResult.ok() : ValidationResult.fail(errors);
+    }
+
+    public Map<String, List<PlacedLesson>> buildTeacherSlotIndex(PartialSchedule schedule) {
+        Map<String, List<PlacedLesson>> index = new HashMap<>();
+        for (PlacedLesson placed : schedule.placedLessons()) {
+            String key = placed.assignment().getTeacherId() + "|" + placed.slot();
+            index.computeIfAbsent(key, k -> new ArrayList<>()).add(placed);
+        }
+        return index;
+    }
+
+    public Map<String, List<PlacedLesson>> buildClassSlotIndex(PartialSchedule schedule) {
+        Map<String, List<PlacedLesson>> index = new HashMap<>();
+        for (PlacedLesson placed : schedule.placedLessons()) {
+            String key = placed.assignment().getClassStreamId() + "|" + placed.slot();
+            index.computeIfAbsent(key, k -> new ArrayList<>()).add(placed);
+        }
+        return index;
+    }
+
+    public boolean isTeacherBusyFast(long teacherId, ScheduleSlot slot,
+                                      Map<String, List<PlacedLesson>> teacherIndex) {
+        String key = teacherId + "|" + slot;
+        List<PlacedLesson> atSlot = teacherIndex.get(key);
+        return atSlot != null && !atSlot.isEmpty();
+    }
+
+    public boolean isClassBusyFast(long classStreamId, ScheduleSlot slot,
+                                    Map<String, List<PlacedLesson>> classIndex) {
+        String key = classStreamId + "|" + slot;
+        List<PlacedLesson> atSlot = classIndex.get(key);
+        return atSlot != null && !atSlot.isEmpty();
     }
 
     private boolean areLessonsPaired(PartialSchedule schedule, TeachingAssignment assignment, SchedulingContext context) {
