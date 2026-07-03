@@ -161,7 +161,6 @@ public class MainController {
         for (var item : navToolbar.getItems()) {
             if (item instanceof ToggleButton btn && btn.getUserData() == NavItem.GENERATE) {
                 btn.setSelected(true);
-                loadView(NavItem.GENERATE);
                 break;
             }
         }

@@ -13,6 +13,7 @@ import com.thorium.application.usecase.room.RoomManagementUseCase;
 import com.thorium.application.usecase.settings.SchoolSettingsUseCase;
 import com.thorium.application.usecase.subject.SubjectManagementUseCase;
 import com.thorium.application.usecase.teacher.TeacherManagementUseCase;
+import com.thorium.application.usecase.data.DataManagementUseCase;
 import com.thorium.application.usecase.timetable.GenerateTimetableUseCase;
 import com.thorium.application.usecase.timetable.TimetableEditorUseCase;
 import com.thorium.infrastructure.export.CompositeTimetableExporter;
@@ -40,6 +41,7 @@ public final class ApplicationBootstrap implements Bootstrap {
     private final RoomRepository roomRepository;
     private final SchoolSettingsRepository schoolSettingsRepository;
     private final SchoolSettingsUseCase schoolSettingsUseCase;
+    private final DataManagementUseCase dataManagementUseCase;
     private final TimetableExporter timetableExporter;
 
     private ApplicationBootstrap(Path databasePath) {
@@ -59,6 +61,8 @@ public final class ApplicationBootstrap implements Bootstrap {
         this.roomRepository = new SqliteRoomRepository(connectionProvider);
         this.schoolSettingsRepository = new SqliteSchoolSettingsRepository(connectionProvider);
         this.schoolSettingsUseCase = new SchoolSettingsUseCase(schoolSettingsRepository);
+        this.dataManagementUseCase = new DataManagementUseCase(
+                new SqliteDataRepository(connectionProvider));
 
         PdfTimetableExporter pdfExporter = new PdfTimetableExporter(assignmentRepository, subjectRepository, classStreamRepository, teacherRepository, periodRepository, roomRepository, breakRepository);
         ExcelTimetableExporter excelExporter = new ExcelTimetableExporter(
@@ -145,5 +149,9 @@ public final class ApplicationBootstrap implements Bootstrap {
 
     public SchoolSettingsUseCase schoolSettingsUseCase() {
         return schoolSettingsUseCase;
+    }
+
+    public DataManagementUseCase dataManagementUseCase() {
+        return dataManagementUseCase;
     }
 }

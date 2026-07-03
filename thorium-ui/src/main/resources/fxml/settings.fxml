@@ -43,6 +43,12 @@
                 <VBox spacing="8" styleClass="card-body">
                     <Label text="Location:" styleClass="form-group-title"/>
                     <Label fx:id="dbPathLabel" wrapText="true" styleClass="card-subtitle"/>
+                    <HBox spacing="8" styleClass="card-body" style="-fx-padding: 8 0 0 0;">
+                        <Button fx:id="generateSampleDataBtn" text="Generate Sample Data"
+                                onAction="#onGenerateSampleData" styleClass="btn-primary"/>
+                        <Button fx:id="clearDbBtn" text="Clear All Data"
+                                onAction="#onClearDatabase" styleClass="btn-danger"/>
+                    </HBox>
                 </VBox>
             </VBox>
             <Label fx:id="messageLabel" styleClass="msg-label"/>

@@ -2,6 +2,7 @@ package com.thorium.domain.scheduling;
 
 import com.thorium.domain.constraint.HardConstraintValidator;
 import com.thorium.domain.constraint.SoftConstraintScorer;
+import com.thorium.domain.model.ClassStream;
 import com.thorium.domain.model.Teacher;
 import com.thorium.domain.scheduling.optimization.HybridMetaheuristicStrategy;
 import com.thorium.domain.scheduling.optimization.OptimizationStrategy;
@@ -126,17 +127,25 @@ public class TimetableGenerator {
 
     public List<String> preflightChecks(SchedulingContext context) {
         List<String> issues = new ArrayList<>();
-        int totalRequired = context.assignments().stream()
-                .mapToInt(a -> a.getLessonsPerWeek()).sum();
         int totalSlots = context.totalSlots();
-        if (totalRequired > totalSlots) {
-            issues.add("Total required lessons (" + totalRequired
-                    + ") exceeds total available slots (" + totalSlots + ")");
-        }
+
+        Map<Long, Integer> classLoads = new HashMap<>();
         Map<Long, Integer> teacherLoads = new HashMap<>();
         for (var a : context.assignments()) {
+            classLoads.merge(a.getClassStreamId(), a.getLessonsPerWeek(), Integer::sum);
             teacherLoads.merge(a.getTeacherId(), a.getLessonsPerWeek(), Integer::sum);
         }
+
+        for (var entry : classLoads.entrySet()) {
+            int load = entry.getValue();
+            if (load > totalSlots) {
+                String name = context.classStream(entry.getKey())
+                        .map(ClassStream::getDisplayName).orElse("ID " + entry.getKey());
+                issues.add("Class " + name + " requires " + load
+                        + " lessons, exceeding available slots (" + totalSlots + ")");
+            }
+        }
+
         for (var entry : teacherLoads.entrySet()) {
             long teacherId = entry.getKey();
             int load = entry.getValue();

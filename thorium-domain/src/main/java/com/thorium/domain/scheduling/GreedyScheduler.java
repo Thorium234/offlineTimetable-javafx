@@ -52,7 +52,7 @@ public class GreedyScheduler {
             if (bestSlot != null) {
                 schedule.place(new PlacedLesson(item.assignment(), bestSlot));
                 if (item.requiresConsecutive) {
-                    ScheduleSlot second = new ScheduleSlot(bestSlot.dayOfWeek(), bestSlot.periodNumber() + 1);
+                    ScheduleSlot second = context.nextLessonSlot(bestSlot);
                     schedule.place(new PlacedLesson(item.assignment(), second));
                 }
                 if (callback != null) {

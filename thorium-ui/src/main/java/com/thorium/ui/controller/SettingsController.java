@@ -6,6 +6,8 @@ import com.thorium.ui.util.IconUtil;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 
+import java.util.Optional;
+
 public class SettingsController {
 
     @FXML private Spinner<Integer> totalPeriodsSpinner;
@@ -15,10 +17,14 @@ public class SettingsController {
     @FXML private Label messageLabel;
     @FXML private Label dbPathLabel;
     @FXML private Button saveBtn;
+    @FXML private Button generateSampleDataBtn;
+    @FXML private Button clearDbBtn;
 
     @FXML
     private void initialize() {
         IconUtil.addIcon(saveBtn, IconUtil.SAVE, "#2563eb");
+        IconUtil.addIcon(generateSampleDataBtn, IconUtil.REFRESH, "#ffffff");
+        IconUtil.addIcon(clearDbBtn, IconUtil.DELETE, "#ffffff");
         totalPeriodsSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 20, 15));
         durationSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(20, 60, 40));
         populateTimeOptions(startTimeCombo);
@@ -40,6 +46,40 @@ public class SettingsController {
         startTimeCombo.setValue(s.startTime());
         endTimeCombo.setValue(s.endTime());
         durationSpinner.getValueFactory().setValue(s.periodDurationMinutes());
+    }
+
+    @FXML
+    private void onClearDatabase() {
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Clear All Data");
+        confirm.setHeaderText("Delete all teachers, subjects, classes, and timetable data?");
+        confirm.setContentText("This cannot be undone. Seed configuration (periods, breaks, settings) will be preserved.");
+        Optional<ButtonType> result = confirm.showAndWait();
+        if (result.isEmpty() || result.get() != ButtonType.OK) return;
+
+        try {
+            AppContext.get().dataManagementUseCase().clearAllData();
+            showMessage("All user data cleared successfully", false);
+        } catch (Exception e) {
+            showMessage("Failed to clear data: " + e.getMessage(), true);
+        }
+    }
+
+    @FXML
+    private void onGenerateSampleData() {
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Generate Sample Data");
+        confirm.setHeaderText("Generate sample teachers, subjects, classes, and assignments?");
+        confirm.setContentText("This will replace any existing user data with 8 classes, 10 subjects, 16 teachers, and 80 assignments.");
+        Optional<ButtonType> result = confirm.showAndWait();
+        if (result.isEmpty() || result.get() != ButtonType.OK) return;
+
+        try {
+            int count = AppContext.get().dataManagementUseCase().generateSampleData();
+            showMessage("Sample data generated: " + count + " assignments", false);
+        } catch (Exception e) {
+            showMessage("Failed to generate sample data: " + e.getMessage(), true);
+        }
     }
 
     @FXML

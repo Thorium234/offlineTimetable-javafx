@@ -13,6 +13,7 @@ import com.thorium.application.usecase.settings.SchoolSettingsUseCase;
 import com.thorium.application.usecase.subject.SubjectManagementUseCase;
 import com.thorium.application.usecase.teacher.TeacherManagementUseCase;
 import com.thorium.application.usecase.timetable.GenerateTimetableUseCase;
+import com.thorium.application.usecase.data.DataManagementUseCase;
 import com.thorium.application.usecase.timetable.TimetableEditorUseCase;
 
 public interface Bootstrap {
@@ -30,4 +31,5 @@ public interface Bootstrap {
     RoomManagementUseCase roomManagementUseCase();
     SchoolSettingsUseCase schoolSettingsUseCase();
     ExportTimetableUseCase exportTimetableUseCase();
+    DataManagementUseCase dataManagementUseCase();
 }

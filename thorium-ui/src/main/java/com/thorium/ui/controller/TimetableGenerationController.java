@@ -13,6 +13,8 @@ import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.VBox;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -92,6 +94,11 @@ public class TimetableGenerationController {
 
     private final GenerationProgressCallback callback = new GenerationProgressCallback() {
         @Override
+        public boolean isCancelled() {
+            return generationTask != null && generationTask.isCancelled();
+        }
+
+        @Override
         public void log(String level, String message) {
             String line = "[" + level + "] " + message + "\n";
             logBuffer.append(line);
@@ -169,7 +176,12 @@ public class TimetableGenerationController {
         resultLabel.getStyleClass().removeAll("success", "warning");
         resultLabel.getStyleClass().add("error");
         qualityLabel.setText("");
-        logArea.appendText("[ERROR] " + e.getMessage() + "\n");
+
+        StringWriter sw = new StringWriter();
+        e.printStackTrace(new PrintWriter(sw));
+        String stacktrace = sw.toString();
+        e.printStackTrace();
+        logArea.appendText("[ERROR] " + stacktrace + "\n");
         logArea.setScrollTop(Double.MAX_VALUE);
     }
 
