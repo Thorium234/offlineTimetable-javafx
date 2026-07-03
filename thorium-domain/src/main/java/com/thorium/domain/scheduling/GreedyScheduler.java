@@ -59,7 +59,7 @@ public class GreedyScheduler {
                     LOG.warning("No slot found for first item (" + summary
                             + ", lessons=" + item.assignment().getLessonsPerWeek()
                             + ") difficulty=" + item.difficulty);
-                    logSlotDiagnostics(item.assignment(), context, callback);
+                    logSlotDiagnostics(item.assignment(), schedule, context, callback);
                 } else if (rejectedCount <= 5 || i == workItems.size() - 1) {
                     LOG.warning("No slot for assignment " + item.assignment().getId()
                             + " (" + summary + ") after " + schedule.size() + " placed");
@@ -76,14 +76,14 @@ public class GreedyScheduler {
         return schedule;
     }
 
-    private void logSlotDiagnostics(TeachingAssignment assignment, SchedulingContext context,
+    private void logSlotDiagnostics(TeachingAssignment assignment, PartialSchedule schedule, SchedulingContext context,
                                      GenerationProgressCallback callback) {
         String msg = "Diagnosing all " + context.allSlots().size() + " slots for assignment " + assignment.getId();
         LOG.warning(msg);
         if (callback != null) callback.log("INFO", msg);
         int rejected = 0;
         for (ScheduleSlot slot : context.allSlots()) {
-            String reason = hardValidator.canPlaceReason(assignment, slot, new PartialSchedule(), context);
+            String reason = hardValidator.canPlaceReason(assignment, slot, schedule, context);
             if (reason != null) {
                 rejected++;
                 String line = "  Slot " + slot + " rejected: " + reason;

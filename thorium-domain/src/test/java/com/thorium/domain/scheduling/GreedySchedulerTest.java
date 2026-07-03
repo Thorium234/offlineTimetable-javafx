@@ -136,16 +136,19 @@ class GreedySchedulerTest {
         PartialSchedule result = scheduler.schedule(context);
         assertEquals(6, result.size());
 
-        // Verify no teacher clashes
+        // Verify no teacher is double-booked (same teacher at same slot)
         for (var day : DayOfWeek.workingDays()) {
             for (int p = 1; p <= 8; p++) {
                 ScheduleSlot slot = new ScheduleSlot(day, p);
-                long teacherCount = result.placedLessons().stream()
+                var lessonsAtSlot = result.placedLessons().stream()
                         .filter(pl -> pl.slot().equals(slot))
+                        .toList();
+                long distinctTeachers = lessonsAtSlot.stream()
                         .map(pl -> pl.assignment().getTeacherId())
                         .distinct()
                         .count();
-                assertTrue(teacherCount <= 1, "Teacher clash at " + slot);
+                assertEquals(lessonsAtSlot.size(), distinctTeachers,
+                        "Teacher double-booked at " + slot);
             }
         }
     }
@@ -156,8 +159,8 @@ class GreedySchedulerTest {
         TeachingAssignment assignment = new TeachingAssignment(1L, 1L, 1L, 1L, 2);
         List<TeacherAvailability> unavailability = DayOfWeek.workingDays().stream()
                 .flatMap(day -> {
-                    TeacherAvailability[] arr = new TeacherAvailability[7];
-                    for (int p = 1; p <= 7; p++) {
+                    TeacherAvailability[] arr = new TeacherAvailability[8];
+                    for (int p = 1; p <= 8; p++) {
                         arr[p - 1] = new TeacherAvailability(
                                 (long) (day.ordinal() * 10 + p), 1L, day, p, false);
                     }

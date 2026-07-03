@@ -250,11 +250,7 @@ public class HardConstraintValidator {
             }
         }
 
-        if (!hasAdjacent && placedCount > 0) {
-            return true;
-        }
-
-        if (remaining == 1 && placedCount > 0 && !hasAdjacent) {
+        if (remaining == 1 && !hasAdjacent) {
             return true;
         }
 

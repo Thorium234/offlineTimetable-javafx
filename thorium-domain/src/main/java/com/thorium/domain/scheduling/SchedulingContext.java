@@ -104,7 +104,7 @@ public final class SchedulingContext {
         private List<DayOfWeek> workingDays = DayOfWeek.workingDays();
         private List<Integer> lessonPeriodNumbers = defaultLessonPeriodNumbers(8);
         private int periodsPerDay = 8;
-        private boolean cbcNoDoubleLessonEnabled = true;
+        private boolean cbcNoDoubleLessonEnabled = false;
 
         private static List<Integer> defaultLessonPeriodNumbers(int count) {
             List<Integer> list = new ArrayList<>();

@@ -1,5 +1,6 @@
 package com.thorium.domain.constraint;
 
+import com.thorium.domain.model.LessonDuration;
 import com.thorium.domain.model.ScheduleSlot;
 import com.thorium.domain.model.TeachingAssignment;
 import com.thorium.domain.scheduling.PlacedLesson;
@@ -36,11 +37,15 @@ public class SoftConstraintScorer {
     private double scoreSpread(PartialSchedule schedule, SchedulingContext context) {
         Map<Long, Map<DayOfWeek, Integer>> perAssignmentDayCount = new HashMap<>();
         Map<Long, Integer> assignmentTotalLessons = new HashMap<>();
+        Map<Long, Boolean> assignmentIsDouble = new HashMap<>();
         for (PlacedLesson placed : schedule.placedLessons()) {
             perAssignmentDayCount
                     .computeIfAbsent(placed.assignment().getId(), k -> new EnumMap<>(DayOfWeek.class))
                     .merge(placed.slot().dayOfWeek(), 1, Integer::sum);
             assignmentTotalLessons.merge(placed.assignment().getId(), 1, Integer::sum);
+            if (placed.assignment().getDuration() == LessonDuration.DOUBLE) {
+                assignmentIsDouble.put(placed.assignment().getId(), true);
+            }
         }
 
         int workingDays = context.workingDays().size();
@@ -50,13 +55,18 @@ public class SoftConstraintScorer {
         for (var entry : perAssignmentDayCount.entrySet()) {
             Map<DayOfWeek, Integer> dayCounts = entry.getValue();
             int totalLpW = assignmentTotalLessons.getOrDefault(entry.getKey(), 0);
+            boolean isDouble = assignmentIsDouble.getOrDefault(entry.getKey(), false);
 
+            int divisor = isDouble ? 2 : 1;
+            int adjustedTotal = (int) Math.ceil((double) totalLpW / divisor);
             int actualMaxOnDay = dayCounts.values().stream().mapToInt(Integer::intValue).max().orElse(0);
+            int adjustedMax = (int) Math.ceil((double) actualMaxOnDay / divisor);
             int distinctDays = dayCounts.size();
-            int idealMaxOnDay = (int) Math.ceil((double) totalLpW / Math.max(1, workingDays));
-            int idealDistinctDays = Math.min(totalLpW, workingDays);
 
-            int deviation = Math.max(0, actualMaxOnDay - idealMaxOnDay);
+            int idealMaxOnDay = (int) Math.ceil((double) adjustedTotal / Math.max(1, workingDays));
+            int idealDistinctDays = Math.min(adjustedTotal, workingDays);
+
+            int deviation = Math.max(0, adjustedMax - idealMaxOnDay);
             double spreadPenalty = deviation / (double) Math.max(1, idealMaxOnDay);
             double maxScore = 1.0 - Math.min(1.0, spreadPenalty);
 
@@ -82,7 +92,8 @@ public class SoftConstraintScorer {
         int penalties = 0;
         int total = 0;
         for (var entry : assignmentPeriods.entrySet()) {
-            boolean allowsDouble = context.subject(entry.getKey().longValue())
+            TeachingAssignment ta = assignmentMap.get(entry.getKey());
+            boolean allowsDouble = ta != null && context.subject(ta.getSubjectId())
                     .map(s -> s.isAllowsDoublePeriod() || s.isRequiresDoublePeriod())
                     .orElse(false);
             for (List<Integer> periods : entry.getValue().values()) {
