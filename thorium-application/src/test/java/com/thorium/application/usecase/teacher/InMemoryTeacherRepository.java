@@ -53,7 +53,9 @@ class InMemoryTeacherRepository implements TeacherRepository {
                 source.getId(),
                 source.getCode(),
                 source.getName(),
-                source.isActive()
+                source.isActive(),
+                source.getMaxLessonsPerDay(),
+                source.getMaxLessonsPerWeek()
         );
     }
 }

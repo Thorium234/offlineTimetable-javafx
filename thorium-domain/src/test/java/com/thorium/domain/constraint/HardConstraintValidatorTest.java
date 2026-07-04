@@ -97,4 +97,67 @@ class HardConstraintValidatorTest {
         assertFalse(result.isValid());
         assertTrue(result.errors().stream().anyMatch(e -> e.contains("expected 2")));
     }
+
+    @Test
+    void rejectsExceedingTeacherDailyLimit() {
+        Teacher teacher = new Teacher(1L, "T001", "John", true, 1, 40);
+        TeachingAssignment ta1 = new TeachingAssignment(1L, 1L, 1L, 1L, 5);
+        TeachingAssignment ta2 = new TeachingAssignment(2L, 1L, 1L, 2L, 5);
+        SchedulingContext ctx = SchedulingContext.builder()
+                .assignments(List.of(ta1, ta2))
+                .teachers(List.of(teacher))
+                .subjects(List.of(new Subject(1L, "S001", "Math", true, 5, false, false, null)))
+                .classStreams(List.of(
+                        new ClassStream(1L, "F1E", 1, "East", "Form 1 East"),
+                        new ClassStream(2L, "F1W", 1, "West", "Form 1 West")))
+                .periodsPerDay(8)
+                .build();
+
+        PartialSchedule schedule = new PartialSchedule();
+        schedule.place(new PlacedLesson(ta1, new ScheduleSlot(DayOfWeek.MONDAY, 1)));
+
+        assertFalse(validator.canPlace(ta2, new ScheduleSlot(DayOfWeek.MONDAY, 2), schedule, ctx));
+    }
+
+    @Test
+    void allowsPlacementUnderTeacherDailyLimit() {
+        Teacher teacher = new Teacher(1L, "T001", "John", true, 5, 40);
+        TeachingAssignment ta1 = new TeachingAssignment(1L, 1L, 1L, 1L, 5);
+        TeachingAssignment ta2 = new TeachingAssignment(2L, 1L, 1L, 2L, 5);
+        SchedulingContext ctx = SchedulingContext.builder()
+                .assignments(List.of(ta1, ta2))
+                .teachers(List.of(teacher))
+                .subjects(List.of(new Subject(1L, "S001", "Math", true, 5, false, false, null)))
+                .classStreams(List.of(
+                        new ClassStream(1L, "F1E", 1, "East", "Form 1 East"),
+                        new ClassStream(2L, "F1W", 1, "West", "Form 1 West")))
+                .periodsPerDay(8)
+                .build();
+
+        PartialSchedule schedule = new PartialSchedule();
+        schedule.place(new PlacedLesson(ta1, new ScheduleSlot(DayOfWeek.MONDAY, 1)));
+
+        assertTrue(validator.canPlace(ta2, new ScheduleSlot(DayOfWeek.TUESDAY, 2), schedule, ctx));
+    }
+
+    @Test
+    void rejectsExceedingTeacherWeeklyLimit() {
+        Teacher teacher = new Teacher(1L, "T001", "John", true, 8, 1);
+        TeachingAssignment other = new TeachingAssignment(2L, 1L, 1L, 2L, 5);
+        SchedulingContext ctx = SchedulingContext.builder()
+                .assignments(List.of(assignment, other))
+                .teachers(List.of(teacher))
+                .subjects(List.of(new Subject(1L, "S001", "Math", true, 5, false, false, null)))
+                .classStreams(List.of(
+                        new ClassStream(1L, "F1E", 1, "East", "Form 1 East"),
+                        new ClassStream(2L, "F1W", 1, "West", "Form 1 West")))
+                .periodsPerDay(8)
+                .build();
+
+        PartialSchedule schedule = new PartialSchedule();
+        // Place the original assignment - teacher has max 1 per week
+        schedule.place(new PlacedLesson(assignment, new ScheduleSlot(DayOfWeek.MONDAY, 1)));
+
+        assertFalse(validator.canPlace(other, new ScheduleSlot(DayOfWeek.TUESDAY, 1), schedule, ctx));
+    }
 }

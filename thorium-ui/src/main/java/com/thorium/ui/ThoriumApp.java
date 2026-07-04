@@ -1,6 +1,6 @@
 package com.thorium.ui;
 
-import com.thorium.infrastructure.ApplicationBootstrap;
+import com.thorium.application.port.BootstrapFactory;
 import com.thorium.ui.di.AppContext;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -23,7 +23,7 @@ public class ThoriumApp extends Application {
     public void start(Stage stage) throws Exception {
         Path dbPath = Paths.get(System.getProperty("user.home"), ".thorium", "timetable.db");
         dbPath.getParent().toFile().mkdirs();
-        AppContext.initialize(ApplicationBootstrap.create(dbPath));
+        AppContext.initialize(BootstrapFactory.create(dbPath));
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/main.fxml"));
         Scene scene = new Scene(loader.load(), 1200, 800);

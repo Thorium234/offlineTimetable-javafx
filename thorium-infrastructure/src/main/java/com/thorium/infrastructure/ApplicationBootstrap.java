@@ -111,7 +111,7 @@ public final class ApplicationBootstrap implements Bootstrap {
         return new GenerateTimetableUseCase(
                 timetableRepository, assignmentRepository, teacherRepository, subjectRepository,
                 classStreamRepository, availabilityRepository, periodRepository, constraintRepository,
-                roomRepository);
+                roomRepository, schoolSettingsRepository);
     }
 
     public TimetableEditorUseCase timetableEditorUseCase() {

@@ -18,10 +18,7 @@ public class TimetableGenerator {
 
     private static final Logger LOG = Logger.getLogger(TimetableGenerator.class.getName());
 
-    private final GreedyScheduler greedyScheduler;
-    private final BacktrackingScheduler backtrackingScheduler;
     private final HardConstraintValidator hardValidator;
-    private final SoftConstraintScorer softScorer;
     private final Optional<OptimizationStrategy> optimizationStrategy;
 
     public TimetableGenerator() {
@@ -30,9 +27,6 @@ public class TimetableGenerator {
 
     public TimetableGenerator(OptimizationStrategy optimizationStrategy) {
         this.hardValidator = new HardConstraintValidator();
-        this.softScorer = new SoftConstraintScorer();
-        this.greedyScheduler = new GreedyScheduler(hardValidator, softScorer);
-        this.backtrackingScheduler = new BacktrackingScheduler(hardValidator, softScorer);
         this.optimizationStrategy = Optional.ofNullable(optimizationStrategy);
     }
 
@@ -45,6 +39,10 @@ public class TimetableGenerator {
                 + context.assignments().size() + " assignments");
         LOG.info("Starting timetable generation with " + context.assignments().size() + " assignments");
         long start = System.currentTimeMillis();
+
+        SoftConstraintScorer softScorer = context.softConstraintScorer();
+        GreedyScheduler greedyScheduler = new GreedyScheduler(hardValidator, softScorer);
+        BacktrackingScheduler backtrackingScheduler = new BacktrackingScheduler(hardValidator, softScorer);
 
         int required = context.assignments().stream()
                 .mapToInt(a -> a.getLessonsPerWeek()).sum();

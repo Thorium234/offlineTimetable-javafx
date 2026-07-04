@@ -4,6 +4,7 @@ import com.thorium.application.dto.TimetableDto;
 import com.thorium.application.dto.TimetableEntryDto;
 import com.thorium.application.port.*;
 import com.thorium.application.util.NameFormatter;
+import com.thorium.domain.constraint.SoftConstraintScorer;
 import com.thorium.domain.model.*;
 import com.thorium.domain.scheduling.GenerationProgressCallback;
 import com.thorium.domain.scheduling.SchedulingContext;
@@ -35,6 +36,7 @@ public class GenerateTimetableUseCase {
     private final PeriodRepository periodRepository;
     private final ConstraintRepository constraintRepository;
     private final RoomRepository roomRepository;
+    private final SchoolSettingsRepository schoolSettingsRepository;
     private final TimetableGenerator generator;
 
     public GenerateTimetableUseCase(TimetableRepository timetableRepository,
@@ -45,7 +47,8 @@ public class GenerateTimetableUseCase {
                                     TeacherAvailabilityRepository availabilityRepository,
                                     PeriodRepository periodRepository,
                                     ConstraintRepository constraintRepository,
-                                    RoomRepository roomRepository) {
+                                    RoomRepository roomRepository,
+                                    SchoolSettingsRepository schoolSettingsRepository) {
         this.timetableRepository = timetableRepository;
         this.assignmentRepository = assignmentRepository;
         this.teacherRepository = teacherRepository;
@@ -55,6 +58,7 @@ public class GenerateTimetableUseCase {
         this.periodRepository = periodRepository;
         this.constraintRepository = constraintRepository;
         this.roomRepository = roomRepository;
+        this.schoolSettingsRepository = schoolSettingsRepository;
         this.generator = new TimetableGenerator();
     }
 
@@ -73,6 +77,13 @@ public class GenerateTimetableUseCase {
             throw new IllegalStateException("No lesson periods configured");
         }
 
+        SchoolSettings settings = schoolSettingsRepository.get();
+        SoftConstraintScorer scorer = new SoftConstraintScorer(
+                settings.getSpreadWeight(),
+                settings.getConsecutiveWeight(),
+                settings.getBalanceWeight()
+        );
+
         SchedulingContext context = SchedulingContext.builder()
                 .assignments(assignments)
                 .teachers(teacherRepository.findAll())
@@ -81,6 +92,7 @@ public class GenerateTimetableUseCase {
                 .teacherAvailability(availabilityRepository.findAll())
                 .lessonPeriodNumbers(lessonPeriodNumbers)
                 .constraints(constraintRepository.findAll())
+                .softConstraintScorer(scorer)
                 .build();
 
         List<String> preflight = generator.preflightChecks(context);

@@ -90,7 +90,8 @@ public class SettingsController {
                     totalPeriodsSpinner.getValue(),
                     startTimeCombo.getValue(),
                     endTimeCombo.getValue(),
-                    durationSpinner.getValue()
+                    durationSpinner.getValue(),
+                    0.50, 0.40, 0.10
             );
             AppContext.get().schoolSettingsUseCase().updateSettings(dto);
             recalcPeriods();

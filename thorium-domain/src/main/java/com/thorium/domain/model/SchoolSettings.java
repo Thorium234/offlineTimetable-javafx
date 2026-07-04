@@ -9,16 +9,31 @@ public class SchoolSettings {
     private LocalTime startTime;
     private LocalTime endTime;
     private int periodDurationMinutes;
+    private double spreadWeight;
+    private double consecutiveWeight;
+    private double balanceWeight;
 
     public SchoolSettings() {
+        this.spreadWeight = 0.50;
+        this.consecutiveWeight = 0.40;
+        this.balanceWeight = 0.10;
     }
 
     public SchoolSettings(Long id, int totalPeriods, LocalTime startTime, LocalTime endTime, int periodDurationMinutes) {
+        this(id, totalPeriods, startTime, endTime, periodDurationMinutes, 0.50, 0.40, 0.10);
+    }
+
+    public SchoolSettings(Long id, int totalPeriods, LocalTime startTime, LocalTime endTime,
+                          int periodDurationMinutes, double spreadWeight, double consecutiveWeight,
+                          double balanceWeight) {
         this.id = id;
         this.totalPeriods = totalPeriods;
         this.startTime = startTime;
         this.endTime = endTime;
         this.periodDurationMinutes = periodDurationMinutes;
+        this.spreadWeight = spreadWeight;
+        this.consecutiveWeight = consecutiveWeight;
+        this.balanceWeight = balanceWeight;
     }
 
     public Long getId() { return id; }
@@ -31,4 +46,10 @@ public class SchoolSettings {
     public void setEndTime(LocalTime endTime) { this.endTime = endTime; }
     public int getPeriodDurationMinutes() { return periodDurationMinutes; }
     public void setPeriodDurationMinutes(int periodDurationMinutes) { this.periodDurationMinutes = periodDurationMinutes; }
+    public double getSpreadWeight() { return spreadWeight; }
+    public void setSpreadWeight(double spreadWeight) { this.spreadWeight = spreadWeight; }
+    public double getConsecutiveWeight() { return consecutiveWeight; }
+    public void setConsecutiveWeight(double consecutiveWeight) { this.consecutiveWeight = consecutiveWeight; }
+    public double getBalanceWeight() { return balanceWeight; }
+    public void setBalanceWeight(double balanceWeight) { this.balanceWeight = balanceWeight; }
 }

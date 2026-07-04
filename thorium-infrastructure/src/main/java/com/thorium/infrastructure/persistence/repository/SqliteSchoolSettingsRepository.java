@@ -35,12 +35,15 @@ public class SqliteSchoolSettingsRepository extends AbstractRepository implement
     @Override
     public SchoolSettings save(SchoolSettings settings) {
         try (Connection conn = connection()) {
-            String sql = "INSERT OR REPLACE INTO school_settings (id, total_periods, school_start_time, school_end_time, period_duration_min) VALUES (1, ?, ?, ?, ?)";
+            String sql = "INSERT OR REPLACE INTO school_settings (id, total_periods, school_start_time, school_end_time, period_duration_min, spread_weight, consecutive_weight, balance_weight) VALUES (1, ?, ?, ?, ?, ?, ?, ?)";
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setInt(1, settings.getTotalPeriods());
                 ps.setString(2, settings.getStartTime().format(TIME_FORMAT));
                 ps.setString(3, settings.getEndTime().format(TIME_FORMAT));
                 ps.setInt(4, settings.getPeriodDurationMinutes());
+                ps.setDouble(5, settings.getSpreadWeight());
+                ps.setDouble(6, settings.getConsecutiveWeight());
+                ps.setDouble(7, settings.getBalanceWeight());
                 ps.executeUpdate();
             }
             commit(conn);
@@ -54,16 +57,28 @@ public class SqliteSchoolSettingsRepository extends AbstractRepository implement
         LocalTime endTime = rs.getString("school_end_time") != null
                 ? LocalTime.parse(rs.getString("school_end_time"), TIME_FORMAT)
                 : LocalTime.of(16, 0);
+        double spreadWeight = 0.50;
+        double consecutiveWeight = 0.40;
+        double balanceWeight = 0.10;
+        try {
+            spreadWeight = rs.getDouble("spread_weight");
+            consecutiveWeight = rs.getDouble("consecutive_weight");
+            balanceWeight = rs.getDouble("balance_weight");
+        } catch (SQLException ignored) {
+        }
         return new SchoolSettings(
                 rs.getLong("id"),
                 rs.getInt("total_periods"),
                 LocalTime.parse(rs.getString("school_start_time"), TIME_FORMAT),
                 endTime,
-                rs.getInt("period_duration_min")
+                rs.getInt("period_duration_min"),
+                spreadWeight,
+                consecutiveWeight,
+                balanceWeight
         );
     }
 
     private SchoolSettings createDefaults() {
-        return new SchoolSettings(1L, 8, LocalTime.of(8, 0), LocalTime.of(16, 0), 40);
+        return new SchoolSettings(1L, 8, LocalTime.of(8, 0), LocalTime.of(16, 0), 40, 0.50, 0.40, 0.10);
     }
 }

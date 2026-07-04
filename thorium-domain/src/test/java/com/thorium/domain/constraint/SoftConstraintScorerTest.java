@@ -129,6 +129,32 @@ class SoftConstraintScorerTest {
                 "Spreading to a new day should score better than stacking");
     }
 
+    @Test
+    void configurableWeightsAffectScore() {
+        TeachingAssignment ta = new TeachingAssignment(1L, 1L, 1L, 1L, 3);
+        SchedulingContext ctx = SchedulingContext.builder()
+                .assignments(List.of(ta))
+                .teachers(List.of(new Teacher(1L, "T001", "John", true)))
+                .subjects(List.of(new Subject(1L, "S001", "Math", true, 5, false, false, null)))
+                .classStreams(List.of(new ClassStream(1L, "F1E", 1, "East", "Form 1 East")))
+                .periodsPerDay(8)
+                .build();
+
+        PartialSchedule schedule = new PartialSchedule();
+        schedule.place(new PlacedLesson(ta, new ScheduleSlot(DayOfWeek.MONDAY, 1)));
+        schedule.place(new PlacedLesson(ta, new ScheduleSlot(DayOfWeek.MONDAY, 2)));
+        schedule.place(new PlacedLesson(ta, new ScheduleSlot(DayOfWeek.TUESDAY, 1)));
+
+        SoftConstraintScorer spreadHeavy = new SoftConstraintScorer(0.80, 0.10, 0.10);
+        SoftConstraintScorer consecutiveHeavy = new SoftConstraintScorer(0.10, 0.80, 0.10);
+
+        double spreadScore = spreadHeavy.score(schedule, ctx);
+        double consecutiveScore = consecutiveHeavy.score(schedule, ctx);
+
+        assertNotEquals(spreadScore, consecutiveScore, 0.001,
+                "Different weight configurations should produce different scores");
+    }
+
     private PartialSchedule perfectSpread() {
         PartialSchedule s = new PartialSchedule();
         s.place(new PlacedLesson(assignment, new ScheduleSlot(DayOfWeek.MONDAY, 1)));

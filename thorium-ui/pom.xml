@@ -21,6 +21,12 @@
         <dependency>
             <groupId>com.thorium</groupId>
             <artifactId>thorium-infrastructure</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>${pdfbox.version}</version>
         </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>

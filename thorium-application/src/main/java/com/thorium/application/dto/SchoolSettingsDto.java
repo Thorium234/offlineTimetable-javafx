@@ -5,6 +5,9 @@ public record SchoolSettingsDto(
         int totalPeriods,
         String startTime,
         String endTime,
-        int periodDurationMinutes
+        int periodDurationMinutes,
+        double spreadWeight,
+        double consecutiveWeight,
+        double balanceWeight
 ) {
 }

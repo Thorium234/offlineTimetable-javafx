@@ -18,7 +18,7 @@ public class DatabaseInitializer {
     private static final Logger LOG = Logger.getLogger(DatabaseInitializer.class.getName());
 
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
-    private static final int SCHEMA_VERSION = 13;
+    private static final int SCHEMA_VERSION = 14;
 
     private final SQLiteConnectionProvider connectionProvider;
 
@@ -116,6 +116,12 @@ public class DatabaseInitializer {
                     runMigrationV13(stmt);
                 }
                 setVersion(connection, 13);
+            }
+            if (currentVersion < 14) {
+                try (Statement stmt = connection.createStatement()) {
+                    runMigrationV14(stmt);
+                }
+                setVersion(connection, 14);
             }
 
             connection.commit();
@@ -320,6 +326,24 @@ public class DatabaseInitializer {
                 """);
         statement.execute("CREATE INDEX IF NOT EXISTS idx_ts_teacher ON teacher_subjects(teacher_id)");
         statement.execute("CREATE INDEX IF NOT EXISTS idx_ts_subject ON teacher_subjects(subject_id)");
+    }
+
+    private void runMigrationV14(Statement statement) throws SQLException {
+        try {
+            statement.execute("ALTER TABLE school_settings ADD COLUMN spread_weight REAL NOT NULL DEFAULT 0.50");
+        } catch (SQLException e) {
+            if (!e.getMessage().contains("duplicate column")) throw e;
+        }
+        try {
+            statement.execute("ALTER TABLE school_settings ADD COLUMN consecutive_weight REAL NOT NULL DEFAULT 0.40");
+        } catch (SQLException e) {
+            if (!e.getMessage().contains("duplicate column")) throw e;
+        }
+        try {
+            statement.execute("ALTER TABLE school_settings ADD COLUMN balance_weight REAL NOT NULL DEFAULT 0.10");
+        } catch (SQLException e) {
+            if (!e.getMessage().contains("duplicate column")) throw e;
+        }
     }
 
     private void seedDefaults() {

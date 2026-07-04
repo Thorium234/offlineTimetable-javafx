@@ -28,6 +28,9 @@ public class SchoolSettingsUseCase {
         settings.setStartTime(LocalTime.parse(dto.startTime(), TIME_FORMAT));
         settings.setEndTime(LocalTime.parse(dto.endTime(), TIME_FORMAT));
         settings.setPeriodDurationMinutes(dto.periodDurationMinutes());
+        settings.setSpreadWeight(dto.spreadWeight());
+        settings.setConsecutiveWeight(dto.consecutiveWeight());
+        settings.setBalanceWeight(dto.balanceWeight());
         validate(settings);
         return toDto(repository.save(settings));
     }
@@ -50,7 +53,10 @@ public class SchoolSettingsUseCase {
                 s.getTotalPeriods(),
                 s.getStartTime().format(TIME_FORMAT),
                 s.getEndTime().format(TIME_FORMAT),
-                s.getPeriodDurationMinutes()
+                s.getPeriodDurationMinutes(),
+                s.getSpreadWeight(),
+                s.getConsecutiveWeight(),
+                s.getBalanceWeight()
         );
     }
 }

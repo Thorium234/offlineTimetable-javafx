@@ -6,9 +6,18 @@ import com.thorium.domain.model.TeachingAssignment;
 public record PlacedLesson(
         TeachingAssignment assignment,
         ScheduleSlot slot,
-        Long entryId
+        Long entryId,
+        Long roomId
 ) {
     public PlacedLesson(TeachingAssignment assignment, ScheduleSlot slot) {
-        this(assignment, slot, null);
+        this(assignment, slot, null, null);
+    }
+
+    public PlacedLesson(TeachingAssignment assignment, ScheduleSlot slot, Long entryId) {
+        this(assignment, slot, entryId, null);
+    }
+
+    public PlacedLesson withRoomId(Long roomId) {
+        return new PlacedLesson(assignment, slot, entryId, roomId);
     }
 }

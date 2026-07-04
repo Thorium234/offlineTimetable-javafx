@@ -1,5 +1,6 @@
 package com.thorium.domain.scheduling;
 
+import com.thorium.domain.constraint.SoftConstraintScorer;
 import com.thorium.domain.model.*;
 import com.thorium.domain.value.ConstraintType;
 import com.thorium.domain.value.DayOfWeek;
@@ -17,6 +18,9 @@ public final class SchedulingContext {
     private final int periodsPerDay;
     private final List<Integer> lessonPeriodNumbers;
     private final boolean cbcNoDoubleLessonEnabled;
+    private final SoftConstraintScorer softConstraintScorer;
+    private final Map<Long, Room> roomsById;
+    private final List<Room> rooms;
 
     private SchedulingContext(Builder builder) {
         this.assignments = copyOrWrap(builder.assignments);
@@ -28,6 +32,11 @@ public final class SchedulingContext {
         this.periodsPerDay = builder.periodsPerDay;
         this.lessonPeriodNumbers = copyOrWrap(builder.lessonPeriodNumbers);
         this.cbcNoDoubleLessonEnabled = builder.cbcNoDoubleLessonEnabled;
+        this.softConstraintScorer = builder.softConstraintScorer != null
+                ? builder.softConstraintScorer
+                : new SoftConstraintScorer();
+        this.roomsById = copyOrWrapMap(builder.roomsById);
+        this.rooms = List.copyOf(builder.rooms);
     }
 
     private static <T> List<T> copyOrWrap(List<T> list) {
@@ -95,6 +104,18 @@ public final class SchedulingContext {
         return cbcNoDoubleLessonEnabled;
     }
 
+    public SoftConstraintScorer softConstraintScorer() {
+        return softConstraintScorer;
+    }
+
+    public List<Room> rooms() {
+        return rooms;
+    }
+
+    public Optional<Room> roomById(Long id) {
+        return Optional.ofNullable(roomsById.get(id));
+    }
+
     public List<ScheduleSlot> allSlots() {
         List<ScheduleSlot> slots = new ArrayList<>();
         for (DayOfWeek day : workingDays) {
@@ -149,6 +170,9 @@ public final class SchedulingContext {
         private List<Integer> lessonPeriodNumbers = defaultLessonPeriodNumbers(8);
         private int periodsPerDay = 8;
         private boolean cbcNoDoubleLessonEnabled = false;
+        private SoftConstraintScorer softConstraintScorer;
+        private Map<Long, Room> roomsById = Map.of();
+        private List<Room> rooms = List.of();
 
         private static List<Integer> defaultLessonPeriodNumbers(int count) {
             List<Integer> list = new ArrayList<>();
@@ -219,6 +243,21 @@ public final class SchedulingContext {
 
         public Builder cbcNoDoubleLessonEnabled(boolean enabled) {
             this.cbcNoDoubleLessonEnabled = enabled;
+            return this;
+        }
+
+        public Builder softConstraintScorer(SoftConstraintScorer scorer) {
+            this.softConstraintScorer = scorer;
+            return this;
+        }
+
+        public Builder rooms(List<Room> rooms) {
+            this.rooms = rooms != null ? rooms : List.of();
+            Map<Long, Room> map = new HashMap<>();
+            for (Room room : this.rooms) {
+                map.put(room.getId(), room);
+            }
+            this.roomsById = map;
             return this;
         }
 
