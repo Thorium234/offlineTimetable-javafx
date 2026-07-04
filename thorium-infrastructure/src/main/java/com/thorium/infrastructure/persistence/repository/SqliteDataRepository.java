@@ -26,6 +26,9 @@ public class SqliteDataRepository extends AbstractRepository implements DataRepo
             deleteAll(conn, "timetable_entries");
             deleteAll(conn, "timetables");
             deleteAll(conn, "teacher_availability");
+            deleteAll(conn, "periods");
+            deleteAll(conn, "breaks");
+            deleteAll(conn, "constraints");
             deleteAll(conn, "teaching_assignments");
             deleteAll(conn, "teacher_subjects");
             deleteAll(conn, "teachers");
@@ -46,12 +49,17 @@ public class SqliteDataRepository extends AbstractRepository implements DataRepo
             List<Long> subjectIds = insertSubjects(conn);
             List<Long> teacherIds = insertTeachers(conn);
             insertTeacherSubjects(conn, teacherIds, subjectIds);
+            List<Long> breakIds = insertBreaks(conn);
+            insertPeriods(conn, breakIds);
+            insertConstraints(conn);
             List<Long> assignmentIds = insertAssignments(conn, classIds, subjectIds, teacherIds);
+            insertTeacherAvailability(conn, teacherIds);
 
             enableForeignKeys(conn);
             LOG.info("Sample data generated: " + classIds.size() + " classes, "
                     + subjectIds.size() + " subjects, " + teacherIds.size()
-                    + " teachers, " + assignmentIds.size() + " assignments");
+                    + " teachers, " + breakIds.size() + " breaks, "
+                    + assignmentIds.size() + " assignments");
             return assignmentIds;
         });
     }
@@ -231,6 +239,100 @@ public class SqliteDataRepository extends AbstractRepository implements DataRepo
             }
         }
         return ids;
+    }
+
+    private List<Long> insertBreaks(Connection conn) throws SQLException {
+        List<Long> ids = new ArrayList<>();
+        String[][] data = {
+            {"Assembly", "0", "50", "1", "1", "1", "07:00", "07:50"},
+            {"Tea Break", "3", "20", "2", "0", "0", "09:50", "10:10"},
+            {"Short Break", "5", "10", "3", "0", "0", "11:20", "11:30"},
+            {"Lunch Break", "7", "50", "4", "0", "0", "12:50", "13:40"},
+            {"Games Time", "10", "165", "5", "0", "0", "16:00", "18:45"},
+        };
+        try (PreparedStatement ps = conn.prepareStatement(
+                "INSERT INTO breaks (name, after_period, duration_minutes, sort_order, "
+                + "is_before_period_one, slotable, start_time, end_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")) {
+            for (String[] row : data) {
+                ps.setString(1, row[0]);
+                ps.setInt(2, Integer.parseInt(row[1]));
+                ps.setInt(3, Integer.parseInt(row[2]));
+                ps.setInt(4, Integer.parseInt(row[3]));
+                ps.setBoolean(5, "1".equals(row[4]));
+                ps.setBoolean(6, "1".equals(row[5]));
+                ps.setString(7, row[6]);
+                ps.setString(8, row[7]);
+                ps.executeUpdate();
+                ids.add(lastId(conn));
+            }
+        }
+        return ids;
+    }
+
+    private void insertPeriods(Connection conn, List<Long> breakIds) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "INSERT INTO periods (period_number, start_time, end_time, label, type, break_id) "
+                + "VALUES (?, ?, ?, ?, ?, ?)")) {
+            Object[][] data = {
+                {1, "07:00", "07:50", "Assembly", "BREAK", breakIds.get(0)},
+                {2, "07:50", "08:30", "P1", "LESSON", null},
+                {3, "08:30", "09:10", "P2", "LESSON", null},
+                {4, "09:10", "09:50", "P3", "LESSON", null},
+                {5, "09:50", "10:10", "Tea Break", "BREAK", breakIds.get(1)},
+                {6, "10:10", "10:50", "P4", "LESSON", null},
+                {7, "10:50", "11:20", "P5", "LESSON", null},
+                {8, "11:20", "11:30", "Short Break", "BREAK", breakIds.get(2)},
+                {9, "11:30", "12:10", "P6", "LESSON", null},
+                {10, "12:10", "12:50", "P7", "LESSON", null},
+                {11, "12:50", "13:40", "Lunch Break", "BREAK", breakIds.get(3)},
+                {12, "13:40", "14:20", "P8", "LESSON", null},
+                {13, "14:20", "15:00", "P9", "LESSON", null},
+                {14, "15:00", "15:40", "P10", "LESSON", null},
+                {15, "15:40", "18:25", "Games Time", "BREAK", breakIds.get(4)},
+            };
+            for (Object[] row : data) {
+                ps.setInt(1, (Integer) row[0]);
+                ps.setString(2, (String) row[1]);
+                ps.setString(3, (String) row[2]);
+                ps.setString(4, (String) row[3]);
+                ps.setString(5, (String) row[4]);
+                if (row[5] != null) {
+                    ps.setLong(6, (Long) row[5]);
+                } else {
+                    ps.setNull(6, java.sql.Types.INTEGER);
+                }
+                ps.executeUpdate();
+            }
+        }
+    }
+
+    private void insertConstraints(Connection conn) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "INSERT INTO constraints (constraint_type, enabled, parameters) VALUES (?, 1, NULL)")) {
+            for (com.thorium.domain.value.ConstraintType type : com.thorium.domain.value.ConstraintType.values()) {
+                ps.setString(1, type.name());
+                ps.executeUpdate();
+            }
+        }
+    }
+
+    private void insertTeacherAvailability(Connection conn, List<Long> teacherIds) throws SQLException {
+        int[] lessonPeriods = {2, 3, 4, 6, 7, 9, 10, 12, 13, 14};
+        String[] days = {"MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"};
+        try (PreparedStatement ps = conn.prepareStatement(
+                "INSERT INTO teacher_availability (teacher_id, day_of_week, period_number, available) "
+                + "VALUES (?, ?, ?, 1)")) {
+            for (Long teacherId : teacherIds) {
+                for (String day : days) {
+                    for (int period : lessonPeriods) {
+                        ps.setLong(1, teacherId);
+                        ps.setString(2, day);
+                        ps.setInt(3, period);
+                        ps.executeUpdate();
+                    }
+                }
+            }
+        }
     }
 
     private long lastId(Connection conn) throws SQLException {

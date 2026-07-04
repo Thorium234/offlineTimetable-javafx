@@ -70,7 +70,7 @@ public class SettingsController {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
         confirm.setTitle("Generate Sample Data");
         confirm.setHeaderText("Generate sample teachers, subjects, classes, and assignments?");
-        confirm.setContentText("This will replace any existing user data with 8 classes, 10 subjects, 16 teachers, and 80 assignments.");
+        confirm.setContentText("This will replace any existing user data with 8 classes, 10 subjects, 16 teachers, 80 assignments, 5 breaks, 15 periods, and availability for all teachers.");
         Optional<ButtonType> result = confirm.showAndWait();
         if (result.isEmpty() || result.get() != ButtonType.OK) return;
 
