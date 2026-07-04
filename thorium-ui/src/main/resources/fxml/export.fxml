@@ -41,6 +41,17 @@
 
             <VBox spacing="0" styleClass="card">
                 <HBox alignment="CENTER_LEFT" spacing="8" styleClass="card-header">
+                    <Label text="All Teachers Timetable" styleClass="card-title"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                </HBox>
+                <HBox spacing="12" styleClass="card-body">
+                    <Button fx:id="previewAllTeachersBtn" text="Preview All" onAction="#onPreviewAllTeachers" styleClass="btn-secondary"/>
+                    <Button fx:id="exportAllTeachersBtn" text="Export All PDF" onAction="#onExportAllTeachers" styleClass="btn-primary"/>
+                </HBox>
+            </VBox>
+
+            <VBox spacing="0" styleClass="card">
+                <HBox alignment="CENTER_LEFT" spacing="8" styleClass="card-header">
                     <Label text="Per-Teacher Timetable" styleClass="card-title"/>
                     <Region HBox.hgrow="ALWAYS"/>
                 </HBox>
@@ -54,27 +65,16 @@
 
             <VBox spacing="0" styleClass="card">
                 <HBox alignment="CENTER_LEFT" spacing="8" styleClass="card-header">
-                    <Label text="Stream-Wise Timetable" styleClass="card-title"/>
+                    <Label text="Class Timetable (Form + Stream)" styleClass="card-title"/>
                     <Region HBox.hgrow="ALWAYS"/>
                 </HBox>
                 <HBox spacing="12" alignment="CENTER_LEFT" styleClass="card-body">
+                    <Label text="Form:" styleClass="form-group-title"/>
+                    <ComboBox fx:id="formCombo" prefWidth="100" styleClass="form-combo"/>
                     <Label text="Stream:" styleClass="form-group-title"/>
-                    <ComboBox fx:id="streamCombo" prefWidth="250" styleClass="form-combo"/>
-                    <Button fx:id="previewStreamBtn" text="Preview" onAction="#onPreviewStream" styleClass="btn-secondary"/>
-                    <Button fx:id="exportStreamBtn" text="Export PDF" onAction="#onExportStream" styleClass="btn-primary"/>
-                </HBox>
-            </VBox>
-
-            <VBox spacing="0" styleClass="card">
-                <HBox alignment="CENTER_LEFT" spacing="8" styleClass="card-header">
-                    <Label text="Grade-Wise Timetable" styleClass="card-title"/>
-                    <Region HBox.hgrow="ALWAYS"/>
-                </HBox>
-                <HBox spacing="12" alignment="CENTER_LEFT" styleClass="card-body">
-                    <Label text="Grade:" styleClass="form-group-title"/>
-                    <ComboBox fx:id="gradeCombo" prefWidth="250" styleClass="form-combo"/>
-                    <Button fx:id="previewGradeBtn" text="Preview" onAction="#onPreviewGrade" styleClass="btn-secondary"/>
-                    <Button fx:id="exportGradeBtn" text="Export PDF" onAction="#onExportGrade" styleClass="btn-primary"/>
+                    <ComboBox fx:id="streamCombo" prefWidth="140" styleClass="form-combo"/>
+                    <Button fx:id="previewClassBtn" text="Preview" onAction="#onPreviewClass" styleClass="btn-secondary"/>
+                    <Button fx:id="exportClassBtn" text="Export PDF" onAction="#onExportClass" styleClass="btn-primary"/>
                 </HBox>
             </VBox>
 

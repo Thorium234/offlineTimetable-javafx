@@ -107,12 +107,12 @@ public class SoftConstraintScorer {
             int idealDistinctDays = Math.min(adjustedTotal, workingDays);
 
             int deviation = Math.max(0, adjustedMax - idealMaxOnDay);
-            double spreadPenalty = deviation / (double) Math.max(1, idealMaxOnDay);
-            double maxScore = 1.0 - Math.min(1.0, spreadPenalty);
+            double spreadPenalty = Math.pow(deviation, 1.5) / Math.max(1, idealMaxOnDay);
+            double maxScore = Math.max(0.0, 1.0 - spreadPenalty);
 
             double dayCoverage = (double) distinctDays / Math.max(1, idealDistinctDays);
 
-            total += (maxScore * 0.6 + dayCoverage * 0.4);
+            total += (maxScore * 0.7 + dayCoverage * 0.3);
             groups++;
         }
         return groups == 0 ? 0.0 : total / groups;

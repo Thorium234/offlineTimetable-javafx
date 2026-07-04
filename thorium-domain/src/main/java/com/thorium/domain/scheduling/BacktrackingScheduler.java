@@ -5,6 +5,7 @@ import com.thorium.domain.constraint.SoftConstraintScorer;
 import com.thorium.domain.exception.SchedulingException;
 import com.thorium.domain.model.ScheduleSlot;
 import com.thorium.domain.model.TeachingAssignment;
+import com.thorium.domain.value.DayOfWeek;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -208,7 +209,8 @@ public class BacktrackingScheduler {
                 })
                 .sorted(Comparator.<ScheduleSlot, Double>comparing(
                         slot -> -softScorer.scorePlacement(item.assignment(), slot, schedule, context))
-                        .thenComparingDouble(slot -> (double) tracker.countPrunedByPlacement(item, slot)))
+                        .thenComparingDouble(slot -> (double) tracker.countPrunedByPlacement(item, slot))
+                        .thenComparingInt(slot -> countPlacedOnDay(item.assignment().getId(), slot.dayOfWeek(), schedule)))
                 .toList();
 
         if (tier == Tier.RELAXED && candidates.isEmpty()) {
@@ -265,6 +267,12 @@ public class BacktrackingScheduler {
             return search(tracker, schedule, context, iterations, tier, callback);
         }
         return false;
+    }
+
+    private int countPlacedOnDay(long assignmentId, DayOfWeek day, PartialSchedule schedule) {
+        return (int) schedule.placedLessons().stream()
+                .filter(p -> p.assignment().getId() == assignmentId && p.slot().dayOfWeek() == day)
+                .count();
     }
 
     private String itemSummary(GreedyScheduler.AssignmentWorkItem item) {

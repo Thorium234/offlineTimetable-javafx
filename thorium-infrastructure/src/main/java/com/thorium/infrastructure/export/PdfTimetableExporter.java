@@ -98,6 +98,13 @@ public class PdfTimetableExporter implements TimetableExporter {
     }
 
     @Override
+    public byte[] renderAllTeachersPdfToBytes(TimetableRepository.TimetableWithEntries data) {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream(65536);
+        writeAllTeachersPdf(data, bos);
+        return bos.toByteArray();
+    }
+
+    @Override
     public byte[] renderGradePdfToBytes(TimetableRepository.TimetableWithEntries data, int form) {
         ByteArrayOutputStream bos = new ByteArrayOutputStream(65536);
         writeCombinedPdf(data, "Form", String.valueOf(form), entries -> {
@@ -424,6 +431,45 @@ public class PdfTimetableExporter implements TimetableExporter {
             doc.save(output);
         } catch (IOException e) {
             throw new IllegalStateException("Failed to render teacher PDF", e);
+        }
+    }
+
+    private void writeAllTeachersPdf(TimetableRepository.TimetableWithEntries data, OutputStream output) {
+        PDType1Font font = new PDType1Font(Standard14Fonts.FontName.HELVETICA);
+        PDType1Font fontBold = new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD);
+
+        try (PDDocument doc = new PDDocument()) {
+            List<Period> periods = periodRepository.findAll().stream()
+                    .sorted(Comparator.comparingInt(Period::getPeriodNumber))
+                    .toList();
+            List<BreakPeriod> breaks = breakRepository.findAll().stream()
+                    .sorted(Comparator.comparingInt(BreakPeriod::getSortOrder))
+                    .toList();
+            List<TimeBlock> timeline = DailyTimelineGenerator.generate(periods, breaks);
+            Map<Long, TeachingAssignment> assignmentMap = assignmentMap();
+
+            List<Teacher> allTeachers = teacherRepository.findAll();
+
+            for (Teacher teacher : allTeachers) {
+                List<TimetableEntry> teacherEntries = data.entries().stream()
+                        .filter(e -> {
+                            TeachingAssignment a = assignmentMap.get(e.getTeachingAssignmentId());
+                            return a != null && a.getTeacherId().equals(teacher.getId());
+                        })
+                        .toList();
+
+                PDRectangle pageSize = new PDRectangle(PDRectangle.A4.getHeight(), PDRectangle.A4.getWidth());
+                PDPage page = new PDPage(pageSize);
+                doc.addPage(page);
+
+                try (PDPageContentStream cs = new PDPageContentStream(doc, page)) {
+                    renderTeacherPage(cs, pageSize, data, teacher, teacherEntries, timeline, assignmentMap, font, fontBold);
+                }
+            }
+
+            doc.save(output);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to render all teachers PDF", e);
         }
     }
 

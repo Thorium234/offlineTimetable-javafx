@@ -213,12 +213,22 @@ public class GreedyScheduler {
     }
 
     private double computeDiversityBonus(TeachingAssignment assignment, ScheduleSlot slot,
-                                          PartialSchedule schedule) {
+                                           PartialSchedule schedule) {
         long lessonsOnSameDay = schedule.placedLessons().stream()
                 .filter(p -> p.assignment().getId().equals(assignment.getId()))
                 .filter(p -> p.slot().dayOfWeek() == slot.dayOfWeek())
                 .count();
-        return -lessonsOnSameDay * 0.02;
+        long totalPlaced = schedule.placedLessons().stream()
+                .filter(p -> p.assignment().getId().equals(assignment.getId()))
+                .count() + 1;
+        if (totalPlaced <= 1) return 0.0;
+        double idealPerDay = (double) totalPlaced / 5.0;
+        double currentOnDay = lessonsOnSameDay + 1;
+        if (currentOnDay > idealPerDay) {
+            double excess = currentOnDay - idealPerDay;
+            return -excess * 0.15;
+        }
+        return 0.0;
     }
 
     private double computeLookAheadPenalty(TeachingAssignment assignment, ScheduleSlot slot,

@@ -14,7 +14,6 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 import java.io.File;
-import java.util.Comparator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -29,34 +28,34 @@ public class ExportCenterController {
     @FXML private Button previewPdfBtn;
     @FXML private Button exportExcelBtn;
 
+    @FXML private Button previewAllTeachersBtn;
+    @FXML private Button exportAllTeachersBtn;
+
     @FXML private ComboBox<TeacherDto> teacherCombo;
     @FXML private Button previewTeacherBtn;
     @FXML private Button exportTeacherBtn;
 
+    @FXML private ComboBox<Integer> formCombo;
     @FXML private ComboBox<String> streamCombo;
-    @FXML private Button previewStreamBtn;
-    @FXML private Button exportStreamBtn;
-
-    @FXML private ComboBox<Integer> gradeCombo;
-    @FXML private Button previewGradeBtn;
-    @FXML private Button exportGradeBtn;
+    @FXML private Button previewClassBtn;
+    @FXML private Button exportClassBtn;
 
     @FXML
     private void initialize() {
         IconUtil.addIcon(exportPdfBtn, IconUtil.EXPORT, "#ffffff");
         IconUtil.addIcon(previewPdfBtn, IconUtil.PREVIEW, "#2563eb");
         IconUtil.addIcon(exportExcelBtn, IconUtil.EXPORT, "#16a34a");
+        IconUtil.addIcon(previewAllTeachersBtn, IconUtil.PREVIEW, "#2563eb");
+        IconUtil.addIcon(exportAllTeachersBtn, IconUtil.EXPORT, "#ffffff");
         IconUtil.addIcon(previewTeacherBtn, IconUtil.PREVIEW, "#2563eb");
         IconUtil.addIcon(exportTeacherBtn, IconUtil.EXPORT, "#ffffff");
-        IconUtil.addIcon(previewStreamBtn, IconUtil.PREVIEW, "#2563eb");
-        IconUtil.addIcon(exportStreamBtn, IconUtil.EXPORT, "#ffffff");
-        IconUtil.addIcon(previewGradeBtn, IconUtil.PREVIEW, "#2563eb");
-        IconUtil.addIcon(exportGradeBtn, IconUtil.EXPORT, "#ffffff");
+        IconUtil.addIcon(previewClassBtn, IconUtil.PREVIEW, "#2563eb");
+        IconUtil.addIcon(exportClassBtn, IconUtil.EXPORT, "#ffffff");
 
         refreshTimetables();
         refreshTeachers();
+        refreshForms();
         refreshStreams();
-        refreshGrades();
 
         timetableCombo.setCellFactory(lv -> new ListCell<TimetableDto>() {
             @Override protected void updateItem(TimetableDto item, boolean empty) {
@@ -92,6 +91,47 @@ public class ExportCenterController {
         } catch (Exception e) {
             showMessage("An unexpected error occurred", true);
             LOG.log(Level.SEVERE, "Unexpected error during timetable preview", e);
+        }
+    }
+
+    @FXML
+    private void onPreviewAllTeachers() {
+        TimetableDto tt = timetableCombo.getSelectionModel().getSelectedItem();
+        if (tt == null) {
+            showMessage("Select a timetable", true);
+            return;
+        }
+        try {
+            byte[] pdfBytes = AppContext.get().exportTimetableUseCase().previewAllTeachersPdf(tt.id());
+            new PdfPreviewDialog(getStage(), pdfBytes, tt.name() + " - All Teachers", tt.id()).show();
+            showMessage("Preview closed", false);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            showMessage(e.getMessage(), true);
+            LOG.log(Level.WARNING, "All teachers timetable preview failed", e);
+        } catch (Exception e) {
+            showMessage("An unexpected error occurred", true);
+            LOG.log(Level.SEVERE, "Unexpected error during all teachers timetable preview", e);
+        }
+    }
+
+    @FXML
+    private void onExportAllTeachers() {
+        TimetableDto tt = timetableCombo.getSelectionModel().getSelectedItem();
+        if (tt == null) {
+            showMessage("Select a timetable", true);
+            return;
+        }
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Save All Teachers Timetable PDF");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF", "*.pdf"));
+        chooser.setInitialFileName(tt.name() + " - All Teachers.pdf");
+        File file = chooser.showSaveDialog(getStage());
+        if (file == null) return;
+        try {
+            AppContext.get().exportTimetableUseCase().exportAllTeachersPdf(tt.id(), file.toPath());
+            showMessage("Exported to " + file.getAbsolutePath(), false);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            showMessage(e.getMessage(), true);
         }
     }
 
@@ -139,85 +179,44 @@ public class ExportCenterController {
     }
 
     @FXML
-    private void onPreviewStream() {
+    private void onPreviewClass() {
         TimetableDto tt = timetableCombo.getSelectionModel().getSelectedItem();
+        Integer form = formCombo.getSelectionModel().getSelectedItem();
         String stream = streamCombo.getSelectionModel().getSelectedItem();
-        if (tt == null || stream == null) {
-            showMessage("Select a timetable and a stream", true);
+        if (tt == null || form == null || stream == null) {
+            showMessage("Select a timetable, form, and stream", true);
             return;
         }
         try {
-            byte[] pdfBytes = AppContext.get().exportTimetableUseCase().previewStreamPdf(tt.id(), stream);
-            new PdfPreviewDialog(getStage(), pdfBytes, tt.name() + " - Stream " + stream, tt.id()).show();
+            byte[] pdfBytes = AppContext.get().exportTimetableUseCase().previewClassPdf(tt.id(), form, stream);
+            new PdfPreviewDialog(getStage(), pdfBytes, tt.name() + " - Form " + form + " " + stream, tt.id()).show();
             showMessage("Preview closed", false);
         } catch (IllegalArgumentException | IllegalStateException e) {
             showMessage(e.getMessage(), true);
-            LOG.log(Level.WARNING, "Stream timetable preview failed", e);
+            LOG.log(Level.WARNING, "Class timetable preview failed", e);
         } catch (Exception e) {
             showMessage("An unexpected error occurred", true);
-            LOG.log(Level.SEVERE, "Unexpected error during stream timetable preview", e);
+            LOG.log(Level.SEVERE, "Unexpected error during class timetable preview", e);
         }
     }
 
     @FXML
-    private void onExportStream() {
+    private void onExportClass() {
         TimetableDto tt = timetableCombo.getSelectionModel().getSelectedItem();
+        Integer form = formCombo.getSelectionModel().getSelectedItem();
         String stream = streamCombo.getSelectionModel().getSelectedItem();
-        if (tt == null || stream == null) {
-            showMessage("Select a timetable and a stream", true);
+        if (tt == null || form == null || stream == null) {
+            showMessage("Select a timetable, form, and stream", true);
             return;
         }
         FileChooser chooser = new FileChooser();
-        chooser.setTitle("Save Stream-Wise Timetable PDF");
+        chooser.setTitle("Save Class Timetable PDF");
         chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF", "*.pdf"));
-        chooser.setInitialFileName(tt.name() + " - Stream " + stream + ".pdf");
+        chooser.setInitialFileName(tt.name() + " - Form " + form + " " + stream + ".pdf");
         File file = chooser.showSaveDialog(getStage());
         if (file == null) return;
         try {
-            AppContext.get().exportTimetableUseCase().exportStreamPdf(tt.id(), file.toPath(), stream);
-            showMessage("Exported to " + file.getAbsolutePath(), false);
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            showMessage(e.getMessage(), true);
-        }
-    }
-
-    @FXML
-    private void onPreviewGrade() {
-        TimetableDto tt = timetableCombo.getSelectionModel().getSelectedItem();
-        Integer form = gradeCombo.getSelectionModel().getSelectedItem();
-        if (tt == null || form == null) {
-            showMessage("Select a timetable and a grade", true);
-            return;
-        }
-        try {
-            byte[] pdfBytes = AppContext.get().exportTimetableUseCase().previewGradePdf(tt.id(), form);
-            new PdfPreviewDialog(getStage(), pdfBytes, tt.name() + " - Form " + form, tt.id()).show();
-            showMessage("Preview closed", false);
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            showMessage(e.getMessage(), true);
-            LOG.log(Level.WARNING, "Grade timetable preview failed", e);
-        } catch (Exception e) {
-            showMessage("An unexpected error occurred", true);
-            LOG.log(Level.SEVERE, "Unexpected error during grade timetable preview", e);
-        }
-    }
-
-    @FXML
-    private void onExportGrade() {
-        TimetableDto tt = timetableCombo.getSelectionModel().getSelectedItem();
-        Integer form = gradeCombo.getSelectionModel().getSelectedItem();
-        if (tt == null || form == null) {
-            showMessage("Select a timetable and a grade", true);
-            return;
-        }
-        FileChooser chooser = new FileChooser();
-        chooser.setTitle("Save Grade-Wise Timetable PDF");
-        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF", "*.pdf"));
-        chooser.setInitialFileName(tt.name() + " - Form " + form + ".pdf");
-        File file = chooser.showSaveDialog(getStage());
-        if (file == null) return;
-        try {
-            AppContext.get().exportTimetableUseCase().exportGradePdf(tt.id(), file.toPath(), form);
+            AppContext.get().exportTimetableUseCase().exportClassPdf(tt.id(), file.toPath(), form, stream);
             showMessage("Exported to " + file.getAbsolutePath(), false);
         } catch (IllegalArgumentException | IllegalStateException e) {
             showMessage(e.getMessage(), true);
@@ -283,6 +282,15 @@ public class ExportCenterController {
                 AppContext.get().teacherManagementUseCase().findAll()));
     }
 
+    private void refreshForms() {
+        var forms = AppContext.get().classStreamManagementUseCase().findAll().stream()
+                .map(c -> c.form())
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
+        formCombo.setItems(FXCollections.observableArrayList(forms));
+    }
+
     private void refreshStreams() {
         var streams = AppContext.get().classStreamManagementUseCase().findAll().stream()
                 .map(c -> c.stream())
@@ -290,15 +298,6 @@ public class ExportCenterController {
                 .sorted()
                 .collect(Collectors.toList());
         streamCombo.setItems(FXCollections.observableArrayList(streams));
-    }
-
-    private void refreshGrades() {
-        var forms = AppContext.get().classStreamManagementUseCase().findAll().stream()
-                .map(c -> c.form())
-                .distinct()
-                .sorted()
-                .collect(Collectors.toList());
-        gradeCombo.setItems(FXCollections.observableArrayList(forms));
     }
 
     private Stage getStage() {

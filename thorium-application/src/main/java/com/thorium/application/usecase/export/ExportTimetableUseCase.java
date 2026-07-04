@@ -84,4 +84,38 @@ public class ExportTimetableUseCase {
             throw new IllegalStateException("Failed to write PDF file", e);
         }
     }
+
+    public byte[] previewAllTeachersPdf(Long timetableId) {
+        TimetableRepository.TimetableWithEntries data = timetableRepository.findByIdWithEntries(timetableId)
+                .orElseThrow(() -> new IllegalArgumentException("Timetable not found: " + timetableId));
+        return exporter.renderAllTeachersPdfToBytes(data);
+    }
+
+    public void exportAllTeachersPdf(Long timetableId, Path outputPath) {
+        TimetableRepository.TimetableWithEntries data = timetableRepository.findByIdWithEntries(timetableId)
+                .orElseThrow(() -> new IllegalArgumentException("Timetable not found: " + timetableId));
+        byte[] pdfBytes = exporter.renderAllTeachersPdfToBytes(data);
+        try {
+            java.nio.file.Files.write(outputPath, pdfBytes);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to write PDF file", e);
+        }
+    }
+
+    public byte[] previewClassPdf(Long timetableId, int form, String stream) {
+        TimetableRepository.TimetableWithEntries data = timetableRepository.findByIdWithEntries(timetableId)
+                .orElseThrow(() -> new IllegalArgumentException("Timetable not found: " + timetableId));
+        return exporter.renderStreamPdfToBytes(data, stream);
+    }
+
+    public void exportClassPdf(Long timetableId, Path outputPath, int form, String stream) {
+        TimetableRepository.TimetableWithEntries data = timetableRepository.findByIdWithEntries(timetableId)
+                .orElseThrow(() -> new IllegalArgumentException("Timetable not found: " + timetableId));
+        byte[] pdfBytes = exporter.renderStreamPdfToBytes(data, stream);
+        try {
+            java.nio.file.Files.write(outputPath, pdfBytes);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to write PDF file", e);
+        }
+    }
 }
