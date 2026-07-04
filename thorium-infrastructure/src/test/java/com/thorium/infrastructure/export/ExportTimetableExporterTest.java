@@ -25,6 +25,9 @@ class ExportTimetableExporterTest {
 
     private ApplicationBootstrap bootstrap;
     private GenerateTimetableUseCase generateUseCase;
+    private TeacherDto teacher;
+    private SubjectDto subject;
+    private ClassStreamDto classStream;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -71,12 +74,45 @@ class ExportTimetableExporterTest {
         assertEquals("%PDF-", new String(header, java.nio.charset.StandardCharsets.US_ASCII));
     }
 
+    @Test
+    void exportsTeacherPdfSuccessfully() throws Exception {
+        TimetableDto timetable = generateUseCase.execute("Test Timetable");
+        Path pdfPath = tempDir.resolve("teacher.pdf");
+
+        bootstrap.exportTimetableUseCase().exportTeacherPdf(timetable.id(), pdfPath, teacher.id());
+
+        assertTrue(Files.exists(pdfPath));
+        assertTrue(Files.size(pdfPath) > 0);
+    }
+
+    @Test
+    void exportsStreamPdfSuccessfully() throws Exception {
+        TimetableDto timetable = generateUseCase.execute("Test Timetable");
+        Path pdfPath = tempDir.resolve("stream.pdf");
+
+        bootstrap.exportTimetableUseCase().exportStreamPdf(timetable.id(), pdfPath, classStream.stream());
+
+        assertTrue(Files.exists(pdfPath));
+        assertTrue(Files.size(pdfPath) > 0);
+    }
+
+    @Test
+    void exportsGradePdfSuccessfully() throws Exception {
+        TimetableDto timetable = generateUseCase.execute("Test Timetable");
+        Path pdfPath = tempDir.resolve("grade.pdf");
+
+        bootstrap.exportTimetableUseCase().exportGradePdf(timetable.id(), pdfPath, classStream.form());
+
+        assertTrue(Files.exists(pdfPath));
+        assertTrue(Files.size(pdfPath) > 0);
+    }
+
     private void seedData() {
-        TeacherDto teacher = bootstrap.teacherManagementUseCase()
+        teacher = bootstrap.teacherManagementUseCase()
                 .create(new TeacherDto(null, "T001", "John Doe", true));
-        SubjectDto subject = bootstrap.subjectManagementUseCase()
+        subject = bootstrap.subjectManagementUseCase()
                 .create(new SubjectDto(null, "S001", "Geography", true, 5, false, false));
-        ClassStreamDto classStream = bootstrap.classStreamManagementUseCase()
+        classStream = bootstrap.classStreamManagementUseCase()
                 .create(new ClassStreamDto(null, "F1E", 1, "East", "Form 1 East"));
 
         bootstrap.assignmentManagementUseCase()
