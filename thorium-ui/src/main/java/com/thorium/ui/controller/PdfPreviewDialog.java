@@ -27,8 +27,12 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class PdfPreviewDialog {
+
+    private static final Logger LOG = Logger.getLogger(PdfPreviewDialog.class.getName());
 
     private final Stage parent;
     private final byte[] pdfBytes;
@@ -90,6 +94,7 @@ public class PdfPreviewDialog {
         try (PDDocument doc = Loader.loadPDF(pdfBytes)) {
             return doc.getNumberOfPages();
         } catch (IOException e) {
+            LOG.log(Level.WARNING, "Failed to count PDF pages", e);
             return 0;
         }
     }
@@ -108,6 +113,7 @@ public class PdfPreviewDialog {
                 container.getChildren().add(imageView);
             }
         } catch (IOException e) {
+            LOG.log(Level.WARNING, "Failed to render PDF preview", e);
             container.getChildren().add(new Label("Failed to render preview: " + e.getMessage()));
         }
     }

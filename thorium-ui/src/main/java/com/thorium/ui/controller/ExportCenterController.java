@@ -15,9 +15,13 @@ import javafx.stage.Stage;
 
 import java.io.File;
 import java.util.Comparator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class ExportCenterController {
+
+    private static final Logger LOG = Logger.getLogger(ExportCenterController.class.getName());
 
     @FXML private ComboBox<TimetableDto> timetableCombo;
     @FXML private Label messageLabel;
@@ -84,13 +88,12 @@ public class ExportCenterController {
             showMessage("Preview closed", false);
         } catch (IllegalArgumentException | IllegalStateException e) {
             showMessage(e.getMessage(), true);
+            LOG.log(Level.WARNING, "Timetable preview failed", e);
         } catch (Exception e) {
             showMessage("An unexpected error occurred", true);
+            LOG.log(Level.SEVERE, "Unexpected error during timetable preview", e);
         }
     }
-
-    @FXML
-    private void onExportExcel() { exportExcel(); }
 
     @FXML
     private void onPreviewTeacher() {
@@ -106,8 +109,10 @@ public class ExportCenterController {
             showMessage("Preview closed", false);
         } catch (IllegalArgumentException | IllegalStateException e) {
             showMessage(e.getMessage(), true);
+            LOG.log(Level.WARNING, "Teacher timetable preview failed", e);
         } catch (Exception e) {
             showMessage("An unexpected error occurred", true);
+            LOG.log(Level.SEVERE, "Unexpected error during teacher timetable preview", e);
         }
     }
 
@@ -147,8 +152,10 @@ public class ExportCenterController {
             showMessage("Preview closed", false);
         } catch (IllegalArgumentException | IllegalStateException e) {
             showMessage(e.getMessage(), true);
+            LOG.log(Level.WARNING, "Stream timetable preview failed", e);
         } catch (Exception e) {
             showMessage("An unexpected error occurred", true);
+            LOG.log(Level.SEVERE, "Unexpected error during stream timetable preview", e);
         }
     }
 
@@ -188,8 +195,10 @@ public class ExportCenterController {
             showMessage("Preview closed", false);
         } catch (IllegalArgumentException | IllegalStateException e) {
             showMessage(e.getMessage(), true);
+            LOG.log(Level.WARNING, "Grade timetable preview failed", e);
         } catch (Exception e) {
             showMessage("An unexpected error occurred", true);
+            LOG.log(Level.SEVERE, "Unexpected error during grade timetable preview", e);
         }
     }
 
@@ -232,8 +241,10 @@ public class ExportCenterController {
             showMessage("Exported to " + file.getAbsolutePath(), false);
         } catch (IllegalArgumentException | IllegalStateException e) {
             showMessage(e.getMessage(), true);
+            LOG.log(Level.WARNING, "PDF export failed", e);
         } catch (Exception e) {
             showMessage("An unexpected error occurred", true);
+            LOG.log(Level.SEVERE, "Unexpected error during PDF export", e);
         }
     }
 
@@ -254,8 +265,10 @@ public class ExportCenterController {
             showMessage("Exported to " + file.getAbsolutePath(), false);
         } catch (IllegalArgumentException | IllegalStateException e) {
             showMessage(e.getMessage(), true);
+            LOG.log(Level.WARNING, "Excel export failed", e);
         } catch (Exception e) {
             showMessage("An unexpected error occurred", true);
+            LOG.log(Level.SEVERE, "Unexpected error during Excel export", e);
         }
     }
 

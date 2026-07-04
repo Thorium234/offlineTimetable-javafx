@@ -20,7 +20,7 @@
                     <ProgressIndicator fx:id="progressIndicator" visible="false" prefWidth="24" prefHeight="24"/>
                 </HBox>
                 <VBox spacing="12" styleClass="card-body">
-                    <HBox spacing="12" alignment="CENTER_LEFT" wrapText="true">
+                    <HBox spacing="12" alignment="CENTER_LEFT">
                         <Label text="Timetable Name:" styleClass="form-group-title"/>
                         <TextField fx:id="nameField" promptText="Optional name (e.g. Term 1 2026)" prefWidth="280" styleClass="form-textfield"/>
                         <Button fx:id="generateBtn" text="Generate" onAction="#onGenerate" styleClass="btn-success"/>

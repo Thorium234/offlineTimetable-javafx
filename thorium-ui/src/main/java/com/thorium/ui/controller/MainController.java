@@ -21,9 +21,13 @@ import javafx.scene.shape.SVGPath;
 import javafx.application.Platform;
 
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 
 public class MainController {
+
+    private static final Logger LOG = Logger.getLogger(MainController.class.getName());
 
     private enum NavItem {
         DASHBOARD("Dashboard", "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10", "#3b82f6", "/fxml/dashboard.fxml"),
@@ -202,6 +206,7 @@ public class MainController {
             currentView = nav;
         } catch (IOException e) {
             statusLabel.setText("Failed to load: " + nav.label);
+            LOG.log(Level.SEVERE, "Failed to load FXML view: " + nav.fxml, e);
         }
     }
 }
