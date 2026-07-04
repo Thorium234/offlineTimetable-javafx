@@ -248,7 +248,8 @@ public class ExportCenterController {
         }
     }
 
-    private void exportExcel() {
+    @FXML
+    private void onExportExcel() {
         TimetableDto selected = timetableCombo.getSelectionModel().getSelectedItem();
         if (selected == null) {
             showMessage("Select a timetable", true);
