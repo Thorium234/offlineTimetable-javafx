@@ -54,12 +54,11 @@ public class BacktrackingScheduler {
 
         String msg = "Backtracking solver failed under all constraint tiers";
         LOG.warning(msg);
-        SchedulingException ex = new SchedulingException(msg);
         if (callback != null) {
             callback.log("ERROR", msg);
             callback.complete(false, initial.size(), 0, 0.0);
         }
-        return TimetableGenerationResult.failure(List.of(msg));
+        throw new SchedulingException(msg);
     }
 
     private TimetableGenerationResult tryResolve(SchedulingContext context, PartialSchedule initial, Tier tier,

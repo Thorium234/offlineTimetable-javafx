@@ -11,7 +11,6 @@ import com.thorium.domain.scheduling.SchedulingContext;
 import com.thorium.domain.scheduling.TimetableGenerationResult;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class GeneticAlgorithmStrategy implements OptimizationStrategy {
 
@@ -73,7 +72,7 @@ public class GeneticAlgorithmStrategy implements OptimizationStrategy {
                     .sorted(Comparator.<PartialSchedule>comparingDouble(
                             s -> softScorer.score(s, context)).reversed())
                     .limit(POPULATION_SIZE)
-                    .collect(Collectors.toList());
+                    .toList();
 
             double currentBest = softScorer.score(population.getFirst(), context);
             if (currentBest > bestFitness + 0.001) {
@@ -112,7 +111,7 @@ public class GeneticAlgorithmStrategy implements OptimizationStrategy {
                 .sorted(Comparator.<PartialSchedule>comparingDouble(
                         s -> softScorer.score(s, context)).reversed())
                 .limit(POPULATION_SIZE)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private PartialSchedule crossover(PartialSchedule parent1, PartialSchedule parent2, SchedulingContext context) {

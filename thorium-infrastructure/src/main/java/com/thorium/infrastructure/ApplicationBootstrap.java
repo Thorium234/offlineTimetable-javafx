@@ -63,15 +63,21 @@ public final class ApplicationBootstrap implements Bootstrap {
         this.schoolSettingsUseCase = new SchoolSettingsUseCase(schoolSettingsRepository);
         this.dataManagementUseCase = new DataManagementUseCase(
                 new SqliteDataRepository(connectionProvider));
-
-        PdfTimetableExporter pdfExporter = new PdfTimetableExporter(assignmentRepository, subjectRepository, classStreamRepository, teacherRepository, periodRepository, roomRepository, breakRepository, schoolSettingsRepository);
-        ExcelTimetableExporter excelExporter = new ExcelTimetableExporter(
-                assignmentRepository, subjectRepository, teacherRepository, classStreamRepository);
-        this.timetableExporter = new CompositeTimetableExporter(pdfExporter, excelExporter);
+        this.timetableExporter = createExporter();
     }
 
     public static ApplicationBootstrap create(Path databasePath) {
         return new ApplicationBootstrap(databasePath);
+    }
+
+    private TimetableExporter createExporter() {
+        PdfTimetableExporter pdfExporter = new PdfTimetableExporter(
+                assignmentRepository, subjectRepository, classStreamRepository,
+                teacherRepository, periodRepository, roomRepository,
+                breakRepository, schoolSettingsRepository);
+        ExcelTimetableExporter excelExporter = new ExcelTimetableExporter(
+                assignmentRepository, subjectRepository, teacherRepository, classStreamRepository);
+        return new CompositeTimetableExporter(pdfExporter, excelExporter);
     }
 
     public TeacherManagementUseCase teacherManagementUseCase() {

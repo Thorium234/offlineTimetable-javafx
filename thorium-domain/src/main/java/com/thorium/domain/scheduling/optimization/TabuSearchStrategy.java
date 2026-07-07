@@ -53,7 +53,7 @@ public class TabuSearchStrategy implements OptimizationStrategy {
             double bestNeighborScore = Double.NEGATIVE_INFINITY;
 
             for (SchedulingMove move : candidates) {
-                double score = evaluateMove(move, current, context);
+                double score = SchedulingMoveUtils.evaluateMove(move, current, context, softScorer);
                 boolean isTabu = tabuList.contains(move);
                 boolean aspired = isTabu && score > bestScore + ASPIRATION_BONUS;
 
@@ -69,7 +69,7 @@ public class TabuSearchStrategy implements OptimizationStrategy {
                 continue;
             }
 
-            current = applyMove(bestMove, current);
+            current = SchedulingMoveUtils.applyMove(bestMove, current);
             currentScore = bestNeighborScore;
 
             tabuList.add(bestMove);
@@ -121,55 +121,12 @@ public class TabuSearchStrategy implements OptimizationStrategy {
             }
             trial.place(swapped1);
             trial.place(swapped2);
-            if (!countsValid(trial, context)) continue;
+            if (!SchedulingMoveUtils.countsValid(trial, context)) continue;
 
             candidates.add(new SchedulingMove(idx1, idx2, l2.slot(), l1.slot()));
         }
 
         return candidates;
-    }
-
-    private double evaluateMove(SchedulingMove move, PartialSchedule schedule, SchedulingContext context) {
-        PartialSchedule trial = schedule.copy();
-        List<PlacedLesson> lessons = new ArrayList<>(trial.placedLessons());
-        PlacedLesson l1 = lessons.get(move.lesson1Idx());
-        PlacedLesson l2 = lessons.get(move.lesson2Idx());
-
-        trial.remove(l1);
-        trial.remove(l2);
-        trial.place(new PlacedLesson(l1.assignment(), move.slot2()));
-        trial.place(new PlacedLesson(l2.assignment(), move.slot1()));
-
-        return softScorer.score(trial, context);
-    }
-
-    private PartialSchedule applyMove(SchedulingMove move, PartialSchedule schedule) {
-        PartialSchedule result = schedule.copy();
-        List<PlacedLesson> lessons = new ArrayList<>(result.placedLessons());
-
-        PlacedLesson l1 = lessons.get(move.lesson1Idx());
-        PlacedLesson l2 = lessons.get(move.lesson2Idx());
-
-        result.remove(l1);
-        result.remove(l2);
-        result.place(new PlacedLesson(l1.assignment(), move.slot2()));
-        result.place(new PlacedLesson(l2.assignment(), move.slot1()));
-
-        return result;
-    }
-
-    private boolean countsValid(PartialSchedule schedule, SchedulingContext context) {
-        Map<Long, Integer> counts = new HashMap<>();
-        for (var lesson : schedule.placedLessons()) {
-            counts.merge(lesson.assignment().getId(), 1, Integer::sum);
-        }
-        for (var assignment : context.assignments()) {
-            int placed = counts.getOrDefault(assignment.getId(), 0);
-            if (placed != assignment.getLessonsPerWeek()) {
-                return false;
-            }
-        }
-        return true;
     }
 
 }

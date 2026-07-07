@@ -2,6 +2,7 @@ package com.thorium.domain.scheduling;
 
 import com.thorium.domain.constraint.HardConstraintValidator;
 import com.thorium.domain.constraint.SoftConstraintScorer;
+import com.thorium.domain.exception.SchedulingException;
 import com.thorium.domain.model.ClassStream;
 import com.thorium.domain.model.Teacher;
 import com.thorium.domain.scheduling.optimization.HybridMetaheuristicStrategy;
@@ -52,8 +53,15 @@ public class TimetableGenerator {
             return TimetableGenerationResult.failure(List.of("Cancelled"));
         }
 
-        if (callback != null) callback.tierChange("GREEDY");
-        PartialSchedule greedyResult = greedyScheduler.schedule(context, callback);
+        PartialSchedule greedyResult;
+        try {
+            if (callback != null) callback.tierChange("GREEDY");
+            greedyResult = greedyScheduler.schedule(context, callback);
+        } catch (SchedulingException e) {
+            if (callback != null) callback.log("ERROR", "Greedy scheduler failed: " + e.getMessage());
+            LOG.warning("Greedy scheduler failed: " + e.getMessage());
+            return TimetableGenerationResult.failure(List.of(e.getMessage()));
+        }
         LOG.fine("Greedy scheduler placed " + greedyResult.size() + "/" + required + " lessons");
         if (callback != null) callback.log("INFO", "Greedy scheduler placed "
                 + greedyResult.size() + "/" + required + " lessons");
@@ -73,15 +81,21 @@ public class TimetableGenerator {
                     + String.format("%.3f", quality) + ")");
             LOG.info("Greedy schedule succeeded (quality=" + String.format("%.3f", quality) + ")");
         } else {
-            if (greedyResult.size() >= required && !greedyValidation.isValid()) {
-                if (callback != null) callback.log("WARN", "Greedy validation failed, trying backtracking from scratch");
-                LOG.fine("Greedy validation failed, falling back to backtracking from scratch");
-                result = backtrackingScheduler.resolve(context, new PartialSchedule(), callback);
-            } else {
-                if (callback != null) callback.log("INFO", "Greedy incomplete ("
-                        + greedyResult.size() + "/" + required + "), resolving with backtracking");
-                LOG.fine("Greedy incomplete (" + greedyResult.size() + "/" + required + "), resolving with backtracking");
-                result = backtrackingScheduler.resolve(context, greedyResult, callback);
+            try {
+                if (greedyResult.size() >= required && !greedyValidation.isValid()) {
+                    if (callback != null) callback.log("WARN", "Greedy validation failed, trying backtracking from scratch");
+                    LOG.fine("Greedy validation failed, falling back to backtracking from scratch");
+                    result = backtrackingScheduler.resolve(context, new PartialSchedule(), callback);
+                } else {
+                    if (callback != null) callback.log("INFO", "Greedy incomplete ("
+                            + greedyResult.size() + "/" + required + "), resolving with backtracking");
+                    LOG.fine("Greedy incomplete (" + greedyResult.size() + "/" + required + "), resolving with backtracking");
+                    result = backtrackingScheduler.resolve(context, greedyResult, callback);
+                }
+            } catch (SchedulingException e) {
+                if (callback != null) callback.log("ERROR", "Backtracking failed: " + e.getMessage());
+                LOG.warning("Backtracking failed: " + e.getMessage());
+                result = TimetableGenerationResult.failure(List.of(e.getMessage()));
             }
         }
 

@@ -89,24 +89,11 @@ public class HillClimbingStrategy implements OptimizationStrategy {
             }
             trial.place(swapped1);
             trial.place(swapped2);
-            if (countsValid(trial, context)) {
+            if (SchedulingMoveUtils.countsValid(trial, context)) {
                 return trial;
             }
         }
         return null;
     }
 
-    private boolean countsValid(PartialSchedule schedule, SchedulingContext context) {
-        Map<Long, Integer> counts = new HashMap<>();
-        for (var lesson : schedule.placedLessons()) {
-            counts.merge(lesson.assignment().getId(), 1, Integer::sum);
-        }
-        for (var assignment : context.assignments()) {
-            int placed = counts.getOrDefault(assignment.getId(), 0);
-            if (placed != assignment.getLessonsPerWeek()) {
-                return false;
-            }
-        }
-        return true;
-    }
 }

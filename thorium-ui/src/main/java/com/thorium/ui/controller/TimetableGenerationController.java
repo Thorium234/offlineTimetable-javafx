@@ -116,14 +116,6 @@ public class TimetableGenerationController {
         }
 
         @Override
-        public void itemPlaced(String summary) {
-            Platform.runLater(() -> {
-                logArea.appendText("[PLACED] " + summary + "\n");
-                logArea.setScrollTop(Double.MAX_VALUE);
-            });
-        }
-
-        @Override
         public void itemRejected(String summary, String reason) {
             Platform.runLater(() -> {
                 logArea.appendText("[REJECTED] " + summary + " — " + reason + "\n");

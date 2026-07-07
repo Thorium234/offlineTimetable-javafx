@@ -23,10 +23,6 @@ public class SoftConstraintScorer {
         this(0.50, 0.40, 0.10);
     }
 
-    public SoftConstraintScorer(double spreadWeight, double consecutiveWeight) {
-        this(spreadWeight, consecutiveWeight, 0.10);
-    }
-
     public SoftConstraintScorer(double spreadWeight, double consecutiveWeight, double balanceWeight) {
         double total = spreadWeight + consecutiveWeight + balanceWeight;
         this.spreadWeight = spreadWeight / total;
