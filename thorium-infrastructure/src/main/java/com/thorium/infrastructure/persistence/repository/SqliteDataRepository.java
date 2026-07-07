@@ -45,6 +45,20 @@ public class SqliteDataRepository extends AbstractRepository implements DataRepo
         return executeWithRollback(conn -> {
             disableForeignKeys(conn);
 
+            // Clear existing data in the same transaction
+            deleteAll(conn, "timetable_entries");
+            deleteAll(conn, "timetables");
+            deleteAll(conn, "teacher_availability");
+            deleteAll(conn, "periods");
+            deleteAll(conn, "breaks");
+            deleteAll(conn, "constraints");
+            deleteAll(conn, "teaching_assignments");
+            deleteAll(conn, "teacher_subjects");
+            deleteAll(conn, "teachers");
+            deleteAll(conn, "subjects");
+            deleteAll(conn, "class_streams");
+            deleteAll(conn, "rooms");
+
             List<Long> classIds = insertClasses(conn);
             List<Long> subjectIds = insertSubjects(conn);
             List<Long> teacherIds = insertTeachers(conn);
@@ -220,7 +234,7 @@ public class SqliteDataRepository extends AbstractRepository implements DataRepo
             {cre, teacherIds.get(8)},
             {comp, teacherIds.get(9)},
         };
-        int[] lessonsPerWeek = {5, 5, 5, 5, 5, 5, 4, 4, 4, 4};
+        int[] lessonsPerWeek = {5, 5, 5, 2, 2, 2, 4, 4, 4, 2};
         String[] durations = {"SINGLE", "SINGLE", "SINGLE", "DOUBLE", "DOUBLE", "DOUBLE", "SINGLE", "SINGLE", "SINGLE", "DOUBLE"};
 
         try (PreparedStatement ps = conn.prepareStatement(
