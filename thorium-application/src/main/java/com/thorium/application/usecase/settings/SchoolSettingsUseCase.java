@@ -24,6 +24,7 @@ public class SchoolSettingsUseCase {
     public SchoolSettingsDto updateSettings(SchoolSettingsDto dto) {
         SchoolSettings settings = new SchoolSettings();
         settings.setId(1L);
+        settings.setSchoolName(dto.schoolName());
         settings.setTotalPeriods(dto.totalPeriods());
         settings.setStartTime(LocalTime.parse(dto.startTime(), TIME_FORMAT));
         settings.setEndTime(LocalTime.parse(dto.endTime(), TIME_FORMAT));
@@ -50,6 +51,7 @@ public class SchoolSettingsUseCase {
     private static SchoolSettingsDto toDto(SchoolSettings s) {
         return new SchoolSettingsDto(
                 s.getId() != null ? s.getId() : 1L,
+                s.getSchoolName(),
                 s.getTotalPeriods(),
                 s.getStartTime().format(TIME_FORMAT),
                 s.getEndTime().format(TIME_FORMAT),

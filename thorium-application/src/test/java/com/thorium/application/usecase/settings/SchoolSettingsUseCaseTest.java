@@ -27,7 +27,7 @@ class SchoolSettingsUseCaseTest {
     @Test
     void updatesSoftConstraintWeights() {
         SchoolSettingsDto updated = useCase.updateSettings(new SchoolSettingsDto(
-                1L, 8, "08:00", "16:00", 40, 0.60, 0.30, 0.10));
+                1L, "My School", 8, "08:00", "16:00", 40, 0.60, 0.30, 0.10));
 
         assertEquals(0.60, updated.spreadWeight());
         assertEquals(0.30, updated.consecutiveWeight());
@@ -38,6 +38,6 @@ class SchoolSettingsUseCaseTest {
     void rejectsInvalidPeriodCount() {
         assertThrows(IllegalArgumentException.class, () ->
                 useCase.updateSettings(new SchoolSettingsDto(
-                        1L, 0, "08:00", "16:00", 40, 0.5, 0.4, 0.1)));
+                        1L, "My School", 0, "08:00", "16:00", 40, 0.5, 0.4, 0.1)));
     }
 }

@@ -102,6 +102,23 @@ public class ExportTimetableUseCase {
         }
     }
 
+    public byte[] previewAllClassesPdf(Long timetableId) {
+        TimetableRepository.TimetableWithEntries data = timetableRepository.findByIdWithEntries(timetableId)
+                .orElseThrow(() -> new IllegalArgumentException("Timetable not found: " + timetableId));
+        return exporter.renderAllClassesPdfToBytes(data);
+    }
+
+    public void exportAllClassesPdf(Long timetableId, Path outputPath) {
+        TimetableRepository.TimetableWithEntries data = timetableRepository.findByIdWithEntries(timetableId)
+                .orElseThrow(() -> new IllegalArgumentException("Timetable not found: " + timetableId));
+        byte[] pdfBytes = exporter.renderAllClassesPdfToBytes(data);
+        try {
+            java.nio.file.Files.write(outputPath, pdfBytes);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to write PDF file", e);
+        }
+    }
+
     public byte[] previewClassPdf(Long timetableId, int form, String stream) {
         TimetableRepository.TimetableWithEntries data = timetableRepository.findByIdWithEntries(timetableId)
                 .orElseThrow(() -> new IllegalArgumentException("Timetable not found: " + timetableId));

@@ -19,4 +19,6 @@ public interface TimetableExporter {
     byte[] renderGradePdfToBytes(TimetableWithEntries data, int form);
 
     byte[] renderAllTeachersPdfToBytes(TimetableWithEntries data);
+
+    byte[] renderAllClassesPdfToBytes(TimetableWithEntries data);
 }

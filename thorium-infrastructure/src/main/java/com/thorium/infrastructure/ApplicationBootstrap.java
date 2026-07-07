@@ -64,7 +64,7 @@ public final class ApplicationBootstrap implements Bootstrap {
         this.dataManagementUseCase = new DataManagementUseCase(
                 new SqliteDataRepository(connectionProvider));
 
-        PdfTimetableExporter pdfExporter = new PdfTimetableExporter(assignmentRepository, subjectRepository, classStreamRepository, teacherRepository, periodRepository, roomRepository, breakRepository);
+        PdfTimetableExporter pdfExporter = new PdfTimetableExporter(assignmentRepository, subjectRepository, classStreamRepository, teacherRepository, periodRepository, roomRepository, breakRepository, schoolSettingsRepository);
         ExcelTimetableExporter excelExporter = new ExcelTimetableExporter(
                 assignmentRepository, subjectRepository, teacherRepository, classStreamRepository);
         this.timetableExporter = new CompositeTimetableExporter(pdfExporter, excelExporter);

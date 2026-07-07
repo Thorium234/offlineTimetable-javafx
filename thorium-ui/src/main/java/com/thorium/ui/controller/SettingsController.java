@@ -16,6 +16,7 @@ public class SettingsController {
     @FXML private Spinner<Integer> durationSpinner;
     @FXML private Label messageLabel;
     @FXML private Label dbPathLabel;
+    @FXML private TextField schoolNameField;
     @FXML private Button saveBtn;
     @FXML private Button generateSampleDataBtn;
     @FXML private Button clearDbBtn;
@@ -42,6 +43,7 @@ public class SettingsController {
 
     private void loadSettings() {
         SchoolSettingsDto s = AppContext.get().schoolSettingsUseCase().getSettings();
+        schoolNameField.setText(s.schoolName());
         totalPeriodsSpinner.getValueFactory().setValue(s.totalPeriods());
         startTimeCombo.setValue(s.startTime());
         endTimeCombo.setValue(s.endTime());
@@ -87,6 +89,7 @@ public class SettingsController {
         try {
             SchoolSettingsDto dto = new SchoolSettingsDto(
                     1L,
+                    schoolNameField.getText(),
                     totalPeriodsSpinner.getValue(),
                     startTimeCombo.getValue(),
                     endTimeCombo.getValue(),

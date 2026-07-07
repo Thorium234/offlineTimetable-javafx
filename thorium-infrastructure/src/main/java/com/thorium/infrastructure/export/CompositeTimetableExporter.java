@@ -51,4 +51,9 @@ public class CompositeTimetableExporter implements TimetableExporter {
     public byte[] renderAllTeachersPdfToBytes(TimetableRepository.TimetableWithEntries data) {
         return pdfExporter.renderAllTeachersPdfToBytes(data);
     }
+
+    @Override
+    public byte[] renderAllClassesPdfToBytes(TimetableRepository.TimetableWithEntries data) {
+        return pdfExporter.renderAllClassesPdfToBytes(data);
+    }
 }

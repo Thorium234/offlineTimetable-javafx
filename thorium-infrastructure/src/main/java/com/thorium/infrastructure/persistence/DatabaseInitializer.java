@@ -18,7 +18,7 @@ public class DatabaseInitializer {
     private static final Logger LOG = Logger.getLogger(DatabaseInitializer.class.getName());
 
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
-    private static final int SCHEMA_VERSION = 14;
+    private static final int SCHEMA_VERSION = 15;
 
     private final SQLiteConnectionProvider connectionProvider;
 
@@ -122,6 +122,12 @@ public class DatabaseInitializer {
                     runMigrationV14(stmt);
                 }
                 setVersion(connection, 14);
+            }
+            if (currentVersion < 15) {
+                try (Statement stmt = connection.createStatement()) {
+                    runMigrationV15(stmt);
+                }
+                setVersion(connection, 15);
             }
 
             connection.commit();
@@ -341,6 +347,14 @@ public class DatabaseInitializer {
         }
         try {
             statement.execute("ALTER TABLE school_settings ADD COLUMN balance_weight REAL NOT NULL DEFAULT 0.10");
+        } catch (SQLException e) {
+            if (!e.getMessage().contains("duplicate column")) throw e;
+        }
+    }
+
+    private void runMigrationV15(Statement statement) throws SQLException {
+        try {
+            statement.execute("ALTER TABLE school_settings ADD COLUMN school_name TEXT NOT NULL DEFAULT 'My School'");
         } catch (SQLException e) {
             if (!e.getMessage().contains("duplicate column")) throw e;
         }

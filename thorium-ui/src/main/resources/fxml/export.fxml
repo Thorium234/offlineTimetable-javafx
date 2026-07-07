@@ -52,6 +52,17 @@
 
             <VBox spacing="0" styleClass="card">
                 <HBox alignment="CENTER_LEFT" spacing="8" styleClass="card-header">
+                    <Label text="All Classes Timetable" styleClass="card-title"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                </HBox>
+                <HBox spacing="12" styleClass="card-body">
+                    <Button fx:id="previewAllClassesBtn" text="Preview All" onAction="#onPreviewAllClasses" styleClass="btn-secondary"/>
+                    <Button fx:id="exportAllClassesBtn" text="Export All PDF" onAction="#onExportAllClasses" styleClass="btn-primary"/>
+                </HBox>
+            </VBox>
+
+            <VBox spacing="0" styleClass="card">
+                <HBox alignment="CENTER_LEFT" spacing="8" styleClass="card-header">
                     <Label text="Per-Teacher Timetable" styleClass="card-title"/>
                     <Region HBox.hgrow="ALWAYS"/>
                 </HBox>

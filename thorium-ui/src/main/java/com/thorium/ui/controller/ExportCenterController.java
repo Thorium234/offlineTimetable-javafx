@@ -31,6 +31,9 @@ public class ExportCenterController {
     @FXML private Button previewAllTeachersBtn;
     @FXML private Button exportAllTeachersBtn;
 
+    @FXML private Button previewAllClassesBtn;
+    @FXML private Button exportAllClassesBtn;
+
     @FXML private ComboBox<TeacherDto> teacherCombo;
     @FXML private Button previewTeacherBtn;
     @FXML private Button exportTeacherBtn;
@@ -47,6 +50,8 @@ public class ExportCenterController {
         IconUtil.addIcon(exportExcelBtn, IconUtil.EXPORT, "#16a34a");
         IconUtil.addIcon(previewAllTeachersBtn, IconUtil.PREVIEW, "#2563eb");
         IconUtil.addIcon(exportAllTeachersBtn, IconUtil.EXPORT, "#ffffff");
+        IconUtil.addIcon(previewAllClassesBtn, IconUtil.PREVIEW, "#2563eb");
+        IconUtil.addIcon(exportAllClassesBtn, IconUtil.EXPORT, "#ffffff");
         IconUtil.addIcon(previewTeacherBtn, IconUtil.PREVIEW, "#2563eb");
         IconUtil.addIcon(exportTeacherBtn, IconUtil.EXPORT, "#ffffff");
         IconUtil.addIcon(previewClassBtn, IconUtil.PREVIEW, "#2563eb");
@@ -129,6 +134,47 @@ public class ExportCenterController {
         if (file == null) return;
         try {
             AppContext.get().exportTimetableUseCase().exportAllTeachersPdf(tt.id(), file.toPath());
+            showMessage("Exported to " + file.getAbsolutePath(), false);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            showMessage(e.getMessage(), true);
+        }
+    }
+
+    @FXML
+    private void onPreviewAllClasses() {
+        TimetableDto tt = timetableCombo.getSelectionModel().getSelectedItem();
+        if (tt == null) {
+            showMessage("Select a timetable", true);
+            return;
+        }
+        try {
+            byte[] pdfBytes = AppContext.get().exportTimetableUseCase().previewAllClassesPdf(tt.id());
+            new PdfPreviewDialog(getStage(), pdfBytes, tt.name() + " - All Classes", tt.id()).show();
+            showMessage("Preview closed", false);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            showMessage(e.getMessage(), true);
+            LOG.log(Level.WARNING, "All classes timetable preview failed", e);
+        } catch (Exception e) {
+            showMessage("An unexpected error occurred", true);
+            LOG.log(Level.SEVERE, "Unexpected error during all classes timetable preview", e);
+        }
+    }
+
+    @FXML
+    private void onExportAllClasses() {
+        TimetableDto tt = timetableCombo.getSelectionModel().getSelectedItem();
+        if (tt == null) {
+            showMessage("Select a timetable", true);
+            return;
+        }
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Save All Classes Timetable PDF");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF", "*.pdf"));
+        chooser.setInitialFileName(tt.name() + " - All Classes.pdf");
+        File file = chooser.showSaveDialog(getStage());
+        if (file == null) return;
+        try {
+            AppContext.get().exportTimetableUseCase().exportAllClassesPdf(tt.id(), file.toPath());
             showMessage("Exported to " + file.getAbsolutePath(), false);
         } catch (IllegalArgumentException | IllegalStateException e) {
             showMessage(e.getMessage(), true);

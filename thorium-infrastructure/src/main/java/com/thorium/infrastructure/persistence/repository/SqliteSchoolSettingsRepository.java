@@ -35,15 +35,16 @@ public class SqliteSchoolSettingsRepository extends AbstractRepository implement
     @Override
     public SchoolSettings save(SchoolSettings settings) {
         try (Connection conn = connection()) {
-            String sql = "INSERT OR REPLACE INTO school_settings (id, total_periods, school_start_time, school_end_time, period_duration_min, spread_weight, consecutive_weight, balance_weight) VALUES (1, ?, ?, ?, ?, ?, ?, ?)";
+            String sql = "INSERT OR REPLACE INTO school_settings (id, school_name, total_periods, school_start_time, school_end_time, period_duration_min, spread_weight, consecutive_weight, balance_weight) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?)";
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setInt(1, settings.getTotalPeriods());
-                ps.setString(2, settings.getStartTime().format(TIME_FORMAT));
-                ps.setString(3, settings.getEndTime().format(TIME_FORMAT));
-                ps.setInt(4, settings.getPeriodDurationMinutes());
-                ps.setDouble(5, settings.getSpreadWeight());
-                ps.setDouble(6, settings.getConsecutiveWeight());
-                ps.setDouble(7, settings.getBalanceWeight());
+                ps.setString(1, settings.getSchoolName());
+                ps.setInt(2, settings.getTotalPeriods());
+                ps.setString(3, settings.getStartTime().format(TIME_FORMAT));
+                ps.setString(4, settings.getEndTime().format(TIME_FORMAT));
+                ps.setInt(5, settings.getPeriodDurationMinutes());
+                ps.setDouble(6, settings.getSpreadWeight());
+                ps.setDouble(7, settings.getConsecutiveWeight());
+                ps.setDouble(8, settings.getBalanceWeight());
                 ps.executeUpdate();
             }
             commit(conn);
@@ -66,8 +67,15 @@ public class SqliteSchoolSettingsRepository extends AbstractRepository implement
             balanceWeight = rs.getDouble("balance_weight");
         } catch (SQLException ignored) {
         }
+        String schoolName = "My School";
+        try {
+            schoolName = rs.getString("school_name");
+            if (schoolName == null || schoolName.isBlank()) schoolName = "My School";
+        } catch (SQLException ignored) {
+        }
         return new SchoolSettings(
                 rs.getLong("id"),
+                schoolName,
                 rs.getInt("total_periods"),
                 LocalTime.parse(rs.getString("school_start_time"), TIME_FORMAT),
                 endTime,
@@ -79,6 +87,6 @@ public class SqliteSchoolSettingsRepository extends AbstractRepository implement
     }
 
     private SchoolSettings createDefaults() {
-        return new SchoolSettings(1L, 8, LocalTime.of(8, 0), LocalTime.of(16, 0), 40, 0.50, 0.40, 0.10);
+        return new SchoolSettings(1L, "My School", 8, LocalTime.of(8, 0), LocalTime.of(16, 0), 40, 0.50, 0.40, 0.10);
     }
 }

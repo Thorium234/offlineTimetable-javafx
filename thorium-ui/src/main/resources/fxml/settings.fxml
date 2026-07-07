@@ -19,17 +19,20 @@
                     <Region HBox.hgrow="ALWAYS"/>
                 </HBox>
                 <GridPane hgap="12" vgap="10" styleClass="card-body" maxWidth="500">
-                    <Label text="Total Periods per Day" styleClass="form-group-title" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-                    <Spinner fx:id="totalPeriodsSpinner" prefWidth="120" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                    <Label text="School Name" styleClass="form-group-title" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                    <TextField fx:id="schoolNameField" prefWidth="250" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
 
-                    <Label text="School Start Time" styleClass="form-group-title" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
-                    <ComboBox fx:id="startTimeCombo" prefWidth="120" styleClass="form-combo" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                    <Label text="Total Periods per Day" styleClass="form-group-title" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                    <Spinner fx:id="totalPeriodsSpinner" prefWidth="120" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
 
-                    <Label text="School End Time" styleClass="form-group-title" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
-                    <ComboBox fx:id="endTimeCombo" prefWidth="120" styleClass="form-combo" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                    <Label text="School Start Time" styleClass="form-group-title" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                    <ComboBox fx:id="startTimeCombo" prefWidth="120" styleClass="form-combo" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
 
-                    <Label text="Period Duration (min)" styleClass="form-group-title" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
-                    <Spinner fx:id="durationSpinner" prefWidth="120" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+                    <Label text="School End Time" styleClass="form-group-title" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+                    <ComboBox fx:id="endTimeCombo" prefWidth="120" styleClass="form-combo" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+
+                    <Label text="Period Duration (min)" styleClass="form-group-title" GridPane.columnIndex="0" GridPane.rowIndex="4"/>
+                    <Spinner fx:id="durationSpinner" prefWidth="120" GridPane.columnIndex="1" GridPane.rowIndex="4"/>
                 </GridPane>
                 <HBox spacing="8" styleClass="card-body" style="-fx-padding: 0 16 16 16;">
                     <Button fx:id="saveBtn" text="Save Settings" onAction="#onSave" styleClass="btn-primary"/>

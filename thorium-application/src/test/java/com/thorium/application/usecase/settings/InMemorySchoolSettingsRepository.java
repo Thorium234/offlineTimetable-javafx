@@ -10,7 +10,7 @@ class InMemorySchoolSettingsRepository implements SchoolSettingsRepository {
     private SchoolSettings settings;
 
     InMemorySchoolSettingsRepository() {
-        this.settings = new SchoolSettings(1L, 8, LocalTime.of(8, 0), LocalTime.of(16, 0), 40);
+        this.settings = new SchoolSettings(1L, "My School", 8, LocalTime.of(8, 0), LocalTime.of(16, 0), 40);
     }
 
     @Override
@@ -27,7 +27,7 @@ class InMemorySchoolSettingsRepository implements SchoolSettingsRepository {
 
     private SchoolSettings copy(SchoolSettings s) {
         SchoolSettings copy = new SchoolSettings(
-                s.getId(), s.getTotalPeriods(), s.getStartTime(), s.getEndTime(),
+                s.getId(), s.getSchoolName(), s.getTotalPeriods(), s.getStartTime(), s.getEndTime(),
                 s.getPeriodDurationMinutes(), s.getSpreadWeight(), s.getConsecutiveWeight(),
                 s.getBalanceWeight()
         );
