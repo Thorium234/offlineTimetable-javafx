@@ -36,7 +36,7 @@ public class SqliteDataRepository extends AbstractRepository implements DataRepo
             deleteAll(conn, "class_streams");
             deleteAll(conn, "rooms");
             enableForeignKeys(conn);
-        });
+        }, "clearAllData");
         LOG.info("All user data cleared successfully");
     }
 
@@ -45,7 +45,7 @@ public class SqliteDataRepository extends AbstractRepository implements DataRepo
         return executeWithRollback(conn -> {
             disableForeignKeys(conn);
 
-            // Clear existing data in the same transaction
+            // Clear existing user data in the same transaction
             deleteAll(conn, "timetable_entries");
             deleteAll(conn, "timetables");
             deleteAll(conn, "teacher_availability");

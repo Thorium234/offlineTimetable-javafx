@@ -4,8 +4,12 @@ import com.thorium.infrastructure.persistence.SQLiteConnectionProvider;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 abstract class AbstractRepository {
+
+    private static final Logger LOG = Logger.getLogger(AbstractRepository.class.getName());
 
     protected final SQLiteConnectionProvider connectionProvider;
 
@@ -32,6 +36,10 @@ abstract class AbstractRepository {
     }
 
     protected <T> T executeWithRollback(SqlOperation<T> operation) {
+        return executeWithRollback(operation, "database operation");
+    }
+
+    protected <T> T executeWithRollback(SqlOperation<T> operation, String label) {
         Connection conn = null;
         try {
             conn = connection();
@@ -40,7 +48,8 @@ abstract class AbstractRepository {
             return result;
         } catch (SQLException e) {
             rollback(conn);
-            throw new IllegalStateException("Database operation failed", e);
+            LOG.log(Level.SEVERE, label + " failed: " + e.getMessage(), e);
+            throw new IllegalStateException(label + " failed", e);
         } finally {
             if (conn != null) {
                 try { conn.close(); } catch (SQLException ignored) {}
@@ -49,6 +58,10 @@ abstract class AbstractRepository {
     }
 
     protected void executeWithRollbackVoid(SqlVoidOperation operation) {
+        executeWithRollbackVoid(operation, "database operation");
+    }
+
+    protected void executeWithRollbackVoid(SqlVoidOperation operation, String label) {
         Connection conn = null;
         try {
             conn = connection();
@@ -56,7 +69,8 @@ abstract class AbstractRepository {
             commit(conn);
         } catch (SQLException e) {
             rollback(conn);
-            throw new IllegalStateException("Database operation failed", e);
+            LOG.log(Level.SEVERE, label + " failed: " + e.getMessage(), e);
+            throw new IllegalStateException(label + " failed", e);
         } finally {
             if (conn != null) {
                 try { conn.close(); } catch (SQLException ignored) {}
