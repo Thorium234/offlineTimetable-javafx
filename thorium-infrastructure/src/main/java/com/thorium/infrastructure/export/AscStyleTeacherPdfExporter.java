@@ -1,7 +1,6 @@
 package com.thorium.infrastructure.export;
 
 import com.thorium.application.port.*;
-import com.thorium.application.util.NameFormatter;
 import com.thorium.domain.model.*;
 import com.thorium.domain.value.DayOfWeek;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -23,21 +22,29 @@ import java.util.stream.Collectors;
 /**
  * aSc Timetables-style teacher PDF exporter.
  * <p>
- * Produces A4 landscape PDFs with a fixed 17-column layout:
- * Day | Assembly | P1 | P2 | P3 | Tea Break | P4 | P5 | Short Break | P6 | P7 | Lunch | P8 | P9 | P10 | Games | P11
+ * Produces A4 landscape PDFs matching the exact aSc Timetables printed layout:
+ * <pre>
+ *  --------------------------------------------------------------
+ * | School Name                                                  |
+ * |                     Teacher Name                             |
+ *  --------------------------------------------------------------
+ * |      |Ass.|1|2|3|Tea|4|5|SB|6|7|Lunch|8|9|10|Games|11|
+ *  --------------------------------------------------------------
+ * |Mon   |    | | | |   | | |  | | |     | | |  |     |  |
+ *  --------------------------------------------------------------
+ * </pre>
  * <p>
- * Times loaded from DB PeriodRepository/BreakRepository, falling back to standard Kenyan timings.
+ * Times loaded from DB PeriodRepository, falling back to standard Kenyan timings.
  * Break columns are merged vertically across all 5 day rows with rotated text.
  * Lesson cells show subject code on top, class/stream below.
- * Day abbreviations: Mo, Tu, We, Th, Fr.
  */
 public class AscStyleTeacherPdfExporter implements TimetableExporter {
 
-    private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
+    private static final DateTimeFormatter TIME_FMT_NO_LEAD = DateTimeFormatter.ofPattern("H:mm");
 
-    // ---- Fixed column structure ----
+    // ---- Fixed column structure (16 timetable cols + 1 day col = 17) ----
 
-    private static final int TOTAL_COLUMNS = 17; // Day + 16 timetable columns
+    private static final int TOTAL_COLUMNS = 17;
 
     private enum ColType { DAY_LABEL, LESSON_COL, BREAK_COL }
 
@@ -61,18 +68,19 @@ public class AscStyleTeacherPdfExporter implements TimetableExporter {
             ColType.LESSON_COL      // 16: Period 11
     };
 
+    // Header labels (short, matching aSc printed style)
     private static final String[] COL_LABELS = {
-            "",                          // Day (not used in header)
-            "ASSEMBLY/PREPS",
-            "P1", "P2", "P3",
-            "TEA BREAK",
-            "P4", "P5",
-            "SHORT BREAK",
-            "P6", "P7",
-            "LUNCH BREAK",
-            "P8", "P9", "P10",
-            "GAMES",
-            "P11"
+            "",          // Day (empty — aSc leaves it blank)
+            "Ass.",
+            "1", "2", "3",
+            "Tea",
+            "4", "5",
+            "SB",
+            "6", "7",
+            "Lunch",
+            "8", "9", "10",
+            "Games",
+            "11"
     };
 
     private static final int[] COL_PERIOD_NUMBERS = {
@@ -89,7 +97,7 @@ public class AscStyleTeacherPdfExporter implements TimetableExporter {
             11
     };
 
-    private static final String[] DAY_ABBREVIATIONS = {"Mo", "Tu", "We", "Th", "Fr"};
+    private static final String[] DAY_ABBREVIATIONS = {"Mon", "Tue", "Wed", "Thu", "Fri"};
 
     // ---- Repositories ----
 
@@ -185,13 +193,13 @@ public class AscStyleTeacherPdfExporter implements TimetableExporter {
     private static final float MARGIN_RIGHT = 12 * MM_TO_PT;
 
     private static final float DAY_COL_W = 48;
-    private static final float BREAK_COL_W = 50;
-    private static final float LESSON_COL_W = 43;
+    private static final float BREAK_COL_W = 52;
+    private static final float LESSON_COL_W = 46;
 
-    private float schoolNameH = 16;
-    private float teacherNameH = 24;
-    private float headerRowH = 34;
-    private float dayRowH = 44;
+    private static final float SCHOOL_NAME_H = 16;
+    private static final float TEACHER_NAME_H = 26;
+    private static final float HEADER_ROW_H = 38;
+    private static final float DAY_ROW_H = 44;
 
     // ---- Colors ----
 
@@ -259,7 +267,7 @@ public class AscStyleTeacherPdfExporter implements TimetableExporter {
         cs.moveTo(x, y1); cs.lineTo(x, y2); cs.stroke();
     }
 
-    // ---- Column starts ----
+    // ---- Column layout ----
 
     private float[] computeColStarts(float tableLeft) {
         float[] starts = new float[TOTAL_COLUMNS];
@@ -321,7 +329,6 @@ public class AscStyleTeacherPdfExporter implements TimetableExporter {
 
     // ---- DB-backed time lookup ----
 
-    /** Lazy-loaded map: periodNumber -> "HH:mm - HH:mm" */
     private volatile Map<Integer, String> periodTimeCache = null;
 
     private String timeForPeriod(int periodNumber) {
@@ -334,18 +341,14 @@ public class AscStyleTeacherPdfExporter implements TimetableExporter {
     private Map<Integer, String> loadPeriodTimes() {
         Map<Integer, String> map = new HashMap<>();
         try {
-            // Load from DB periods
             List<Period> periods = periodRepository.findAll();
             for (Period p : periods) {
                 if (Period.TYPE_LESSON.equals(p.getType())) {
                     map.put(p.getPeriodNumber(),
-                            p.getStartTime().format(TIME_FMT) + " - " + p.getEndTime().format(TIME_FMT));
+                            formatTimeNoLeading(p.getStartTime()) + " - " + formatTimeNoLeading(p.getEndTime()));
                 }
             }
-            // Also store break start/end times for reference if available
-            // (breaks are used for column labels, times shown only on lesson columns)
         } catch (Exception e) {
-            // Fallback to hardcoded times if DB unavailable
             map.putAll(fallbackPeriodTimes());
         }
         if (map.isEmpty()) {
@@ -354,12 +357,17 @@ public class AscStyleTeacherPdfExporter implements TimetableExporter {
         return Collections.unmodifiableMap(map);
     }
 
+    private String formatTimeNoLeading(LocalTime t) {
+        int hour = t.getHour();
+        int min = t.getMinute();
+        return hour + ":" + (min < 10 ? "0" + min : String.valueOf(min));
+    }
+
     private static Map<Integer, String> fallbackPeriodTimes() {
-        // Standard Kenyan secondary school timings
         Map<Integer, String> m = new HashMap<>();
-        m.put(1, "08:00 - 08:40");
-        m.put(2, "08:40 - 09:20");
-        m.put(3, "09:20 - 10:00");
+        m.put(1, "8:00 - 8:40");
+        m.put(2, "8:40 - 9:20");
+        m.put(3, "9:20 - 10:00");
         m.put(4, "10:20 - 11:00");
         m.put(5, "11:00 - 11:40");
         m.put(6, "11:50 - 12:30");
@@ -395,7 +403,7 @@ public class AscStyleTeacherPdfExporter implements TimetableExporter {
             doc.addPage(pg);
 
             try (PDPageContentStream cs = new PDPageContentStream(doc, pg)) {
-                renderAscPage(cs, pg.getMediaBox(), teacher.getName(), teacherEntries, aMap);
+                renderAscPage(cs, pg.getMediaBox(), teacher.getName(), teacherEntries, aMap, fb, f, fi);
             }
             doc.save(output);
         } catch (IOException e) {
@@ -427,7 +435,7 @@ public class AscStyleTeacherPdfExporter implements TimetableExporter {
                 doc.addPage(pg);
 
                 try (PDPageContentStream cs = new PDPageContentStream(doc, pg)) {
-                    renderAscPage(cs, pg.getMediaBox(), teacher.getName(), teacherEntries, aMap);
+                    renderAscPage(cs, pg.getMediaBox(), teacher.getName(), teacherEntries, aMap, fb, f, fi);
                 }
             }
             doc.save(output);
@@ -438,37 +446,40 @@ public class AscStyleTeacherPdfExporter implements TimetableExporter {
 
     private void renderAscPage(PDPageContentStream cs, PDRectangle pageSize,
                                 String teacherName, List<TimetableEntry> entries,
-                                Map<Long, TeachingAssignment> aMap) throws IOException {
+                                Map<Long, TeachingAssignment> aMap,
+                                PDType1Font fb, PDType1Font f, PDType1Font fi) throws IOException {
         float pw = pageSize.getWidth();
         float ph = pageSize.getHeight();
-        float tableLeft = MARGIN_LEFT;
-        float tableRight = tableLeft + tableWidth();
+        float tableW = tableWidth();
+
+        // Center the table horizontally on page
+        float tableLeft = (pw - tableW) / 2f;
         float yTop = ph - MARGIN_TOP;
 
         float[] colStarts = computeColStarts(tableLeft);
         String school = schoolName();
-
-        PDType1Font fb = new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD);
-        PDType1Font f = new PDType1Font(Standard14Fonts.FontName.HELVETICA);
-        PDType1Font fi = new PDType1Font(Standard14Fonts.FontName.HELVETICA_OBLIQUE);
-
         float y = yTop;
 
         // ---- School name (top-left small uppercase) ----
         if (!school.isBlank()) {
             setFill(cs, SCHOOL_NAME_C);
-            txt(cs, tableLeft, y, school.toUpperCase(), fb, 10);
-            y -= schoolNameH;
+            txt(cs, tableLeft, y, school.toUpperCase(), fb, 9);
+            y -= SCHOOL_NAME_H;
         }
 
         // ---- Teacher name (centered large bold) ----
+        String teacherHeading = "Teacher " + teacherName.toUpperCase();
         setFill(cs, TITLE_TEXT_C);
-        txc(cs, tableLeft, tableRight, y, teacherName.toUpperCase(), fb, 18);
-        y -= teacherNameH;
+        txc(cs, tableLeft, tableLeft + tableW, y, teacherHeading, fb, 17);
+        y -= TEACHER_NAME_H;
+
+        // ---- Top border before header ----
+        setStroke(cs, GRID_LINE, 0.8f);
+        hline(cs, tableLeft, tableLeft + tableW, y);
 
         // ---- Column headers ----
         renderAscHeaders(cs, y, colStarts, fb, f);
-        y -= headerRowH;
+        y -= HEADER_ROW_H;
 
         // ---- Day rows (with merged break columns) ----
         renderAscDayRows(cs, y, colStarts, entries, aMap, fb, f, fi);
@@ -476,33 +487,49 @@ public class AscStyleTeacherPdfExporter implements TimetableExporter {
 
     private void renderAscHeaders(PDPageContentStream cs, float y, float[] colStarts,
                                    PDType1Font fb, PDType1Font f) throws IOException {
-        // Day header
-        dr(cs, colStarts[0], y, DAY_COL_W, headerRowH, HEADER_BG, null, 0);
-        setFill(cs, HEADER_TEXT);
-        txc(cs, colStarts[0], colStarts[0] + DAY_COL_W, y + headerRowH / 2f - 5, "Day", fb, 11);
+        // Day header cell — leave empty (aSc style)
+        dr(cs, colStarts[0], y, DAY_COL_W, HEADER_ROW_H, HEADER_BG, null, 0);
 
-        // Column headers
+        // Column headers: time at top, label below
         for (int i = 1; i < TOTAL_COLUMNS; i++) {
             float cx = colStarts[i];
             float cw = colWidth(i);
-            dr(cs, cx, y, cw, headerRowH, HEADER_BG, null, 0);
+            dr(cs, cx, y, cw, HEADER_ROW_H, HEADER_BG, null, 0);
             setFill(cs, HEADER_TEXT);
 
-            if (COL_TYPES[i] == ColType.LESSON_COL) {
-                // Period number
-                txc(cs, cx, cx + cw, y + headerRowH - 10, COL_LABELS[i], fb, 11);
-                // Time label below
-                String timeLabel = timeForPeriod(COL_PERIOD_NUMBERS[i]);
-                txc(cs, cx, cx + cw, y + 5, timeLabel, f, 7);
+            boolean isBreak = COL_TYPES[i] == ColType.BREAK_COL;
+            int pn = COL_PERIOD_NUMBERS[i];
+
+            // Time label (small, top)
+            String timeLabel;
+            if (isBreak) {
+                timeLabel = breakTimeForColumn(i);
             } else {
-                // Break label
-                txc(cs, cx, cx + cw, y + headerRowH / 2f - 5, COL_LABELS[i], fb, 9);
+                timeLabel = timeForPeriod(pn);
             }
+            if (!timeLabel.isBlank()) {
+                txc(cs, cx, cx + cw, y + HEADER_ROW_H - 8, timeLabel, f, 7);
+            }
+
+            // Period / break label (bold, below time)
+            txc(cs, cx, cx + cw, y + 6, COL_LABELS[i], fb, 10);
         }
 
-        // Bottom border of header
-        setStroke(cs, GRID_LINE, 0.6f);
+        // Bottom border of header row
+        setStroke(cs, GRID_LINE, 0.8f);
         hline(cs, colStarts[0], colStarts[0] + tableWidth(), y);
+    }
+
+    private String breakTimeForColumn(int colIdx) {
+        // Standard break times matching the spec
+        switch (colIdx) {
+            case 1:  return "7:10 - 8:00";  // Assembly
+            case 5:  return "10:00 - 10:20"; // Tea Break
+            case 8:  return "11:40 - 11:50"; // Short Break
+            case 11: return "13:10 - 14:00"; // Lunch
+            case 15: return "16:00 - 16:40"; // Games
+            default: return "";
+        }
     }
 
     private void renderAscDayRows(PDPageContentStream cs, float y, float[] colStarts,
@@ -515,8 +542,7 @@ public class AscStyleTeacherPdfExporter implements TimetableExporter {
                     .put(e.getPeriodNumber(), e);
         }
 
-        // Total height of 5 day rows
-        float rowsTotalH = 5 * dayRowH;
+        float rowsTotalH = 5 * DAY_ROW_H;
         float tableLeft = colStarts[0];
         float tableRight = tableLeft + tableWidth();
 
@@ -527,18 +553,26 @@ public class AscStyleTeacherPdfExporter implements TimetableExporter {
             float cw = colWidth(i);
             // Fill background for merged column
             dr(cs, cx, y, cw, rowsTotalH, BREAK_BG, BREAK_BORDER_C, 0.8f);
-            // Rotated text
+
+            // Rotated text, centered in merged cell
             String label = COL_LABELS[i];
+            String fullLabel;
+            switch (i) {
+                case 1:  fullLabel = "ASSEMBLY/PREPS"; break;
+                case 5:  fullLabel = "TEA BREAK"; break;
+                case 8:  fullLabel = "SHORT BREAK"; break;
+                case 11: fullLabel = "LUNCH BREAK"; break;
+                case 15: fullLabel = "GAMES"; break;
+                default: fullLabel = label.toUpperCase();
+            }
+
             cs.saveGraphicsState();
-            // Rotate 90 degrees counter-clockwise — translate to center of merged cell
             float centerX = cx + cw / 2f;
             float centerY = y - rowsTotalH / 2f;
+            // Rotate 90° CCW
             cs.transform(new org.apache.pdfbox.util.Matrix(0, -1, 1, 0, centerX, centerY));
-            // The text will be drawn along the Y axis now (since we rotated)
-            // After rotation (90° CCW): new X = -old Y, new Y = old X
-            // So text origin is at (-halfHeight, 0) relative to center
-            float tw = fb.getStringWidth(label) / 1000f * 10;
-            txt(cs, -tw / 2f, -cw / 2f + 3, label, fb, 10);
+            float tw = fb.getStringWidth(fullLabel) / 1000f * 10;
+            txc(cs, -tw / 2f, tw / 2f, -cw / 2f + 3, fullLabel, fb, 10);
             cs.restoreGraphicsState();
         }
 
@@ -548,14 +582,14 @@ public class AscStyleTeacherPdfExporter implements TimetableExporter {
             float[] bg = ri % 2 == 1 ? ODD_ROW : EVEN_ROW;
 
             // Day column
-            dr(cs, colStarts[0], y, DAY_COL_W, dayRowH, bg, GRID_LINE, 0.5f);
+            dr(cs, colStarts[0], y, DAY_COL_W, DAY_ROW_H, bg, GRID_LINE, 0.5f);
             setFill(cs, DAY_TEXT);
-            txc(cs, colStarts[0], colStarts[0] + DAY_COL_W, y + dayRowH / 2f - 5,
+            txc(cs, colStarts[0], colStarts[0] + DAY_COL_W, y + DAY_ROW_H / 2f - 5,
                     DAY_ABBREVIATIONS[ri], fb, 12);
 
             // Lesson columns
             Map<Integer, TimetableEntry> dayEntries = dayLookup.getOrDefault(day.name(), new HashMap<>());
-            float midY = y + dayRowH / 2f;
+            float midY = y + DAY_ROW_H / 2f;
 
             for (int i = 1; i < TOTAL_COLUMNS; i++) {
                 float cx = colStarts[i];
@@ -563,7 +597,7 @@ public class AscStyleTeacherPdfExporter implements TimetableExporter {
 
                 if (COL_TYPES[i] == ColType.LESSON_COL) {
                     int pn = COL_PERIOD_NUMBERS[i];
-                    dr(cs, cx, y, cw, dayRowH, bg, GRID_LINE, 0.5f);
+                    dr(cs, cx, y, cw, DAY_ROW_H, bg, GRID_LINE, 0.5f);
 
                     TimetableEntry match = dayEntries.get(pn);
                     if (match != null) {
@@ -582,27 +616,21 @@ public class AscStyleTeacherPdfExporter implements TimetableExporter {
                         }
                     }
                 } else {
-                    // Break column — already filled above; just draw vertical border on right
-                    // (left border is from the previous column's right border or is the outer border)
+                    // Break column — draw vertical border on right side
                     setStroke(cs, BREAK_BORDER_C, 0.6f);
-                    vline(cs, cx + cw, y, y - dayRowH);
+                    vline(cs, cx + cw, y, y - DAY_ROW_H);
                 }
             }
 
             // Bottom border for this row
             setStroke(cs, GRID_LINE, 0.4f);
-            hline(cs, tableLeft, tableRight, y - dayRowH);
+            hline(cs, tableLeft, tableRight, y - DAY_ROW_H);
 
-            y -= dayRowH;
+            y -= DAY_ROW_H;
         }
 
         // ---- Outer border (thicker) ----
         setStroke(cs, GRID_LINE, 1.2f);
         strokeR(cs, tableLeft, y + rowsTotalH, tableWidth(), rowsTotalH);
-    }
-
-    @FunctionalInterface
-    private interface Filter {
-        List<TimetableEntry> filter(List<TimetableEntry> entries);
     }
 }
