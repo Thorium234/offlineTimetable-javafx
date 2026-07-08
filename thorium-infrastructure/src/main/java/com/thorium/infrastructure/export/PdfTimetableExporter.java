@@ -71,11 +71,11 @@ public class PdfTimetableExporter implements TimetableExporter {
     private static final float[] LIGHT_GRAY = {0.92f, 0.92f, 0.92f};
     private static final float[] DARK_GRAY = {0.4f, 0.4f, 0.4f};
     private static final float[] GRID_LINE = {0, 0, 0};
-    private static final float[] BREAK_BG = {0.996f, 0.957f, 0.780f};  // #fef3c7
-    private static final float[] BREAK_BORDER = {0.847f, 0.467f, 0.024f}; // #d97706
-    private static final float[] HEADER_BG = {0.1176f, 0.251f, 0.686f}; // #1e40af
+    private static final float[] BREAK_BG = {0.878f, 0.878f, 0.878f};  // #e0e0e0
+    private static final float[] BREAK_BORDER = {0, 0, 0}; // #000000
+    private static final float[] HEADER_BG = {0.2f, 0.2f, 0.2f}; // #333333
     private static final float[] HEADER_TEXT = {1, 1, 1};
-    private static final float[] MONDAY_BG = {0.1176f, 0.251f, 0.686f}; // same as HEADER_BG
+    private static final float[] MONDAY_BG = {0.2f, 0.2f, 0.2f}; // same as HEADER_BG
 
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
 
