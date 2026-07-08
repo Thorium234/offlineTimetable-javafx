@@ -3,6 +3,7 @@ package com.thorium.infrastructure.export;
 import com.thorium.application.port.*;
 import com.thorium.domain.model.*;
 import com.thorium.domain.value.DayOfWeek;
+import com.thorium.domain.value.SubjectColorPalette;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -215,6 +216,18 @@ public class AscStyleTeacherPdfExporter implements TimetableExporter {
     private static final float[] CLASS_TEXT_C = hex("64748b");
     private static final float[] TITLE_TEXT_C = hex("1e293b");
     private static final float[] SCHOOL_NAME_C = hex("475569");
+
+    // Pastel subject color cache: subjectId -> float[]
+    private final Map<Long, float[]> subjectColorCache = new HashMap<>();
+
+    private float[] subjectBg(Long subjectId) {
+        return subjectColorCache.computeIfAbsent(subjectId, id -> {
+            Subject subject = subjectRepository.findById(id).orElse(null);
+            if (subject == null) return EVEN_ROW;
+            String hex = SubjectColorPalette.resolveColor(id, subject.getColor());
+            return hex(hex);
+        });
+    }
 
     private static float[] hex(String h) {
         int c = Integer.parseInt(h.substring(1), 16);
@@ -597,16 +610,25 @@ public class AscStyleTeacherPdfExporter implements TimetableExporter {
 
                 if (COL_TYPES[i] == ColType.LESSON_COL) {
                     int pn = COL_PERIOD_NUMBERS[i];
-                    dr(cs, cx, y, cw, DAY_ROW_H, bg, GRID_LINE, 0.5f);
-
                     TimetableEntry match = dayEntries.get(pn);
+
+                    // Use subject color if lesson exists, otherwise alternating row bg
+                    float[] cellBg;
+                    if (match != null) {
+                        TeachingAssignment a = aMap.get(match.getTeachingAssignmentId());
+                        cellBg = a != null ? subjectBg(a.getSubjectId()) : bg;
+                    } else {
+                        cellBg = bg;
+                    }
+                    dr(cs, cx, y, cw, DAY_ROW_H, cellBg, GRID_LINE, 0.5f);
+
                     if (match != null) {
                         TeachingAssignment a = aMap.get(match.getTeachingAssignmentId());
                         if (a != null) {
                             String sc = subjectCode(a.getSubjectId());
                             String cn = classDisplayName(a.getClassStreamId());
 
-                            // Subject code (top line)
+                            // Subject code (top line) — dark text for readability on pastel
                             setFill(cs, SUBJECT_TEXT_C);
                             txc(cs, cx, cx + cw, midY + 10, sc, fb, 9);
 
