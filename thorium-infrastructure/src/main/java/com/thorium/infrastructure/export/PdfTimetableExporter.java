@@ -22,64 +22,34 @@ import java.util.stream.Collectors;
 
 public class PdfTimetableExporter implements TimetableExporter {
 
-    // ---- Fixed 17-column layout (matching table.txt spec) ----
-    // 1 day col + 16 timetable cols: Ass.|1|2|3|Tea|4|5|SB|6|7|Lunch|8|9|10|Games|11
-
-    private static final int TOTAL_COLUMNS = 17;
-
+    // ---- Fixed visual column types ----
     private enum ColType { DAY_LABEL, LESSON_COL, BREAK_COL }
 
-    private static final ColType[] COL_TYPES = {
-            ColType.DAY_LABEL,      // 0: Day labels
-            ColType.BREAK_COL,      // 1: Assembly
-            ColType.LESSON_COL,     // 2: Period 1
-            ColType.LESSON_COL,     // 3: Period 2
-            ColType.LESSON_COL,     // 4: Period 3
-            ColType.BREAK_COL,      // 5: Tea Break
-            ColType.LESSON_COL,     // 6: Period 4
-            ColType.LESSON_COL,     // 7: Period 5
-            ColType.BREAK_COL,      // 8: Short Break
-            ColType.LESSON_COL,     // 9: Period 6
-            ColType.LESSON_COL,     // 10: Period 7
-            ColType.BREAK_COL,      // 11: Lunch
-            ColType.LESSON_COL,     // 12: Period 8
-            ColType.LESSON_COL,     // 13: Period 9
-            ColType.LESSON_COL,     // 14: Period 10
-            ColType.BREAK_COL,      // 15: Games
-            ColType.LESSON_COL      // 16: Period 11
-    };
+    // ---- Dynamic column structure built from DB ----
+    private static final class ColLayout {
+        final int totalColumns;
+        final ColType[] colTypes;
+        final String[] colLabels;
+        final int[] colPeriodNumbers;    // DB period_number for lesson cols, -1 for break/day
+        final boolean[] colIsBreak;
 
-    private static final String[] COL_LABELS = {
-            "",          // Day
-            "Ass.",
-            "1", "2", "3",
-            "Tea",
-            "4", "5",
-            "SB",
-            "6", "7",
-            "Lunch",
-            "8", "9", "10",
-            "Games",
-            "11"
-    };
-
-    private static final int[] COL_PERIOD_NUMBERS = {
-            -1,  // Day
-            -1,  // Assembly
-            1, 2, 3,
-            -1,  // Tea Break
-            4, 5,
-            -1,  // Short Break
-            6, 7,
-            -1,  // Lunch
-            8, 9, 10,
-            -1,  // Games
-            11
-    };
+        ColLayout(int total, ColType[] types, String[] labels, int[] pns, boolean[] breaks) {
+            this.totalColumns = total;
+            this.colTypes = types;
+            this.colLabels = labels;
+            this.colPeriodNumbers = pns;
+            this.colIsBreak = breaks;
+        }
+    }
 
     private static final String[] DAY_ABBREVIATIONS = {"Mo", "Tu", "We", "Th", "Fr"};
 
-    // ---- Layout constants (mm converted to pt: 1mm = 2.83465pt) ----
+    private static final String[] BREAK_FULL_LABELS = {
+            "", "ASSEMBLY/PREPS", "", "", "", "TEA BREAK", "", "", "SHORT BREAK", "", "",
+            "LUNCH BREAK", "", "", "", "GAMES", ""
+    };
+
+    // ---- Layout constants (mm to pt: 1mm = 2.83465pt) ----
 
     private static final float MM_TO_PT = 2.83465f;
     private static final float MARGIN_TOP = 15 * MM_TO_PT;
@@ -100,8 +70,8 @@ public class PdfTimetableExporter implements TimetableExporter {
 
     private static final float[] BLACK = {0, 0, 0};
     private static final float[] WHITE = {1, 1, 1};
-    private static final float[] LIGHT_GRAY = {0.92f, 0.92f, 0.92f}; // subtle alternating rows
-    private static final float[] DARK_GRAY = {0.4f, 0.4f, 0.4f};     // school name / secondary text
+    private static final float[] LIGHT_GRAY = {0.92f, 0.92f, 0.92f};
+    private static final float[] DARK_GRAY = {0.4f, 0.4f, 0.4f};
     private static final float[] GRID_LINE = {0, 0, 0};
 
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
@@ -116,6 +86,10 @@ public class PdfTimetableExporter implements TimetableExporter {
     private final PeriodRepository periodRepository;
     private final BreakRepository breakRepository;
     private final SchoolSettingsRepository schoolSettingsRepository;
+
+    // ---- Lazy-loaded dynamic column layout ----
+    private volatile ColLayout layout = null;
+    private volatile Map<Integer, String> periodTimeCache = null;
 
     public PdfTimetableExporter(TeachingAssignmentRepository assignmentRepository,
                                 SubjectRepository subjectRepository,
@@ -144,7 +118,6 @@ public class PdfTimetableExporter implements TimetableExporter {
         this.breakRepository = breakRepository;
         this.schoolSettingsRepository = schoolSettingsRepository;
         this.periodRepository = periodRepository;
-        this.periodTimeCache = null;
     }
 
     // ---- TimetableExporter interface ----
@@ -238,6 +211,137 @@ public class PdfTimetableExporter implements TimetableExporter {
         throw new UnsupportedOperationException("Use AscStyleTeacherPdfExporter");
     }
 
+    // ---- Dynamic column layout from DB periods ----
+
+    private ColLayout loadLayout() {
+        List<Period> periods;
+        try {
+            periods = periodRepository.findAll().stream()
+                    .sorted(Comparator.comparingInt(Period::getPeriodNumber))
+                    .toList();
+        } catch (Exception e) {
+            periods = List.of();
+        }
+        if (periods.isEmpty()) {
+            return buildFallbackLayout();
+        }
+
+        int total = 1 + periods.size(); // day col + one per DB period
+        ColType[] types = new ColType[total];
+        String[] labels = new String[total];
+        int[] pns = new int[total];
+        boolean[] breaks = new boolean[total];
+
+        types[0] = ColType.DAY_LABEL;
+        labels[0] = "";
+        pns[0] = -1;
+        breaks[0] = false;
+
+        int lessonNum = 0;
+        for (int i = 0; i < periods.size(); i++) {
+            Period p = periods.get(i);
+            int colIdx = i + 1;
+            if (p.isBreak()) {
+                types[colIdx] = ColType.BREAK_COL;
+                labels[colIdx] = shortLabel(p.getLabel());
+                pns[colIdx] = -1;
+                breaks[colIdx] = true;
+            } else {
+                lessonNum++;
+                types[colIdx] = ColType.LESSON_COL;
+                labels[colIdx] = shortLessonLabel(lessonNum, p.getLabel());
+                pns[colIdx] = p.getPeriodNumber();
+                breaks[colIdx] = false;
+            }
+        }
+        return new ColLayout(total, types, labels, pns, breaks);
+    }
+
+    private ColLayout buildFallbackLayout() {
+        int total = 17;
+        ColType[] types = new ColType[total];
+        String[] labels = new String[total];
+        int[] pns = new int[total];
+        boolean[] breaks = new boolean[total];
+
+        types[0] = ColType.DAY_LABEL; labels[0] = ""; pns[0] = -1; breaks[0] = false;
+
+        // colIdx, type(0=break,1=lesson), label, periodNumber(DB)
+        Object[][] def = {
+                {1, 0, "Ass.", -1},        // Assembly
+                {2, 1, "1", 2},            // P1 (DB period_number=2)
+                {3, 1, "2", 3},
+                {4, 1, "3", 4},
+                {5, 0, "Tea", -1},         // Tea Break
+                {6, 1, "4", 6},
+                {7, 1, "5", 7},
+                {8, 0, "SB", -1},          // Short Break
+                {9, 1, "6", 9},
+                {10, 1, "7", 10},
+                {11, 0, "Lunch", -1},      // Lunch
+                {12, 1, "8", 12},
+                {13, 1, "9", 13},
+                {14, 1, "10", 14},
+                {15, 0, "Games", -1},      // Games
+        };
+
+        for (Object[] d : def) {
+            int idx = (int) d[0];
+            boolean isBreak = (int) d[1] == 0;
+            types[idx] = isBreak ? ColType.BREAK_COL : ColType.LESSON_COL;
+            labels[idx] = (String) d[2];
+            pns[idx] = (int) d[3];
+            breaks[idx] = isBreak;
+        }
+        return new ColLayout(total, types, labels, pns, breaks);
+    }
+
+    private String shortLabel(String periodLabel) {
+        if (periodLabel == null) return "";
+        return switch (periodLabel.toLowerCase()) {
+            case "assembly" -> "Ass.";
+            case "tea break" -> "Tea";
+            case "short break" -> "SB";
+            case "lunch break", "lunch" -> "Lunch";
+            case "games time", "games" -> "Games";
+            default -> periodLabel.length() <= 5 ? periodLabel : periodLabel.substring(0, 4) + ".";
+        };
+    }
+
+    private String shortLessonLabel(int lessonNum, String periodLabel) {
+        if (periodLabel != null && !periodLabel.isBlank()) {
+            String u = periodLabel.toUpperCase();
+            // If label looks like "P1", "P2", etc., use just the number
+            if (u.matches("P\\d+")) return u.substring(1);
+            // Otherwise use label but short
+            return u.length() <= 4 ? u : u.substring(0, 3);
+        }
+        return String.valueOf(lessonNum);
+    }
+
+    private String breakFullLabel(String colLabel) {
+        if (colLabel == null || colLabel.isEmpty()) return "BREAK";
+        return switch (colLabel) {
+            case "Ass." -> "ASSEMBLY/PREPS";
+            case "Tea" -> "TEA BREAK";
+            case "SB" -> "SHORT BREAK";
+            case "Lunch" -> "LUNCH BREAK";
+            case "Games" -> "GAMES";
+            default -> colLabel.toUpperCase();
+        };
+    }
+
+    private ColLayout layout() {
+        if (layout == null) {
+            synchronized (this) {
+                if (layout == null) {
+                    layout = loadLayout();
+                }
+            }
+        }
+        return layout;
+    }
+
     // ---- Private helpers ----
 
     private Map<Long, TeachingAssignment> assignmentMap() {
@@ -278,35 +382,33 @@ public class PdfTimetableExporter implements TimetableExporter {
         }
     }
 
-    // ---- Column layout ----
+    // ---- Column layout helpers ----
 
-    private float[] computeColStarts(float tableLeft) {
-        float[] starts = new float[TOTAL_COLUMNS];
+    private float[] computeColStarts(float tableLeft, ColLayout ly) {
+        float[] starts = new float[ly.totalColumns];
         starts[0] = tableLeft;
         float cx = tableLeft + DAY_COL_W;
-        for (int i = 1; i < TOTAL_COLUMNS; i++) {
+        for (int i = 1; i < ly.totalColumns; i++) {
             starts[i] = cx;
-            cx += colWidth(i);
+            cx += colWidth(ly, i);
         }
         return starts;
     }
 
-    private float colWidth(int colIdx) {
+    private float colWidth(ColLayout ly, int colIdx) {
         if (colIdx == 0) return DAY_COL_W;
-        return COL_TYPES[colIdx] == ColType.BREAK_COL ? BREAK_COL_W : LESSON_COL_W;
+        return ly.colTypes[colIdx] == ColType.BREAK_COL ? BREAK_COL_W : LESSON_COL_W;
     }
 
-    private float tableWidth() {
+    private float tableWidth(ColLayout ly) {
         float w = DAY_COL_W;
-        for (int i = 1; i < TOTAL_COLUMNS; i++) {
-            w += colWidth(i);
+        for (int i = 1; i < ly.totalColumns; i++) {
+            w += colWidth(ly, i);
         }
         return w;
     }
 
     // ---- DB-backed period times ----
-
-    private volatile Map<Integer, String> periodTimeCache = null;
 
     private String timeForPeriod(int periodNumber) {
         if (periodTimeCache == null) {
@@ -354,17 +456,6 @@ public class PdfTimetableExporter implements TimetableExporter {
         m.put(10, "15:20 - 16:00");
         m.put(11, "16:40 - 17:20");
         return m;
-    }
-
-    private String breakTimeForColumn(int colIdx) {
-        switch (colIdx) {
-            case 1:  return "7:10 - 8:00";  // Assembly
-            case 5:  return "10:00 - 10:20"; // Tea Break
-            case 8:  return "11:40 - 11:50"; // Short Break
-            case 11: return "13:10 - 14:00"; // Lunch
-            case 15: return "16:00 - 16:40"; // Games
-            default: return "";
-        }
     }
 
     // ---- Drawing helpers ----
@@ -428,86 +519,83 @@ public class PdfTimetableExporter implements TimetableExporter {
         return r;
     }
 
-    // ========== Page Rendering (fixed 17-column, A4 landscape, B&W) ==========
+    // ========== Page Rendering ==========
 
     private void renderPage(PDPageContentStream cs, PDRectangle pageSize,
                             String headingText, List<TimetableEntry> entries,
                             Map<Long, TeachingAssignment> aMap,
                             PDType1Font fb, PDType1Font f, PDType1Font fi) throws IOException {
+        ColLayout ly = layout();
         float pw = pageSize.getWidth();
         float ph = pageSize.getHeight();
-        float tableW = tableWidth();
-
-        // Center table horizontally
+        float tableW = tableWidth(ly);
         float tableLeft = (pw - tableW) / 2f;
         float yTop = ph - MARGIN_TOP;
-
-        float[] colStarts = computeColStarts(tableLeft);
+        float[] colStarts = computeColStarts(tableLeft, ly);
         String school = schoolName();
         float y = yTop;
 
-        // ---- School name (top-left, uppercase small) ----
         if (!school.isBlank()) {
             setFill(cs, DARK_GRAY);
             txt(cs, tableLeft, y, school.toUpperCase(), fb, 9);
             y -= SCHOOL_NAME_H;
         }
 
-        // ---- Heading (class/teacher name, centered large bold) ----
         setFill(cs, BLACK);
         txc(cs, tableLeft, tableLeft + tableW, y, headingText.toUpperCase(), fb, 17);
         y -= HEADING_H;
 
-        // ---- Top border before header ----
         setStroke(cs, GRID_LINE, 0.8f);
         hline(cs, tableLeft, tableLeft + tableW, y);
 
-        // ---- Column headers (period number + time) ----
-        renderColumnHeaders(cs, y, colStarts, fb, f);
+        renderColumnHeaders(cs, y, colStarts, ly, fb, f);
         y -= HEADER_ROW_H;
 
-        // ---- Day rows with merged break columns ----
-        renderDayRows(cs, y, colStarts, entries, aMap, fb, f, fi);
+        renderDayRows(cs, y, colStarts, ly, entries, aMap, fb, f, fi);
     }
 
     private void renderColumnHeaders(PDPageContentStream cs, float y, float[] colStarts,
-                                     PDType1Font fb, PDType1Font f) throws IOException {
-        // Day header cell — empty (just grid border)
+                                     ColLayout ly, PDType1Font fb, PDType1Font f) throws IOException {
         dr(cs, colStarts[0], y, DAY_COL_W, HEADER_ROW_H, WHITE, GRID_LINE, 0.5f);
 
-        for (int i = 1; i < TOTAL_COLUMNS; i++) {
+        for (int i = 1; i < ly.totalColumns; i++) {
             float cx = colStarts[i];
-            float cw = colWidth(i);
+            float cw = colWidth(ly, i);
             dr(cs, cx, y, cw, HEADER_ROW_H, WHITE, GRID_LINE, 0.5f);
             setFill(cs, BLACK);
 
-            boolean isBreak = COL_TYPES[i] == ColType.BREAK_COL;
-            int pn = COL_PERIOD_NUMBERS[i];
-
-            // Time label (small, top)
             String timeLabel;
-            if (isBreak) {
-                timeLabel = breakTimeForColumn(i);
+            if (ly.colIsBreak[i]) {
+                timeLabel = breakTimeForLabel(ly.colLabels[i]);
             } else {
-                timeLabel = timeForPeriod(pn);
+                timeLabel = timeForPeriod(ly.colPeriodNumbers[i]);
             }
             if (!timeLabel.isBlank()) {
                 txc(cs, cx, cx + cw, y + HEADER_ROW_H - 8, timeLabel, f, 7);
             }
-
-            // Period/break label (bold, below time)
-            txc(cs, cx, cx + cw, y + 6, COL_LABELS[i], fb, 10);
+            txc(cs, cx, cx + cw, y + 6, ly.colLabels[i], fb, 10);
         }
 
-        // Bottom border of header row
         setStroke(cs, GRID_LINE, 0.8f);
-        hline(cs, colStarts[0], colStarts[0] + tableWidth(), y);
+        hline(cs, colStarts[0], colStarts[0] + tableWidth(ly), y);
+    }
+
+    private String breakTimeForLabel(String label) {
+        if (label == null) return "";
+        return switch (label) {
+            case "Ass." -> "7:10 - 8:00";
+            case "Tea" -> "10:00 - 10:20";
+            case "SB" -> "11:40 - 11:50";
+            case "Lunch" -> "13:10 - 14:00";
+            case "Games" -> "16:00 - 16:40";
+            default -> "";
+        };
     }
 
     private void renderDayRows(PDPageContentStream cs, float y, float[] colStarts,
-                               List<TimetableEntry> entries, Map<Long, TeachingAssignment> aMap,
+                               ColLayout ly, List<TimetableEntry> entries,
+                               Map<Long, TeachingAssignment> aMap,
                                PDType1Font fb, PDType1Font f, PDType1Font fi) throws IOException {
-        // Build lookup: day.name -> (periodNumber -> entry)
         Map<String, Map<Integer, TimetableEntry>> dayLookup = new HashMap<>();
         for (TimetableEntry e : entries) {
             dayLookup.computeIfAbsent(e.getDayOfWeek().name(), _k -> new HashMap<>())
@@ -516,27 +604,17 @@ public class PdfTimetableExporter implements TimetableExporter {
 
         float rowsTotalH = 5 * DAY_ROW_H;
         float tableLeft = colStarts[0];
-        float tableRight = tableLeft + tableWidth();
+        float tableRight = tableLeft + tableWidth(ly);
 
-        // ---- Pre-render: merged break columns across all rows ----
-        for (int i = 1; i < TOTAL_COLUMNS; i++) {
-            if (COL_TYPES[i] != ColType.BREAK_COL) continue;
+        // Pre-render merged break columns
+        for (int i = 1; i < ly.totalColumns; i++) {
+            if (!ly.colIsBreak[i]) continue;
             float cx = colStarts[i];
-            float cw = colWidth(i);
-            // White background with border
+            float cw = colWidth(ly, i);
             dr(cs, cx, y, cw, rowsTotalH, WHITE, GRID_LINE, 0.5f);
 
-            String fullLabel;
-            switch (i) {
-                case 1:  fullLabel = "ASSEMBLY/PREPS"; break;
-                case 5:  fullLabel = "TEA BREAK"; break;
-                case 8:  fullLabel = "SHORT BREAK"; break;
-                case 11: fullLabel = "LUNCH BREAK"; break;
-                case 15: fullLabel = "GAMES"; break;
-                default: fullLabel = COL_LABELS[i].toUpperCase();
-            }
+            String fullLabel = breakFullLabel(ly.colLabels[i]);
 
-            // Rotated text (90° CCW)
             cs.saveGraphicsState();
             float centerX = cx + cw / 2f;
             float centerY = y - rowsTotalH / 2f;
@@ -547,27 +625,25 @@ public class PdfTimetableExporter implements TimetableExporter {
             cs.restoreGraphicsState();
         }
 
-        // ---- Render day rows ----
+        // Render day rows
         for (int ri = 0; ri < 5; ri++) {
             DayOfWeek day = DayOfWeek.workingDays().get(ri);
             float[] bg = ri % 2 == 1 ? LIGHT_GRAY : WHITE;
 
-            // Day column
             dr(cs, colStarts[0], y, DAY_COL_W, DAY_ROW_H, bg, GRID_LINE, 0.5f);
             setFill(cs, BLACK);
             txc(cs, colStarts[0], colStarts[0] + DAY_COL_W, y + DAY_ROW_H / 2f - 5,
                     DAY_ABBREVIATIONS[ri], fb, 12);
 
-            // Lesson columns
             Map<Integer, TimetableEntry> dayEntries = dayLookup.getOrDefault(day.name(), new HashMap<>());
             float midY = y + DAY_ROW_H / 2f;
 
-            for (int i = 1; i < TOTAL_COLUMNS; i++) {
+            for (int i = 1; i < ly.totalColumns; i++) {
                 float cx = colStarts[i];
-                float cw = colWidth(i);
+                float cw = colWidth(ly, i);
 
-                if (COL_TYPES[i] == ColType.LESSON_COL) {
-                    int pn = COL_PERIOD_NUMBERS[i];
+                if (ly.colTypes[i] == ColType.LESSON_COL) {
+                    int pn = ly.colPeriodNumbers[i];
                     TimetableEntry match = dayEntries.get(pn);
 
                     dr(cs, cx, y, cw, DAY_ROW_H, bg, GRID_LINE, 0.5f);
@@ -577,33 +653,25 @@ public class PdfTimetableExporter implements TimetableExporter {
                         if (a != null) {
                             String sc = subjectCode(a.getSubjectId());
                             String ti = teacherInitials(a.getTeacherId());
-
-                            // Subject code (top line, bold)
                             setFill(cs, BLACK);
                             txc(cs, cx, cx + cw, midY + 10, sc, fb, 9);
-
-                            // Teacher initials (bottom line)
                             setFill(cs, DARK_GRAY);
                             txc(cs, cx, cx + cw, midY - 6, ti, f, 7);
                         }
                     }
                 } else {
-                    // Break column — draw vertical border on right
                     setStroke(cs, GRID_LINE, 0.4f);
                     vline(cs, cx + cw, y, y - DAY_ROW_H);
                 }
             }
 
-            // Bottom border for this row
             setStroke(cs, GRID_LINE, 0.4f);
             hline(cs, tableLeft, tableRight, y - DAY_ROW_H);
-
             y -= DAY_ROW_H;
         }
 
-        // ---- Outer border (slightly thicker) ----
         setStroke(cs, GRID_LINE, 1.2f);
-        strokeR(cs, tableLeft, y + rowsTotalH, tableWidth(), rowsTotalH);
+        strokeR(cs, tableLeft, y + rowsTotalH, tableWidth(ly), rowsTotalH);
     }
 
     // ========== PDF writers ==========
@@ -616,7 +684,6 @@ public class PdfTimetableExporter implements TimetableExporter {
         try (PDDocument doc = new PDDocument()) {
             Map<Long, TeachingAssignment> aMap = assignmentMap();
             Map<String, List<TimetableEntry>> byClass = groupByClass(data.entries());
-            // A4 landscape
             float pw = PDRectangle.A4.getHeight();
             float ph = PDRectangle.A4.getWidth();
 
@@ -690,9 +757,7 @@ public class PdfTimetableExporter implements TimetableExporter {
             PDPage pg = new PDPage(new PDRectangle(pw, ph));
             doc.addPage(pg);
             PDPageContentStream cs = new PDPageContentStream(doc, pg);
-            // For teacher PDF, heading is the teacher name
-            String heading = "Teacher " + teacher.getName();
-            renderPage(cs, pg.getMediaBox(), heading, teacherEntries, aMap, fb, f, fi);
+            renderPage(cs, pg.getMediaBox(), "Teacher " + teacher.getName(), teacherEntries, aMap, fb, f, fi);
             cs.close();
             doc.save(output);
         } catch (IOException e) {
@@ -722,8 +787,7 @@ public class PdfTimetableExporter implements TimetableExporter {
                 PDPage pg = new PDPage(new PDRectangle(pw, ph));
                 doc.addPage(pg);
                 PDPageContentStream cs = new PDPageContentStream(doc, pg);
-                String heading = "Teacher " + teacher.getName();
-                renderPage(cs, pg.getMediaBox(), heading, teacherEntries, aMap, fb, f, fi);
+                renderPage(cs, pg.getMediaBox(), "Teacher " + teacher.getName(), teacherEntries, aMap, fb, f, fi);
                 cs.close();
             }
             doc.save(output);
