@@ -260,10 +260,10 @@ public class SqliteDataRepository extends AbstractRepository implements DataRepo
         List<Long> ids = new ArrayList<>();
         String[][] data = {
             {"Assembly", "0", "50", "1", "1", "1", "07:10", "08:00"},
-            {"Tea Break", "2", "30", "2", "0", "0", "09:20", "09:50"},
-            {"Short Break", "4", "10", "3", "0", "0", "11:10", "11:20"},
-            {"Lunch Break", "6", "30", "4", "0", "0", "12:40", "13:10"},
-            {"Games Time", "10", "40", "5", "0", "0", "15:50", "16:30"},
+            {"Tea Break", "3", "20", "2", "0", "0", "10:00", "10:20"},
+            {"Short Break", "5", "10", "3", "0", "0", "11:40", "11:50"},
+            {"Lunch Break", "7", "50", "4", "0", "0", "13:10", "14:00"},
+            {"Games Time", "10", "40", "5", "0", "0", "16:00", "16:40"},
         };
         try (PreparedStatement ps = conn.prepareStatement(
                 "INSERT INTO breaks (name, after_period, duration_minutes, sort_order, "
@@ -292,18 +292,18 @@ public class SqliteDataRepository extends AbstractRepository implements DataRepo
                 {1, "07:10", "08:00", "Assembly", "BREAK", breakIds.get(0)},
                 {2, "08:00", "08:40", "P1", "LESSON", null},
                 {3, "08:40", "09:20", "P2", "LESSON", null},
-                {4, "09:20", "09:50", "Tea Break", "BREAK", breakIds.get(1)},
-                {5, "09:50", "10:30", "P3", "LESSON", null},
-                {6, "10:30", "11:10", "P4", "LESSON", null},
-                {7, "11:10", "11:20", "Short Break", "BREAK", breakIds.get(2)},
-                {8, "11:20", "12:00", "P5", "LESSON", null},
-                {9, "12:00", "12:40", "P6", "LESSON", null},
-                {10, "12:40", "13:10", "Lunch Break", "BREAK", breakIds.get(3)},
-                {11, "13:10", "13:50", "P7", "LESSON", null},
-                {12, "13:50", "14:30", "P8", "LESSON", null},
-                {13, "14:30", "15:10", "P9", "LESSON", null},
-                {14, "15:10", "15:50", "P10", "LESSON", null},
-                {15, "15:50", "16:30", "Games Time", "BREAK", breakIds.get(4)},
+                {4, "09:20", "10:00", "P3", "LESSON", null},
+                {5, "10:00", "10:20", "Tea Break", "BREAK", breakIds.get(1)},
+                {6, "10:20", "11:00", "P4", "LESSON", null},
+                {7, "11:00", "11:40", "P5", "LESSON", null},
+                {8, "11:40", "11:50", "Short Break", "BREAK", breakIds.get(2)},
+                {9, "11:50", "12:30", "P6", "LESSON", null},
+                {10, "12:30", "13:10", "P7", "LESSON", null},
+                {11, "13:10", "14:00", "Lunch Break", "BREAK", breakIds.get(3)},
+                {12, "14:00", "14:40", "P8", "LESSON", null},
+                {13, "14:40", "15:20", "P9", "LESSON", null},
+                {14, "15:20", "16:00", "P10", "LESSON", null},
+                {15, "16:00", "16:40", "Games Time", "BREAK", breakIds.get(4)},
             };
             for (Object[] row : data) {
                 ps.setInt(1, (Integer) row[0]);
@@ -359,7 +359,7 @@ public class SqliteDataRepository extends AbstractRepository implements DataRepo
 
     private void updateSchoolSettings(Connection conn) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement(
-                "INSERT OR REPLACE INTO school_settings (id, school_name, total_periods, school_start_time, school_end_time, period_duration_min, spread_weight, consecutive_weight, balance_weight) VALUES (1, 'My School', 15, '07:10', '16:30', 40, 0.50, 0.40, 0.10)")) {
+                "INSERT OR REPLACE INTO school_settings (id, school_name, total_periods, school_start_time, school_end_time, period_duration_min, spread_weight, consecutive_weight, balance_weight) VALUES (1, 'My School', 10, '07:10', '16:40', 40, 0.50, 0.40, 0.10)")) {
             ps.executeUpdate();
         }
     }
