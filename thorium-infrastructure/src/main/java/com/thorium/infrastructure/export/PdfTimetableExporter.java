@@ -71,6 +71,11 @@ public class PdfTimetableExporter implements TimetableExporter {
     private static final float[] LIGHT_GRAY = {0.92f, 0.92f, 0.92f};
     private static final float[] DARK_GRAY = {0.4f, 0.4f, 0.4f};
     private static final float[] GRID_LINE = {0, 0, 0};
+    private static final float[] BREAK_BG = {0.996f, 0.957f, 0.780f};  // #fef3c7
+    private static final float[] BREAK_BORDER = {0.847f, 0.467f, 0.024f}; // #d97706
+    private static final float[] HEADER_BG = {0.1176f, 0.251f, 0.686f}; // #1e40af
+    private static final float[] HEADER_TEXT = {1, 1, 1};
+    private static final float[] MONDAY_BG = {0.1176f, 0.251f, 0.686f}; // same as HEADER_BG
 
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
 
@@ -548,14 +553,20 @@ public class PdfTimetableExporter implements TimetableExporter {
 
     private void renderColumnHeaders(PDPageContentStream cs, float y, float[] colStarts,
                                      ColLayout ly, PDType1Font fb, PDType1Font f) throws IOException {
-        dr(cs, colStarts[0], y, DAY_COL_W, HEADER_ROW_H, WHITE, GRID_LINE, 0.5f);
+        dr(cs, colStarts[0], y, DAY_COL_W, HEADER_ROW_H, HEADER_BG, GRID_LINE, 0.5f);
+        setFill(cs, HEADER_TEXT);
+        txc(cs, colStarts[0], colStarts[0] + DAY_COL_W, y + HEADER_ROW_H / 2f - 5, "Day", fb, 10);
 
         for (int i = 1; i < ly.totalColumns; i++) {
             float cx = colStarts[i];
             float cw = colWidth(ly, i);
-            dr(cs, cx, y, cw, HEADER_ROW_H, WHITE, GRID_LINE, 0.5f);
-            setFill(cs, BLACK);
+            dr(cs, cx, y, cw, HEADER_ROW_H, HEADER_BG, GRID_LINE, 0.5f);
+            setFill(cs, HEADER_TEXT);
 
+            // Period number / break label on top (bold)
+            txc(cs, cx, cx + cw, y + HEADER_ROW_H - 12, ly.colLabels[i], fb, 10);
+
+            // Time interval underneath (smaller, lighter)
             String timeLabel;
             if (ly.colIsBreak[i]) {
                 timeLabel = breakTimeForLabel(ly.colLabels[i]);
@@ -563,9 +574,8 @@ public class PdfTimetableExporter implements TimetableExporter {
                 timeLabel = timeForPeriod(ly.colPeriodNumbers[i]);
             }
             if (!timeLabel.isBlank()) {
-                txc(cs, cx, cx + cw, y + HEADER_ROW_H - 8, timeLabel, f, 7);
+                txc(cs, cx, cx + cw, y + 4, timeLabel, f, 7);
             }
-            txc(cs, cx, cx + cw, y + 6, ly.colLabels[i], fb, 10);
         }
 
         setStroke(cs, GRID_LINE, 0.8f);
@@ -598,12 +608,12 @@ public class PdfTimetableExporter implements TimetableExporter {
         float tableLeft = colStarts[0];
         float tableRight = tableLeft + tableWidth(ly);
 
-        // Pre-render merged break columns
+        // Pre-render merged break columns with amber styling
         for (int i = 1; i < ly.totalColumns; i++) {
             if (!ly.colIsBreak[i]) continue;
             float cx = colStarts[i];
             float cw = colWidth(ly, i);
-            dr(cs, cx, y, cw, rowsTotalH, WHITE, GRID_LINE, 0.5f);
+            dr(cs, cx, y, cw, rowsTotalH, BREAK_BG, BREAK_BORDER, 0.5f);
 
             String fullLabel = ly.colBreakFullLabels[i];
 
@@ -611,7 +621,7 @@ public class PdfTimetableExporter implements TimetableExporter {
             float centerX = cx + cw / 2f;
             float centerY = y - rowsTotalH / 2f;
             cs.transform(new org.apache.pdfbox.util.Matrix(0, -1, 1, 0, centerX, centerY));
-            setFill(cs, BLACK);
+            setFill(cs, BREAK_BORDER);
             float tw = fb.getStringWidth(fullLabel) / 1000f * 10;
             txc(cs, -tw / 2f, tw / 2f, -cw / 2f + 3, fullLabel, fb, 10);
             cs.restoreGraphicsState();
@@ -620,10 +630,11 @@ public class PdfTimetableExporter implements TimetableExporter {
         // Render day rows
         for (int ri = 0; ri < 5; ri++) {
             DayOfWeek day = DayOfWeek.workingDays().get(ri);
-            float[] bg = ri % 2 == 1 ? LIGHT_GRAY : WHITE;
+            boolean isMonday = ri == 0;
+            float[] bg = isMonday ? MONDAY_BG : (ri % 2 == 1 ? LIGHT_GRAY : WHITE);
 
             dr(cs, colStarts[0], y, DAY_COL_W, DAY_ROW_H, bg, GRID_LINE, 0.5f);
-            setFill(cs, BLACK);
+            setFill(cs, isMonday ? WHITE : BLACK);
             txc(cs, colStarts[0], colStarts[0] + DAY_COL_W, y + DAY_ROW_H / 2f - 5,
                     DAY_ABBREVIATIONS[ri], fb, 12);
 
@@ -638,22 +649,24 @@ public class PdfTimetableExporter implements TimetableExporter {
                     int pn = ly.colPeriodNumbers[i];
                     TimetableEntry match = dayEntries.get(pn);
 
-                    dr(cs, cx, y, cw, DAY_ROW_H, bg, GRID_LINE, 0.5f);
+                    float[] cellBg = isMonday ? MONDAY_BG : bg;
+                    dr(cs, cx, y, cw, DAY_ROW_H, cellBg, GRID_LINE, 0.5f);
 
                     if (match != null) {
                         TeachingAssignment a = aMap.get(match.getTeachingAssignmentId());
                         if (a != null) {
                             String sc = subjectCode(a.getSubjectId());
                             String ti = teacherInitials(a.getTeacherId());
-                            setFill(cs, BLACK);
+                            float[] textColor = isMonday ? WHITE : BLACK;
+                            float[] teacherColor = isMonday ? WHITE : DARK_GRAY;
+                            setFill(cs, textColor);
                             txc(cs, cx, cx + cw, midY + 10, sc, fb, 9);
-                            setFill(cs, DARK_GRAY);
+                            setFill(cs, teacherColor);
                             txc(cs, cx, cx + cw, midY - 6, ti, f, 7);
                         }
                     }
                 } else {
-                    setStroke(cs, GRID_LINE, 0.4f);
-                    vline(cs, cx + cw, y, y - DAY_ROW_H);
+                    // Break column — no interior vline needed (already bordered)
                 }
             }
 

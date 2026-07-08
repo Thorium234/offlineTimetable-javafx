@@ -18,16 +18,22 @@ public class SoftConstraintScorer {
     private final double spreadWeight;
     private final double consecutiveWeight;
     private final double balanceWeight;
+    private final double windowWeight;
 
     public SoftConstraintScorer() {
-        this(0.75, 0.15, 0.10);
+        this(0.60, 0.15, 0.15, 0.10);
     }
 
-    public SoftConstraintScorer(double spreadWeight, double consecutiveWeight, double balanceWeight) {
-        double total = spreadWeight + consecutiveWeight + balanceWeight;
+    public SoftConstraintScorer(double spreadWeight, double consecutiveWeight, double balanceWeight, double windowWeight) {
+        double total = spreadWeight + consecutiveWeight + balanceWeight + windowWeight;
         this.spreadWeight = spreadWeight / total;
         this.consecutiveWeight = consecutiveWeight / total;
         this.balanceWeight = balanceWeight / total;
+        this.windowWeight = windowWeight / total;
+    }
+
+    public SoftConstraintScorer(double spreadWeight, double consecutiveWeight, double balanceWeight) {
+        this(spreadWeight, consecutiveWeight, balanceWeight, 0.10);
     }
 
     public double score(PartialSchedule schedule, SchedulingContext context) {
@@ -37,7 +43,9 @@ public class SoftConstraintScorer {
         double spreadScore = scoreSpread(schedule, context);
         double consecutiveScore = scoreConsecutiveLessons(schedule, context);
         double balanceScore = scoreTeacherBalance(schedule, context);
-        return spreadScore * spreadWeight + consecutiveScore * consecutiveWeight + balanceScore * balanceWeight;
+        double windowScore = scoreStudentWindows(schedule, context);
+        return spreadScore * spreadWeight + consecutiveScore * consecutiveWeight
+                + balanceScore * balanceWeight + windowScore * windowWeight;
     }
 
     public double scorePlacement(TeachingAssignment assignment, ScheduleSlot slot,
@@ -147,5 +155,44 @@ public class SoftConstraintScorer {
             return 1.0;
         }
         return 1.0 - ((double) penalties / total);
+    }
+
+    /**
+     * Scores intra-day student windows (gaps). Penalizes assignments whose lessons
+     * are spread far apart within a single day with large gaps between them.
+     * Returns 1.0 for no windows (all lessons consecutive/compact), lower for gaps.
+     */
+    private double scoreStudentWindows(PartialSchedule schedule, SchedulingContext context) {
+        Map<Long, Map<DayOfWeek, List<Integer>>> assignmentPeriods = new HashMap<>();
+        for (PlacedLesson placed : schedule.placedLessons()) {
+            assignmentPeriods
+                    .computeIfAbsent(placed.assignment().getId(), k -> new EnumMap<>(DayOfWeek.class))
+                    .computeIfAbsent(placed.slot().dayOfWeek(), k -> new java.util.ArrayList<>())
+                    .add(placed.slot().periodNumber());
+        }
+
+        if (assignmentPeriods.isEmpty()) return 1.0;
+
+        double totalPenalty = 0.0;
+        int totalWindows = 0;
+
+        for (var entry : assignmentPeriods.entrySet()) {
+            for (List<Integer> periods : entry.getValue().values()) {
+                if (periods.size() < 2) continue;
+                periods.sort(Integer::compareTo);
+                for (int i = 1; i < periods.size(); i++) {
+                    int gap = periods.get(i) - periods.get(i - 1);
+                    if (gap > 1) {
+                        // Penalize gaps: wider gaps = higher penalty
+                        // gap=2 (1 period skipped) is minor, gap=3+ is bad
+                        totalPenalty += Math.min(1.0, (gap - 1) / 3.0);
+                        totalWindows++;
+                    }
+                }
+            }
+        }
+
+        if (totalWindows == 0) return 1.0;
+        return 1.0 - (totalPenalty / totalWindows);
     }
 }

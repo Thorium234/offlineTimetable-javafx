@@ -33,6 +33,7 @@ public class TimetableViewerController {
     @FXML private VBox poolContainer;
     @FXML private Button refreshBtn;
     @FXML private Button printBtn;
+    private static final String[] DAY_CODES = {"Mo", "Tu", "We", "Th", "Fr"};
 
     // SVG Outline Paths for Resource Tree Nodes
     private static final String CLASS_ICON = "M22 10v6M2 10l10-5 10 5-10 5z M6 12v5c0 2 2 3 6 3s6-1 6-3v-5";
@@ -319,9 +320,12 @@ public class TimetableViewerController {
         // Row 0 Day Headers
         for (int c = 0; c < days.size(); c++) {
             Label dayLabel = new Label(days.get(c).displayName());
-            dayLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #334155; -fx-font-size: 13px;");
+            boolean isMonday = c == 0;
+            String textColor = isMonday ? "#ffffff" : "#334155";
+            String bgColor = isMonday ? "#1e40af" : "#f1f5f9";
+            dayLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: " + textColor + "; -fx-font-size: 13px;");
             StackPane headerPane = new StackPane(dayLabel);
-            headerPane.setStyle("-fx-background-color: #f1f5f9; -fx-padding: 8; -fx-alignment: center; -fx-border-color: #e2e8f0; -fx-border-width: 0 0 2 0;");
+            headerPane.setStyle("-fx-background-color: " + bgColor + "; -fx-padding: 8; -fx-alignment: center; -fx-border-color: #e2e8f0; -fx-border-width: 0 0 2 0;");
             timetableGrid.add(headerPane, c + 1, 0);
         }
 
@@ -370,15 +374,21 @@ public class TimetableViewerController {
             }
         }
 
-        // Draw Break Rows (full-width dividers)
+        // Draw Break Rows (vertically isolated, styled with rotation)
         for (var entry : breakRows.entrySet()) {
             int r = entry.getKey();
             PeriodDto brk = entry.getValue();
+            String breakFull = brk.label().toUpperCase();
 
-            Label breakLabel = new Label("\u2615 " + brk.label() + " (" + brk.startTime() + " - " + brk.endTime() + ")");
-            breakLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #475569; -fx-font-size: 11px;");
+            // Build a rotated vertical label
+            Label breakLabel = new Label("\u2615 " + breakFull + "\n" + brk.startTime() + " - " + brk.endTime());
+            breakLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #d97706; -fx-font-size: 11px; -fx-rotate: 0;");
+            breakLabel.setAlignment(javafx.geometry.Pos.CENTER);
+            breakLabel.setMaxWidth(Double.MAX_VALUE);
+            breakLabel.setMaxHeight(Double.MAX_VALUE);
+
             StackPane breakPane = new StackPane(breakLabel);
-            breakPane.setStyle("-fx-background-color: #f1f5f9; -fx-background-radius: 4; -fx-padding: 6; -fx-alignment: center;");
+            breakPane.setStyle("-fx-background-color: #fef3c7; -fx-background-radius: 4; -fx-padding: 6; -fx-alignment: center; -fx-border-color: #d97706; -fx-border-width: 1px; -fx-border-radius: 4;");
 
             timetableGrid.add(breakPane, 0, r, 6, 1);
         }
@@ -494,91 +504,21 @@ public class TimetableViewerController {
             );
         }
 
-        // Core card labels and icons rows
-        HBox subjectRow = new HBox(4);
-        subjectRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        // Subject code (bold, centered, large)
         Label subjectLabel = new Label(card.subjectCode());
-        subjectLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: #0f172a;");
-        subjectRow.getChildren().addAll(
-                createSmallIcon(SUBJECT_ICON, "#1e293b", 10, 1.5),
-                subjectLabel
-        );
+        subjectLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 13px; -fx-text-fill: #0f172a;");
+        subjectLabel.setAlignment(javafx.geometry.Pos.CENTER);
 
-        HBox teacherOrClassRow = new HBox(4);
-        teacherOrClassRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-        Label secondaryLabel = new Label();
-        secondaryLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: #334155; -fx-font-weight: 500;");
+        // Teacher initials below (smaller, lighter, centered)
+        Label teacherLabel = new Label(card.teacherInitials() != null ? card.teacherInitials() : "");
+        teacherLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: #475569;");
+        teacherLabel.setAlignment(javafx.geometry.Pos.CENTER);
 
-        HBox roomRow = new HBox(4);
-        roomRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-        Label roomLabel = new Label();
-        roomRow.getChildren().add(roomLabel);
-
-        // Adapt contents and icons dynamically to the active Resource view
-        if (selectedType == SelectionType.CLASS) {
-            secondaryLabel.setText(card.teacherInitials() != null ? card.teacherInitials() : "No Teacher");
-            teacherOrClassRow.getChildren().addAll(
-                    createSmallIcon(TEACHER_ICON, "#334155", 10, 1.5),
-                    secondaryLabel
-            );
-            
-            if (card.roomCode() != null) {
-                roomLabel.setText(card.roomCode());
-                roomLabel.setStyle("-fx-font-size: 9px; -fx-font-style: italic; -fx-text-fill: #475569;");
-                roomRow.getChildren().add(0, createSmallIcon(ROOM_ICON, "#475569", 10, 1.5));
-            } else {
-                roomLabel.setText("No Room");
-                roomLabel.setStyle("-fx-font-size: 9px; -fx-font-style: italic; -fx-text-fill: #94a3b8;");
-            }
-        } else if (selectedType == SelectionType.TEACHER) {
-            secondaryLabel.setText(card.classStreamName());
-            teacherOrClassRow.getChildren().addAll(
-                    createSmallIcon(CLASS_ICON, "#334155", 10, 1.5),
-                    secondaryLabel
-            );
-            
-            if (card.roomCode() != null) {
-                roomLabel.setText(card.roomCode());
-                roomLabel.setStyle("-fx-font-size: 9px; -fx-font-style: italic; -fx-text-fill: #475569;");
-                roomRow.getChildren().add(0, createSmallIcon(ROOM_ICON, "#475569", 10, 1.5));
-            } else {
-                roomLabel.setText("No Room");
-                roomLabel.setStyle("-fx-font-size: 9px; -fx-font-style: italic; -fx-text-fill: #94a3b8;");
-            }
-        } else if (selectedType == SelectionType.ROOM) {
-            secondaryLabel.setText(card.classStreamName());
-            teacherOrClassRow.getChildren().addAll(
-                    createSmallIcon(CLASS_ICON, "#334155", 10, 1.5),
-                    secondaryLabel
-            );
-            
-            if (card.teacherInitials() != null) {
-                roomLabel.setText(card.teacherInitials());
-                roomLabel.setStyle("-fx-font-size: 9px; -fx-text-fill: #475569;");
-                roomRow.getChildren().add(0, createSmallIcon(TEACHER_ICON, "#475569", 10, 1.5));
-            } else {
-                roomLabel.setText("No Teacher");
-                roomLabel.setStyle("-fx-font-size: 9px; -fx-text-fill: #94a3b8;");
-            }
-        } else {
-            secondaryLabel.setText(card.classStreamName());
-            teacherOrClassRow.getChildren().addAll(
-                    createSmallIcon(CLASS_ICON, "#334155", 10, 1.5),
-                    secondaryLabel
-            );
-            
-            if (card.teacherInitials() != null) {
-                roomLabel.setText(card.teacherInitials());
-                roomLabel.setStyle("-fx-font-size: 9px; -fx-text-fill: #475569;");
-                roomRow.getChildren().add(0, createSmallIcon(TEACHER_ICON, "#475569", 10, 1.5));
-            } else {
-                roomLabel.setText("No Teacher");
-                roomLabel.setStyle("-fx-font-size: 9px; -fx-text-fill: #94a3b8;");
-            }
-        }
-
-        HBox topRow = new HBox(subjectRow);
-        topRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        VBox contentBox = new VBox(subjectLabel, teacherLabel);
+        contentBox.setSpacing(1);
+        contentBox.setAlignment(javafx.geometry.Pos.CENTER);
+        contentBox.setPadding(new Insets(4, 2, 4, 2));
+        HBox.setHgrow(contentBox, Priority.ALWAYS);
 
         // Grid Close button (only displayed on Hover to allow quick unassigning)
         if (!isPoolCard) {
@@ -600,10 +540,14 @@ public class TimetableViewerController {
             node.setOnMouseEntered(e -> closeBtn.setVisible(true));
             node.setOnMouseExited(e -> closeBtn.setVisible(false));
 
-            topRow.getChildren().addAll(spacer, closeBtn);
+            // Close button overlaid on top-right via a wrapper
+            StackPane wrapper = new StackPane(contentBox, closeBtn);
+            StackPane.setAlignment(closeBtn, javafx.geometry.Pos.TOP_RIGHT);
+            StackPane.setMargin(closeBtn, new Insets(0, 2, 0, 0));
+            node.getChildren().add(wrapper);
+        } else {
+            node.getChildren().add(contentBox);
         }
-
-        node.getChildren().addAll(topRow, teacherOrClassRow, roomRow);
         node.setSpacing(1);
         node.setPadding(new Insets(6));
 
