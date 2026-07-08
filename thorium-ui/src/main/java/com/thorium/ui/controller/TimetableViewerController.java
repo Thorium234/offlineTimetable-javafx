@@ -302,95 +302,93 @@ public class TimetableViewerController {
             return;
         }
 
-        // Set Headers
         gridTitleLabel.setText(selectedLabel + " Timetable");
         filterStatusLabel.setText("Viewing scheduled lessons for " + selectedType.name().toLowerCase() + ": " + selectedLabel);
 
-        List<DayOfWeek> days = List.of(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY);
-
-        // Column Constraints
-        ColumnConstraints col0 = new ColumnConstraints(110);
-        timetableGrid.getColumnConstraints().add(col0);
-        for (int i = 0; i < 5; i++) {
-            ColumnConstraints col = new ColumnConstraints();
-            col.setPercentWidth(18); // equally space column widths
-            timetableGrid.getColumnConstraints().add(col);
-        }
-
-        // Row 0 Day Headers
-        for (int c = 0; c < days.size(); c++) {
-            Label dayLabel = new Label(days.get(c).displayName());
-            boolean isMonday = c == 0;
-            String textColor = isMonday ? "#ffffff" : "#334155";
-            String bgColor = isMonday ? "#1e40af" : "#f1f5f9";
-            dayLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: " + textColor + "; -fx-font-size: 13px;");
-            StackPane headerPane = new StackPane(dayLabel);
-            headerPane.setStyle("-fx-background-color: " + bgColor + "; -fx-padding: 8; -fx-alignment: center; -fx-border-color: #e2e8f0; -fx-border-width: 0 0 2 0;");
-            timetableGrid.add(headerPane, c + 1, 0);
-        }
-
-        // Set up mapping of periods to grid rows
-        int currentRow = 1;
-        Map<Integer, Integer> periodToRowMap = new HashMap<>();
-        Map<Integer, PeriodDto> breakRows = new HashMap<>();
-
         List<PeriodDto> periods = currentState.periods();
+        List<DayOfWeek> days = DayOfWeek.workingDays();
 
-        for (PeriodDto period : periods) {
-            periodToRowMap.put(period.periodNumber(), currentRow);
-            if ("BREAK".equals(period.type())) {
-                breakRows.put(currentRow, period);
-            }
-            currentRow++;
+        // Column 0: day label; remaining: one per period
+        timetableGrid.getColumnConstraints().add(new ColumnConstraints(80));
+        for (int i = 0; i < periods.size(); i++) {
+            timetableGrid.getColumnConstraints().add(new ColumnConstraints(90));
         }
 
-        // Draw Period Rows
-        for (PeriodDto period : periods) {
-            if ("BREAK".equals(period.type())) continue;
-            int r = periodToRowMap.get(period.periodNumber());
+        // 6 rows: header + 5 days
+        timetableGrid.getRowConstraints().add(new RowConstraints(38));
+        for (int i = 0; i < 5; i++) {
+            timetableGrid.getRowConstraints().add(new RowConstraints(44));
+        }
 
-            Label pLabel = new Label(period.label());
-            pLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #1e293b; -fx-font-size: 12px;");
-            Label timeLabel = new Label(period.startTime() + " - " + period.endTime());
-            timeLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: #64748b;");
+        // ---- Row 0: Header row (period names + times) ----
+        for (int pi = 0; pi < periods.size(); pi++) {
+            PeriodDto p = periods.get(pi);
+            int col = pi + 1;
 
-            VBox pBox = new VBox(pLabel, timeLabel);
-            pBox.setSpacing(2);
-            pBox.setPadding(new Insets(6));
-            pBox.setStyle("-fx-background-color: #f8fafc; -fx-border-color: #e2e8f0; -fx-border-width: 0 1 1 0; -fx-alignment: center;");
-            timetableGrid.add(pBox, 0, r);
+            VBox headerCell = new VBox(2);
+            Label periodLabel = new Label(p.label());
+            periodLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 11px; -fx-text-fill: #ffffff;");
+            Label timeLabel = new Label(p.startTime() + " - " + p.endTime());
+            timeLabel.setStyle("-fx-font-size: 9px; -fx-text-fill: #d0d0d0;");
+            headerCell.getChildren().addAll(periodLabel, timeLabel);
+            headerCell.setAlignment(javafx.geometry.Pos.CENTER);
+            headerCell.setPadding(new Insets(4));
+            headerCell.setStyle("-fx-background-color: #333333; -fx-border-color: #000000; -fx-border-width: 0.5px;");
+            timetableGrid.add(headerCell, col, 0);
+        }
 
-            for (int c = 0; c < days.size(); c++) {
-                DayOfWeek day = days.get(c);
-                LessonCardDto matchedLesson = findMatchedLesson(day, period.periodNumber());
+        // ---- Rows 1-5: Day rows ----
+        for (int di = 0; di < 5; di++) {
+            DayOfWeek day = days.get(di);
+            int row = di + 1;
+            boolean isMonday = di == 0;
 
-                if (matchedLesson != null) {
-                    VBox cardNode = createCardNode(matchedLesson, false);
-                    timetableGrid.add(cardNode, c + 1, r);
+            // Column 0: day label
+            Label dayLabel = new Label(day.displayName());
+            dayLabel.setMaxWidth(Double.MAX_VALUE);
+            dayLabel.setMaxHeight(Double.MAX_VALUE);
+            dayLabel.setAlignment(javafx.geometry.Pos.CENTER);
+            if (isMonday) {
+                dayLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #ffffff; -fx-background-color: #333333; -fx-padding: 8; -fx-border-color: #000000; -fx-border-width: 0.5px;");
+            } else {
+                dayLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #000000; -fx-background-color: #f5f5f5; -fx-padding: 8; -fx-border-color: #000000; -fx-border-width: 0.5px;");
+            }
+            timetableGrid.add(dayLabel, 0, row);
+
+            // Lesson cells per period column
+            for (int pi = 0; pi < periods.size(); pi++) {
+                PeriodDto p = periods.get(pi);
+                int col = pi + 1;
+
+                if ("BREAK".equals(p.type())) continue;
+
+                LessonCardDto lesson = findMatchedLesson(day, p.periodNumber());
+                if (lesson != null) {
+                    VBox card = createCardNode(lesson, false, isMonday);
+                    timetableGrid.add(card, col, row);
                 } else {
-                    Pane emptySlot = createEmptySlotNode(day, period.periodNumber());
-                    timetableGrid.add(emptySlot, c + 1, r);
+                    Pane empty = createEmptySlotNode(day, p.periodNumber(), isMonday);
+                    timetableGrid.add(empty, col, row);
                 }
             }
         }
 
-        // Draw Break Rows (vertically isolated, styled with rotation)
-        for (var entry : breakRows.entrySet()) {
-            int r = entry.getKey();
-            PeriodDto brk = entry.getValue();
-            String breakFull = brk.label().toUpperCase();
+        // ---- Merged break columns (vertical across all 5 day rows) ----
+        for (int pi = 0; pi < periods.size(); pi++) {
+            PeriodDto p = periods.get(pi);
+            if (!"BREAK".equals(p.type())) continue;
+            int col = pi + 1;
 
-            // Build a rotated vertical label
-            Label breakLabel = new Label("\u2615 " + breakFull + "\n" + brk.startTime() + " - " + brk.endTime());
-            breakLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #d97706; -fx-font-size: 11px; -fx-rotate: 0;");
+            String breakText = "\u2615 " + p.label().toUpperCase() + "\n" + p.startTime() + " - " + p.endTime();
+            Label breakLabel = new Label(breakText);
+            breakLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 11px; -fx-text-fill: #333333;");
             breakLabel.setAlignment(javafx.geometry.Pos.CENTER);
             breakLabel.setMaxWidth(Double.MAX_VALUE);
             breakLabel.setMaxHeight(Double.MAX_VALUE);
 
             StackPane breakPane = new StackPane(breakLabel);
-            breakPane.setStyle("-fx-background-color: #fef3c7; -fx-background-radius: 4; -fx-padding: 6; -fx-alignment: center; -fx-border-color: #d97706; -fx-border-width: 1px; -fx-border-radius: 4;");
-
-            timetableGrid.add(breakPane, 0, r, 6, 1);
+            breakPane.setStyle("-fx-background-color: #e0e0e0; -fx-border-color: #000000; -fx-border-width: 0.5px; -fx-padding: 6; -fx-alignment: center;");
+            timetableGrid.add(breakPane, col, 1, 1, 5);
         }
     }
 
@@ -431,7 +429,7 @@ public class TimetableViewerController {
             }
 
             if (match) {
-                VBox cardNode = createCardNode(card, true);
+                VBox cardNode = createCardNode(card, true, false);
                 unassignedPool.getChildren().add(cardNode);
             }
         }
@@ -477,7 +475,7 @@ public class TimetableViewerController {
      * Creates custom lesson card node with hover effects, context menus, tooltips,
      * and drag-and-drop triggers.
      */
-    private VBox createCardNode(LessonCardDto card, boolean isPoolCard) {
+    private VBox createCardNode(LessonCardDto card, boolean isPoolCard, boolean isMonday) {
         VBox node = new VBox();
         node.getStyleClass().add("lesson-card");
         if (isPoolCard) {
@@ -486,32 +484,21 @@ public class TimetableViewerController {
             node.getStyleClass().add("grid-card");
         }
 
-        // Visual Layout Styles & Colors
-        String baseColor = card.subjectColor();
-        if (card.roomId() == null && !isPoolCard) {
-            // White stripes indicator for no-room placement
-            node.setStyle(
-                    "-fx-background-color: linear-gradient(from 0px 11.314px to 11.314px 0px, repeat, " +
-                    baseColor + " 0%, " + baseColor + " 50%, #ffffff 50%, #ffffff 100%); " +
-                    "-fx-border-color: derive(" + baseColor + ", -25%); " +
-                    "-fx-border-width: 1.5px; -fx-border-radius: 6px; -fx-background-radius: 6px;"
-            );
+        // Black & White theme
+        if (isMonday) {
+            node.setStyle("-fx-background-color: #333333; -fx-border-color: #000000; -fx-border-width: 0.5px; -fx-padding: 4;");
         } else {
-            node.setStyle(
-                    "-fx-background-color: " + baseColor + "; " +
-                    "-fx-border-color: derive(" + baseColor + ", -25%); " +
-                    "-fx-border-width: 1.5px; -fx-border-radius: 6px; -fx-background-radius: 6px;"
-            );
+            node.setStyle("-fx-background-color: #ffffff; -fx-border-color: #000000; -fx-border-width: 0.5px; -fx-padding: 4;");
         }
 
         // Subject code (bold, centered, large)
         Label subjectLabel = new Label(card.subjectCode());
-        subjectLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 13px; -fx-text-fill: #0f172a;");
+        subjectLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 13px; -fx-text-fill: " + (isMonday ? "#ffffff" : "#000000") + ";");
         subjectLabel.setAlignment(javafx.geometry.Pos.CENTER);
 
         // Teacher initials below (smaller, lighter, centered)
         Label teacherLabel = new Label(card.teacherInitials() != null ? card.teacherInitials() : "");
-        teacherLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: #475569;");
+        teacherLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: " + (isMonday ? "#d0d0d0" : "#666666") + ";");
         teacherLabel.setAlignment(javafx.geometry.Pos.CENTER);
 
         VBox contentBox = new VBox(subjectLabel, teacherLabel);
@@ -526,7 +513,7 @@ public class TimetableViewerController {
             HBox.setHgrow(spacer, Priority.ALWAYS);
 
             Button closeBtn = new Button("×");
-            closeBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #ef4444; -fx-font-weight: bold; -fx-font-size: 13px; -fx-padding: 0 2 0 2; -fx-cursor: hand;");
+            closeBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: " + (isMonday ? "#ffffff" : "#333333") + "; -fx-font-weight: bold; -fx-font-size: 13px; -fx-padding: 0 2 0 2; -fx-cursor: hand;");
             closeBtn.setOnAction(e -> {
                 try {
                     timetableEditorUseCase.unassignEntry(currentTimetableId, card.entryId());
@@ -649,11 +636,11 @@ public class TimetableViewerController {
                             );
 
                             if (v1.valid() && v2.valid()) {
-                                node.setStyle("-fx-background-color: #fef3c7; -fx-border-color: #d97706; -fx-border-width: 2px; -fx-border-style: solid;");
+                                node.setStyle("-fx-background-color: #e0e0e0; -fx-border-color: #000000; -fx-border-width: 2px; -fx-border-style: solid;");
                                 event.acceptTransferModes(javafx.scene.input.TransferMode.MOVE);
                                 conflictWarningLabel.setText("");
                             } else {
-                                node.setStyle("-fx-background-color: #fef2f2; -fx-border-color: #ef4444; -fx-border-width: 2px; -fx-border-style: solid;");
+                                node.setStyle("-fx-background-color: #cccccc; -fx-border-color: #000000; -fx-border-width: 2px; -fx-border-style: solid;");
                                 conflictWarningLabel.setText(!v1.valid() ? v1.reason() : v2.reason());
                             }
                         } catch (Exception ex) {
@@ -666,20 +653,10 @@ public class TimetableViewerController {
 
             node.setOnDragExited(event -> {
                 // Restore visual card state
-                String origColor = card.subjectColor();
-                if (card.roomId() == null) {
-                    node.setStyle(
-                            "-fx-background-color: linear-gradient(from 0px 11.314px to 11.314px 0px, repeat, " +
-                            origColor + " 0%, " + origColor + " 50%, #ffffff 50%, #ffffff 100%); " +
-                            "-fx-border-color: derive(" + origColor + ", -25%); " +
-                            "-fx-border-width: 1.5px; -fx-border-radius: 6px; -fx-background-radius: 6px;"
-                    );
+                if (isMonday) {
+                    node.setStyle("-fx-background-color: #333333; -fx-border-color: #000000; -fx-border-width: 0.5px; -fx-padding: 4;");
                 } else {
-                    node.setStyle(
-                            "-fx-background-color: " + origColor + "; " +
-                            "-fx-border-color: derive(" + origColor + ", -25%); " +
-                            "-fx-border-width: 1.5px; -fx-border-radius: 6px; -fx-background-radius: 6px;"
-                    );
+                    node.setStyle("-fx-background-color: #ffffff; -fx-border-color: #000000; -fx-border-width: 0.5px; -fx-padding: 4;");
                 }
                 conflictWarningLabel.setText("");
                 event.consume();
@@ -713,21 +690,22 @@ public class TimetableViewerController {
     /**
      * Builds an empty grid slot ready to receive cards with real-time green/red visual validation feedback.
      */
-    private Pane createEmptySlotNode(DayOfWeek day, int periodNum) {
+    private Pane createEmptySlotNode(DayOfWeek day, int periodNum, boolean isMonday) {
         StackPane slot = new StackPane();
         slot.getStyleClass().add("grid-cell");
-        slot.setStyle("-fx-background-color: transparent; -fx-border-color: #cbd5e1; -fx-border-width: 1px; -fx-border-style: dashed; -fx-border-radius: 6px; -fx-background-radius: 6px;");
-        slot.setPrefSize(105, 60);
+        String defaultBg = isMonday ? "#333333" : "#ffffff";
+        String defaultBorder = "#000000";
+        slot.setStyle("-fx-background-color: " + defaultBg + "; -fx-border-color: " + defaultBorder + "; -fx-border-width: 0.5px;");
+        slot.setPrefSize(90, 44);
 
-        // Hover Highlight
         slot.setOnMouseEntered(e -> {
             if (slot.getChildren().isEmpty()) {
-                slot.setStyle("-fx-background-color: #f1f5f9; -fx-border-color: #94a3b8; -fx-border-width: 1.5px; -fx-border-style: dashed; -fx-border-radius: 6px; -fx-background-radius: 6px;");
+                slot.setStyle("-fx-background-color: #e0e0e0; -fx-border-color: #000000; -fx-border-width: 1px;");
             }
         });
         slot.setOnMouseExited(e -> {
             if (slot.getChildren().isEmpty()) {
-                slot.setStyle("-fx-background-color: transparent; -fx-border-color: #cbd5e1; -fx-border-width: 1px; -fx-border-style: dashed; -fx-border-radius: 6px; -fx-background-radius: 6px;");
+                slot.setStyle("-fx-background-color: " + defaultBg + "; -fx-border-color: " + defaultBorder + "; -fx-border-width: 0.5px;");
             }
         });
 
@@ -748,13 +726,13 @@ public class TimetableViewerController {
                     );
 
                     if (validation.valid()) {
-                        // Green highlight for valid drop slot
-                        slot.setStyle("-fx-background-color: #f0fdf4; -fx-border-color: #22c55e; -fx-border-width: 2px; -fx-border-style: solid; -fx-border-radius: 6px; -fx-background-radius: 6px;");
+                        // Dark border for valid drop slot
+                        slot.setStyle("-fx-background-color: " + defaultBg + "; -fx-border-color: #000000; -fx-border-width: 2px; -fx-border-style: solid;");
                         event.acceptTransferModes(javafx.scene.input.TransferMode.MOVE);
                         conflictWarningLabel.setText("");
                     } else {
-                        // Red highlight for conflict slot
-                        slot.setStyle("-fx-background-color: #fef2f2; -fx-border-color: #ef4444; -fx-border-width: 2px; -fx-border-style: solid; -fx-border-radius: 6px; -fx-background-radius: 6px;");
+                        // Dashed border for conflict slot
+                        slot.setStyle("-fx-background-color: " + defaultBg + "; -fx-border-color: #000000; -fx-border-width: 1px; -fx-border-style: dashed;");
                         conflictWarningLabel.setText(validation.reason());
                     }
                 } catch (Exception ex) {
@@ -766,7 +744,7 @@ public class TimetableViewerController {
 
         // Drag Exited listener
         slot.setOnDragExited(event -> {
-            slot.setStyle("-fx-background-color: transparent; -fx-border-color: #cbd5e1; -fx-border-width: 1px; -fx-border-style: dashed; -fx-border-radius: 6px; -fx-background-radius: 6px;");
+            slot.setStyle("-fx-background-color: " + defaultBg + "; -fx-border-color: " + defaultBorder + "; -fx-border-width: 0.5px;");
             conflictWarningLabel.setText("");
             event.consume();
         });

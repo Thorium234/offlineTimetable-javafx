@@ -9,6 +9,6 @@ target/
 .ai/
 start.txt
 *.pdf
-.txt
+*.txt
 AGENTS.md
 .crush/
