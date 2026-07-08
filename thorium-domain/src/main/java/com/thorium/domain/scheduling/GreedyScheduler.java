@@ -226,9 +226,10 @@ public class GreedyScheduler {
         double currentOnDay = lessonsOnSameDay + 1;
         if (currentOnDay > idealPerDay) {
             double excess = currentOnDay - idealPerDay;
-            return -excess * 0.15;
+            return -excess * 0.35;
         }
-        return 0.0;
+        double dayBonus = (idealPerDay - currentOnDay) * 0.05;
+        return dayBonus;
     }
 
     private double computeLookAheadPenalty(TeachingAssignment assignment, ScheduleSlot slot,

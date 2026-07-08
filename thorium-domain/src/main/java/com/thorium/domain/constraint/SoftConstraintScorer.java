@@ -20,7 +20,7 @@ public class SoftConstraintScorer {
     private final double balanceWeight;
 
     public SoftConstraintScorer() {
-        this(0.50, 0.40, 0.10);
+        this(0.75, 0.15, 0.10);
     }
 
     public SoftConstraintScorer(double spreadWeight, double consecutiveWeight, double balanceWeight) {
@@ -94,7 +94,7 @@ public class SoftConstraintScorer {
             boolean isDouble = assignmentIsDouble.getOrDefault(entry.getKey(), false);
 
             int divisor = isDouble ? 2 : 1;
-            int adjustedTotal = (int) Math.ceil((double) totalLpW / divisor);
+            int adjustedTotal = Math.max(1, (int) Math.ceil((double) totalLpW / divisor));
             int actualMaxOnDay = dayCounts.values().stream().mapToInt(Integer::intValue).max().orElse(0);
             int adjustedMax = (int) Math.ceil((double) actualMaxOnDay / divisor);
             int distinctDays = dayCounts.size();
@@ -103,12 +103,12 @@ public class SoftConstraintScorer {
             int idealDistinctDays = Math.min(adjustedTotal, workingDays);
 
             int deviation = Math.max(0, adjustedMax - idealMaxOnDay);
-            double spreadPenalty = Math.pow(deviation, 1.5) / Math.max(1, idealMaxOnDay);
+            double spreadPenalty = Math.pow(deviation, 2.0) / Math.max(1, idealMaxOnDay);
             double maxScore = Math.max(0.0, 1.0 - spreadPenalty);
 
             double dayCoverage = (double) distinctDays / Math.max(1, idealDistinctDays);
 
-            total += (maxScore * 0.7 + dayCoverage * 0.3);
+            total += (maxScore * 0.6 + dayCoverage * 0.4);
             groups++;
         }
         return groups == 0 ? 0.0 : total / groups;
