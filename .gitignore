@@ -11,3 +11,4 @@ start.txt
 *.pdf
 .txt
 AGENTS.md
+.crush/
