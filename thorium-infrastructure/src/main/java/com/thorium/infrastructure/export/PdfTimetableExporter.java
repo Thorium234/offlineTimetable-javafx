@@ -144,6 +144,16 @@ public class PdfTimetableExporter implements TimetableExporter {
         return renderPdfToBytes(data);
     }
 
+    @Override
+    public byte[] renderAscTeacherPdfToBytes(TimetableRepository.TimetableWithEntries data, Long teacherId) {
+        throw new UnsupportedOperationException("Use AscStyleTeacherPdfExporter");
+    }
+
+    @Override
+    public byte[] renderAscAllTeachersPdfToBytes(TimetableRepository.TimetableWithEntries data) {
+        throw new UnsupportedOperationException("Use AscStyleTeacherPdfExporter");
+    }
+
     // ---- Private helpers ----
 
     private Map<Long, TeachingAssignment> assignmentMap() {

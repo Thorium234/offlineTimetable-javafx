@@ -89,6 +89,30 @@
                 </HBox>
             </VBox>
 
+            <VBox spacing="0" styleClass="card">
+                <HBox alignment="CENTER_LEFT" spacing="8" styleClass="card-header">
+                    <Label text="aSc-Style Per-Teacher Timetable" styleClass="card-title"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                </HBox>
+                <HBox spacing="12" alignment="CENTER_LEFT" styleClass="card-body">
+                    <Label text="Teacher:" styleClass="form-group-title"/>
+                    <ComboBox fx:id="ascTeacherCombo" prefWidth="250" styleClass="form-combo"/>
+                    <Button fx:id="previewAscTeacherBtn" text="Preview" onAction="#onPreviewAscTeacher" styleClass="btn-secondary"/>
+                    <Button fx:id="exportAscTeacherBtn" text="Export PDF" onAction="#onExportAscTeacher" styleClass="btn-primary"/>
+                </HBox>
+            </VBox>
+
+            <VBox spacing="0" styleClass="card">
+                <HBox alignment="CENTER_LEFT" spacing="8" styleClass="card-header">
+                    <Label text="aSc-Style All Teachers Timetable" styleClass="card-title"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                </HBox>
+                <HBox spacing="12" styleClass="card-body">
+                    <Button fx:id="previewAscAllTeachersBtn" text="Preview All" onAction="#onPreviewAscAllTeachers" styleClass="btn-secondary"/>
+                    <Button fx:id="exportAscAllTeachersBtn" text="Export All PDF" onAction="#onExportAscAllTeachers" styleClass="btn-primary"/>
+                </HBox>
+            </VBox>
+
             <Label fx:id="messageLabel" styleClass="msg-label"/>
         </VBox>
     </ScrollPane>

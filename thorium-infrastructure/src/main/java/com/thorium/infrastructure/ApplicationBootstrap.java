@@ -16,6 +16,7 @@ import com.thorium.application.usecase.teacher.TeacherManagementUseCase;
 import com.thorium.application.usecase.data.DataManagementUseCase;
 import com.thorium.application.usecase.timetable.GenerateTimetableUseCase;
 import com.thorium.application.usecase.timetable.TimetableEditorUseCase;
+import com.thorium.infrastructure.export.AscStyleTeacherPdfExporter;
 import com.thorium.infrastructure.export.CompositeTimetableExporter;
 import com.thorium.infrastructure.export.ExcelTimetableExporter;
 import com.thorium.infrastructure.export.PdfTimetableExporter;
@@ -77,7 +78,11 @@ public final class ApplicationBootstrap implements Bootstrap {
                 breakRepository, schoolSettingsRepository);
         ExcelTimetableExporter excelExporter = new ExcelTimetableExporter(
                 assignmentRepository, subjectRepository, teacherRepository, classStreamRepository);
-        return new CompositeTimetableExporter(pdfExporter, excelExporter);
+        AscStyleTeacherPdfExporter ascExporter = new AscStyleTeacherPdfExporter(
+                assignmentRepository, subjectRepository, classStreamRepository,
+                teacherRepository, roomRepository, periodRepository, breakRepository,
+                schoolSettingsRepository);
+        return new CompositeTimetableExporter(pdfExporter, excelExporter, ascExporter);
     }
 
     public TeacherManagementUseCase teacherManagementUseCase() {

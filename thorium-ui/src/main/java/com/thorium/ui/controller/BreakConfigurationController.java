@@ -104,16 +104,20 @@ public class BreakConfigurationController {
         try {
             SchoolSettingsDto s = AppContext.get().schoolSettingsUseCase().getSettings();
             int tp = s.totalPeriods();
-            int dur = s.periodDurationMinutes();
             for (BreakDto b : AppContext.get().breakConfigurationUseCase().findAll()) {
                 AppContext.get().breakConfigurationUseCase().delete(b.id());
             }
             List<BreakSpec> specs = new ArrayList<>();
-            specs.add(new BreakSpec("Assembly", 0, 50, true, true));
+            specs.add(new BreakSpec("Assembly", 0, 50, true, false));
             if (tp >= 4) specs.add(new BreakSpec("Tea Break", 3, 20, false, false));
-            if (tp >= 5) specs.add(new BreakSpec("Short Break", 5, 10, false, false));
+            if (tp >= 6) specs.add(new BreakSpec("Short Break", 5, 10, false, false));
             if (tp >= 8) specs.add(new BreakSpec("Lunch Break", 7, 50, false, false));
-            specs.add(new BreakSpec("Games Time", tp, 165, false, false));
+            int gamesAfter = Math.min(tp, 10);
+            if (tp >= 11) {
+                specs.add(new BreakSpec("Games Time", 10, 40, false, false));
+            } else if (tp >= gamesAfter) {
+                specs.add(new BreakSpec("Games Time", gamesAfter, 40, false, false));
+            }
             int sort = 1;
             for (BreakSpec spec : specs) {
                 AppContext.get().breakConfigurationUseCase().create(
@@ -121,7 +125,7 @@ public class BreakConfigurationController {
             }
             clearForm(); refreshTable();
             recalcPeriods();
-            showMessage("Generated default breaks for " + tp + " periods", false);
+            showMessage("Generated standard school breaks for " + tp + " periods", false);
         } catch (Exception e) {
             showMessage("Failed to generate breaks: " + e.getMessage(), true);
         }

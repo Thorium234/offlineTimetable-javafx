@@ -11,10 +11,13 @@ public class CompositeTimetableExporter implements TimetableExporter {
 
     private final PdfTimetableExporter pdfExporter;
     private final ExcelTimetableExporter excelExporter;
+    private final AscStyleTeacherPdfExporter ascExporter;
 
-    public CompositeTimetableExporter(PdfTimetableExporter pdfExporter, ExcelTimetableExporter excelExporter) {
+    public CompositeTimetableExporter(PdfTimetableExporter pdfExporter, ExcelTimetableExporter excelExporter,
+                                      AscStyleTeacherPdfExporter ascExporter) {
         this.pdfExporter = pdfExporter;
         this.excelExporter = excelExporter;
+        this.ascExporter = ascExporter;
     }
 
     @Override
@@ -55,5 +58,15 @@ public class CompositeTimetableExporter implements TimetableExporter {
     @Override
     public byte[] renderAllClassesPdfToBytes(TimetableRepository.TimetableWithEntries data) {
         return pdfExporter.renderAllClassesPdfToBytes(data);
+    }
+
+    @Override
+    public byte[] renderAscTeacherPdfToBytes(TimetableRepository.TimetableWithEntries data, Long teacherId) {
+        return ascExporter.renderAscTeacherPdfToBytes(data, teacherId);
+    }
+
+    @Override
+    public byte[] renderAscAllTeachersPdfToBytes(TimetableRepository.TimetableWithEntries data) {
+        return ascExporter.renderAscAllTeachersPdfToBytes(data);
     }
 }

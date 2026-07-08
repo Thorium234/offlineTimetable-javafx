@@ -43,6 +43,12 @@ public class ExportCenterController {
     @FXML private Button previewClassBtn;
     @FXML private Button exportClassBtn;
 
+    @FXML private ComboBox<TeacherDto> ascTeacherCombo;
+    @FXML private Button previewAscTeacherBtn;
+    @FXML private Button exportAscTeacherBtn;
+    @FXML private Button previewAscAllTeachersBtn;
+    @FXML private Button exportAscAllTeachersBtn;
+
     @FXML
     private void initialize() {
         IconUtil.addIcon(exportPdfBtn, IconUtil.EXPORT, "#ffffff");
@@ -57,8 +63,14 @@ public class ExportCenterController {
         IconUtil.addIcon(previewClassBtn, IconUtil.PREVIEW, "#2563eb");
         IconUtil.addIcon(exportClassBtn, IconUtil.EXPORT, "#ffffff");
 
+        IconUtil.addIcon(previewAscTeacherBtn, IconUtil.PREVIEW, "#2563eb");
+        IconUtil.addIcon(exportAscTeacherBtn, IconUtil.EXPORT, "#ffffff");
+        IconUtil.addIcon(previewAscAllTeachersBtn, IconUtil.PREVIEW, "#2563eb");
+        IconUtil.addIcon(exportAscAllTeachersBtn, IconUtil.EXPORT, "#ffffff");
+
         refreshTimetables();
         refreshTeachers();
+        refreshAscTeachers();
         refreshForms();
         refreshStreams();
 
@@ -69,6 +81,12 @@ public class ExportCenterController {
             }
         });
         teacherCombo.setCellFactory(lv -> new ListCell<TeacherDto>() {
+            @Override protected void updateItem(TeacherDto item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : item.name());
+            }
+        });
+        ascTeacherCombo.setCellFactory(lv -> new ListCell<TeacherDto>() {
             @Override protected void updateItem(TeacherDto item, boolean empty) {
                 super.updateItem(item, empty);
                 setText(empty || item == null ? null : item.name());
@@ -269,6 +287,90 @@ public class ExportCenterController {
         }
     }
 
+    @FXML
+    private void onExportAscTeacher() {
+        TimetableDto tt = timetableCombo.getSelectionModel().getSelectedItem();
+        TeacherDto teacher = ascTeacherCombo.getSelectionModel().getSelectedItem();
+        if (tt == null || teacher == null) {
+            showMessage("Select a timetable and a teacher", true);
+            return;
+        }
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Save aSc-Style Teacher Timetable PDF");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF", "*.pdf"));
+        chooser.setInitialFileName(tt.name() + " - " + teacher.name() + " (aSc).pdf");
+        File file = chooser.showSaveDialog(getStage());
+        if (file == null) return;
+        try {
+            AppContext.get().exportTimetableUseCase().exportAscTeacherPdf(tt.id(), file.toPath(), teacher.id());
+            showMessage("Exported to " + file.getAbsolutePath(), false);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            showMessage(e.getMessage(), true);
+        }
+    }
+
+    @FXML
+    private void onPreviewAscTeacher() {
+        TimetableDto tt = timetableCombo.getSelectionModel().getSelectedItem();
+        TeacherDto teacher = ascTeacherCombo.getSelectionModel().getSelectedItem();
+        if (tt == null || teacher == null) {
+            showMessage("Select a timetable and a teacher", true);
+            return;
+        }
+        try {
+            byte[] pdfBytes = AppContext.get().exportTimetableUseCase().previewAscTeacherPdf(tt.id(), teacher.id());
+            new PdfPreviewDialog(getStage(), pdfBytes, tt.name() + " - " + teacher.name() + " (aSc)", tt.id()).show();
+            showMessage("Preview closed", false);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            showMessage(e.getMessage(), true);
+            LOG.log(Level.WARNING, "aSc teacher timetable preview failed", e);
+        } catch (Exception e) {
+            showMessage("An unexpected error occurred", true);
+            LOG.log(Level.SEVERE, "Unexpected error during aSc teacher timetable preview", e);
+        }
+    }
+
+    @FXML
+    private void onExportAscAllTeachers() {
+        TimetableDto tt = timetableCombo.getSelectionModel().getSelectedItem();
+        if (tt == null) {
+            showMessage("Select a timetable", true);
+            return;
+        }
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Save aSc-Style All Teachers Timetable PDF");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF", "*.pdf"));
+        chooser.setInitialFileName(tt.name() + " - All Teachers (aSc).pdf");
+        File file = chooser.showSaveDialog(getStage());
+        if (file == null) return;
+        try {
+            AppContext.get().exportTimetableUseCase().exportAscAllTeachersPdf(tt.id(), file.toPath());
+            showMessage("Exported to " + file.getAbsolutePath(), false);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            showMessage(e.getMessage(), true);
+        }
+    }
+
+    @FXML
+    private void onPreviewAscAllTeachers() {
+        TimetableDto tt = timetableCombo.getSelectionModel().getSelectedItem();
+        if (tt == null) {
+            showMessage("Select a timetable", true);
+            return;
+        }
+        try {
+            byte[] pdfBytes = AppContext.get().exportTimetableUseCase().previewAscAllTeachersPdf(tt.id());
+            new PdfPreviewDialog(getStage(), pdfBytes, tt.name() + " - All Teachers (aSc)", tt.id()).show();
+            showMessage("Preview closed", false);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            showMessage(e.getMessage(), true);
+            LOG.log(Level.WARNING, "aSc all teachers timetable preview failed", e);
+        } catch (Exception e) {
+            showMessage("An unexpected error occurred", true);
+            LOG.log(Level.SEVERE, "Unexpected error during aSc all teachers timetable preview", e);
+        }
+    }
+
     private void export() {
         TimetableDto selected = timetableCombo.getSelectionModel().getSelectedItem();
         if (selected == null) {
@@ -321,6 +423,11 @@ public class ExportCenterController {
     private void refreshTimetables() {
         timetableCombo.setItems(FXCollections.observableArrayList(
                 AppContext.get().generateTimetableUseCase().findAll()));
+    }
+
+    private void refreshAscTeachers() {
+        ascTeacherCombo.setItems(FXCollections.observableArrayList(
+                AppContext.get().teacherManagementUseCase().findAll()));
     }
 
     private void refreshTeachers() {

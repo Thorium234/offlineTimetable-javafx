@@ -52,7 +52,7 @@ public class PeriodConfigurationUseCase {
     }
 
     public int periodsPerDay() {
-        return periodRepository.count();
+        return (int) periodRepository.findAll().stream().filter(p -> Period.TYPE_LESSON.equals(p.getType())).count();
     }
 
     public void recalculateMasterTimeline(SchoolSettingsDto settings) {
@@ -111,12 +111,7 @@ public class PeriodConfigurationUseCase {
             }
         }
 
-        int totalLessonSlots = 0;
-        for (BreakDto b : breaks) {
-            if (!b.isBeforePeriodOne() && b.afterPeriod() > totalLessonSlots) {
-                totalLessonSlots = b.afterPeriod();
-            }
-        }
+        int totalLessonSlots = settings.totalPeriods();
         while (lessonCounter < totalLessonSlots) {
             lessonCounter++;
             periodCounter++;

@@ -21,4 +21,10 @@ public interface TimetableExporter {
     byte[] renderAllTeachersPdfToBytes(TimetableWithEntries data);
 
     byte[] renderAllClassesPdfToBytes(TimetableWithEntries data);
+
+    // ---- aSc-style teacher timetable export ----
+
+    byte[] renderAscTeacherPdfToBytes(TimetableWithEntries data, Long teacherId);
+
+    byte[] renderAscAllTeachersPdfToBytes(TimetableWithEntries data);
 }

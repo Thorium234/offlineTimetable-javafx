@@ -135,4 +135,40 @@ public class ExportTimetableUseCase {
             throw new IllegalStateException("Failed to write PDF file", e);
         }
     }
+
+    // ---- aSc-style teacher timetable export ----
+
+    public byte[] previewAscTeacherPdf(Long timetableId, Long teacherId) {
+        TimetableRepository.TimetableWithEntries data = timetableRepository.findByIdWithEntries(timetableId)
+                .orElseThrow(() -> new IllegalArgumentException("Timetable not found: " + timetableId));
+        return exporter.renderAscTeacherPdfToBytes(data, teacherId);
+    }
+
+    public void exportAscTeacherPdf(Long timetableId, Path outputPath, Long teacherId) {
+        TimetableRepository.TimetableWithEntries data = timetableRepository.findByIdWithEntries(timetableId)
+                .orElseThrow(() -> new IllegalArgumentException("Timetable not found: " + timetableId));
+        byte[] pdfBytes = exporter.renderAscTeacherPdfToBytes(data, teacherId);
+        try {
+            java.nio.file.Files.write(outputPath, pdfBytes);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to write PDF file", e);
+        }
+    }
+
+    public byte[] previewAscAllTeachersPdf(Long timetableId) {
+        TimetableRepository.TimetableWithEntries data = timetableRepository.findByIdWithEntries(timetableId)
+                .orElseThrow(() -> new IllegalArgumentException("Timetable not found: " + timetableId));
+        return exporter.renderAscAllTeachersPdfToBytes(data);
+    }
+
+    public void exportAscAllTeachersPdf(Long timetableId, Path outputPath) {
+        TimetableRepository.TimetableWithEntries data = timetableRepository.findByIdWithEntries(timetableId)
+                .orElseThrow(() -> new IllegalArgumentException("Timetable not found: " + timetableId));
+        byte[] pdfBytes = exporter.renderAscAllTeachersPdfToBytes(data);
+        try {
+            java.nio.file.Files.write(outputPath, pdfBytes);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to write PDF file", e);
+        }
+    }
 }
