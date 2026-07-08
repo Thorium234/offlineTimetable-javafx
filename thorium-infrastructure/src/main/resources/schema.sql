@@ -63,7 +63,11 @@ CREATE TABLE IF NOT EXISTS breaks (
     name             TEXT    NOT NULL,
     after_period     INTEGER NOT NULL DEFAULT 0,
     duration_minutes INTEGER NOT NULL CHECK (duration_minutes > 0),
-    sort_order       INTEGER NOT NULL DEFAULT 0
+    sort_order       INTEGER NOT NULL DEFAULT 0,
+    is_before_period_one INTEGER NOT NULL DEFAULT 0,
+    slotable         INTEGER NOT NULL DEFAULT 0,
+    start_time       TEXT,
+    end_time         TEXT
 );
 
 CREATE TABLE IF NOT EXISTS constraints (
