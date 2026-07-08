@@ -1,0 +1,687 @@
+you are a senior engineer and you are tasked to help a junior java developer he is making a timetable tool like the asc here the archtecure but he is facing one issue the timetable beinf generated isnt what we expect how can we really trace the exact file (base) thorium@thorium234:~/Desktop/programming/2026/javacore/timetable$ tree .
+.
+├── AGENTS.md
+├── asc_timetables_en_P1.pdf
+├── direc.txt
+├── finalinstruction.txt
+├── instractions.txt
+├── pom.xml
+├── rawidea.txt
+├── README.md
+├── start.txt
+├── table.txt
+├── thorium-application
+│   ├── pom.xml
+│   ├── src
+│   │   ├── main
+│   │   │   └── java
+│   │   │   └── com
+│   │   │   └── thorium
+│   │   │   └── application
+│   │   │   ├── dto
+│   │   │   │   ├── BreakDto.java
+│   │   │   │   ├── ClassStreamDto.java
+│   │   │   │   ├── DashboardSummaryDto.java
+│   │   │   │   ├── EntityTreeDto.java
+│   │   │   │   ├── EntityTreeNodeDto.java
+│   │   │   │   ├── LessonCardDto.java
+│   │   │   │   ├── PeriodDto.java
+│   │   │   │   ├── PlacementValidationDto.java
+│   │   │   │   ├── RoomDto.java
+│   │   │   │   ├── SchoolSettingsDto.java
+│   │   │   │   ├── SubjectDto.java
+│   │   │   │   ├── TeacherAvailabilityDto.java
+│   │   │   │   ├── TeacherDto.java
+│   │   │   │   ├── TeacherSubjectDto.java
+│   │   │   │   ├── TeachingAssignmentDto.java
+│   │   │   │   ├── TimetableDto.java
+│   │   │   │   ├── TimetableEditorStateDto.java
+│   │   │   │   └── TimetableEntryDto.java
+│   │   │   ├── mapper
+│   │   │   │   └── EntityMapper.java
+│   │   │   ├── port
+│   │   │   │   ├── BootstrapFactory.java
+│   │   │   │   ├── Bootstrap.java
+│   │   │   │   ├── BreakRepository.java
+│   │   │   │   ├── ClassStreamRepository.java
+│   │   │   │   ├── ConstraintRepository.java
+│   │   │   │   ├── DataRepository.java
+│   │   │   │   ├── PeriodRepository.java
+│   │   │   │   ├── RoomRepository.java
+│   │   │   │   ├── SchoolSettingsRepository.java
+│   │   │   │   ├── SubjectRepository.java
+│   │   │   │   ├── TeacherAvailabilityRepository.java
+│   │   │   │   ├── TeacherRepository.java
+│   │   │   │   ├── TeacherSubjectRepository.java
+│   │   │   │   ├── TeachingAssignmentRepository.java
+│   │   │   │   ├── TimetableExporter.java
+│   │   │   │   └── TimetableRepository.java
+│   │   │   ├── usecase
+│   │   │   │   ├── assignment
+│   │   │   │   │   ├── AssignmentManagementUseCase.java
+│   │   │   │   │   └── TeacherSubjectManagementUseCase.java
+│   │   │   │   ├── availability
+│   │   │   │   │   └── AvailabilityManagementUseCase.java
+│   │   │   │   ├── breaks
+│   │   │   │   │   └── BreakConfigurationUseCase.java
+│   │   │   │   ├── classstream
+│   │   │   │   │   └── ClassStreamManagementUseCase.java
+│   │   │   │   ├── dashboard
+│   │   │   │   │   └── DashboardUseCase.java
+│   │   │   │   ├── data
+│   │   │   │   │   └── DataManagementUseCase.java
+│   │   │   │   ├── export
+│   │   │   │   │   └── ExportTimetableUseCase.java
+│   │   │   │   ├── period
+│   │   │   │   │   └── PeriodConfigurationUseCase.java
+│   │   │   │   ├── room
+│   │   │   │   │   └── RoomManagementUseCase.java
+│   │   │   │   ├── settings
+│   │   │   │   │   └── SchoolSettingsUseCase.java
+│   │   │   │   ├── subject
+│   │   │   │   │   └── SubjectManagementUseCase.java
+│   │   │   │   ├── teacher
+│   │   │   │   │   └── TeacherManagementUseCase.java
+│   │   │   │   └── timetable
+│   │   │   │   ├── GenerateTimetableUseCase.java
+│   │   │   │   └── TimetableEditorUseCase.java
+│   │   │   └── util
+│   │   │   └── NameFormatter.java
+│   │   └── test
+│   │   └── java
+│   │   └── com
+│   │   └── thorium
+│   │   └── application
+│   │   └── usecase
+│   │   ├── settings
+│   │   │   ├── InMemorySchoolSettingsRepository.java
+│   │   │   └── SchoolSettingsUseCaseTest.java
+│   │   └── teacher
+│   │   ├── InMemoryTeacherRepository.java
+│   │   └── TeacherManagementUseCaseTest.java
+│   └── target
+│   ├── classes
+│   │   └── com
+│   │   └── thorium
+│   │   └── application
+│   │   ├── dto
+│   │   │   ├── BreakDto.class
+│   │   │   ├── ClassStreamDto.class
+│   │   │   ├── DashboardSummaryDto.class
+│   │   │   ├── EntityTreeDto.class
+│   │   │   ├── EntityTreeNodeDto.class
+│   │   │   ├── LessonCardDto.class
+│   │   │   ├── PeriodDto.class
+│   │   │   ├── PlacementValidationDto.class
+│   │   │   ├── RoomDto.class
+│   │   │   ├── SchoolSettingsDto.class
+│   │   │   ├── SubjectDto.class
+│   │   │   ├── TeacherAvailabilityDto.class
+│   │   │   ├── TeacherDto.class
+│   │   │   ├── TeacherSubjectDto.class
+│   │   │   ├── TeachingAssignmentDto.class
+│   │   │   ├── TimetableDto.class
+│   │   │   ├── TimetableEditorStateDto.class
+│   │   │   └── TimetableEntryDto.class
+│   │   ├── mapper
+│   │   │   └── EntityMapper.class
+│   │   ├── port
+│   │   │   ├── Bootstrap.class
+│   │   │   ├── BootstrapFactory.class
+│   │   │   ├── BreakRepository.class
+│   │   │   ├── ClassStreamRepository.class
+│   │   │   ├── ConstraintRepository.class
+│   │   │   ├── DataRepository.class
+│   │   │   ├── PeriodRepository.class
+│   │   │   ├── RoomRepository.class
+│   │   │   ├── SchoolSettingsRepository.class
+│   │   │   ├── SubjectRepository.class
+│   │   │   ├── TeacherAvailabilityRepository.class
+│   │   │   ├── TeacherRepository.class
+│   │   │   ├── TeacherSubjectRepository.class
+│   │   │   ├── TeachingAssignmentRepository.class
+│   │   │   ├── TimetableExporter.class
+│   │   │   ├── TimetableRepository$TimetableWithEntries.class
+│   │   │   └── TimetableRepository.class
+│   │   ├── usecase
+│   │   │   ├── assignment
+│   │   │   │   ├── AssignmentManagementUseCase.class
+│   │   │   │   └── TeacherSubjectManagementUseCase.class
+│   │   │   ├── availability
+│   │   │   │   └── AvailabilityManagementUseCase.class
+│   │   │   ├── breaks
+│   │   │   │   └── BreakConfigurationUseCase.class
+│   │   │   ├── classstream
+│   │   │   │   └── ClassStreamManagementUseCase.class
+│   │   │   ├── dashboard
+│   │   │   │   └── DashboardUseCase.class
+│   │   │   ├── data
+│   │   │   │   └── DataManagementUseCase.class
+│   │   │   ├── export
+│   │   │   │   └── ExportTimetableUseCase.class
+│   │   │   ├── period
+│   │   │   │   └── PeriodConfigurationUseCase.class
+│   │   │   ├── room
+│   │   │   │   └── RoomManagementUseCase.class
+│   │   │   ├── settings
+│   │   │   │   └── SchoolSettingsUseCase.class
+│   │   │   ├── subject
+│   │   │   │   └── SubjectManagementUseCase.class
+│   │   │   ├── teacher
+│   │   │   │   └── TeacherManagementUseCase.class
+│   │   │   └── timetable
+│   │   │   ├── GenerateTimetableUseCase.class
+│   │   │   ├── TimetableEditorUseCase$EditorContext.class
+│   │   │   └── TimetableEditorUseCase.class
+│   │   └── util
+│   │   └── NameFormatter.class
+│   ├── generated-sources
+│   │   └── annotations
+│   ├── generated-test-sources
+│   │   └── test-annotations
+│   ├── maven-status
+│   │   └── maven-compiler-plugin
+│   │   ├── compile
+│   │   │   └── default-compile
+│   │   │   ├── createdFiles.lst
+│   │   │   └── inputFiles.lst
+│   │   └── testCompile
+│   │   └── default-testCompile
+│   │   ├── createdFiles.lst
+│   │   └── inputFiles.lst
+│   ├── surefire-reports
+│   │   ├── com.thorium.application.usecase.settings.SchoolSettingsUseCaseTest.txt
+│   │   ├── com.thorium.application.usecase.teacher.TeacherManagementUseCaseTest.txt
+│   │   ├── TEST-com.thorium.application.usecase.settings.SchoolSettingsUseCaseTest.xml
+│   │   └── TEST-com.thorium.application.usecase.teacher.TeacherManagementUseCaseTest.xml
+│   └── test-classes
+│   └── com
+│   └── thorium
+│   └── application
+│   └── usecase
+│   ├── settings
+│   │   ├── InMemorySchoolSettingsRepository.class
+│   │   └── SchoolSettingsUseCaseTest.class
+│   └── teacher
+│   ├── InMemoryTeacherRepository.class
+│   └── TeacherManagementUseCaseTest.class
+├── thorium-domain
+│   ├── pom.xml
+│   ├── src
+│   │   ├── main
+│   │   │   └── java
+│   │   │   └── com
+│   │   │   └── thorium
+│   │   │   └── domain
+│   │   │   ├── constraint
+│   │   │   │   ├── HardConstraintValidator.java
+│   │   │   │   └── SoftConstraintScorer.java
+│   │   │   ├── exception
+│   │   │   │   └── SchedulingException.java
+│   │   │   ├── model
+│   │   │   │   ├── BreakPeriod.java
+│   │   │   │   ├── ClassStream.java
+│   │   │   │   ├── Constraint.java
+│   │   │   │   ├── LessonDuration.java
+│   │   │   │   ├── Period.java
+│   │   │   │   ├── Room.java
+│   │   │   │   ├── RoomType.java
+│   │   │   │   ├── ScheduleSlot.java
+│   │   │   │   ├── SchoolSettings.java
+│   │   │   │   ├── Subject.java
+│   │   │   │   ├── TeacherAvailability.java
+│   │   │   │   ├── Teacher.java
+│   │   │   │   ├── TeacherSubject.java
+│   │   │   │   ├── TeachingAssignment.java
+│   │   │   │   ├── timeblock
+│   │   │   │   │   ├── BlockType.java
+│   │   │   │   │   ├── BreakBlock.java
+│   │   │   │   │   ├── EventBlock.java
+│   │   │   │   │   ├── LessonBlock.java
+│   │   │   │   │   └── TimeBlock.java
+│   │   │   │   ├── TimetableEntry.java
+│   │   │   │   └── Timetable.java
+│   │   │   ├── scheduling
+│   │   │   │   ├── BacktrackingScheduler.java
+│   │   │   │   ├── DailyTimelineGenerator.java
+│   │   │   │   ├── GenerationProgressCallback.java
+│   │   │   │   ├── GreedyScheduler.java
+│   │   │   │   ├── optimization
+│   │   │   │   │   ├── GeneticAlgorithmStrategy.java
+│   │   │   │   │   ├── HillClimbingStrategy.java
+│   │   │   │   │   ├── HybridMetaheuristicStrategy.java
+│   │   │   │   │   ├── OptimizationStrategy.java
+│   │   │   │   │   ├── SchedulingMove.java
+│   │   │   │   │   ├── SchedulingMoveUtils.java
+│   │   │   │   │   ├── SimulatedAnnealingStrategy.java
+│   │   │   │   │   ├── TabuList.java
+│   │   │   │   │   └── TabuSearchStrategy.java
+│   │   │   │   ├── PartialSchedule.java
+│   │   │   │   ├── PlacedLesson.java
+│   │   │   │   ├── SchedulingContext.java
+│   │   │   │   ├── TimetableGenerationResult.java
+│   │   │   │   └── TimetableGenerator.java
+│   │   │   └── value
+│   │   │   ├── ConstraintType.java
+│   │   │   ├── DayOfWeek.java
+│   │   │   ├── SubjectColorPalette.java
+│   │   │   └── TimetableStatus.java
+│   │   └── test
+│   │   └── java
+│   │   └── com
+│   │   └── thorium
+│   │   └── domain
+│   │   ├── constraint
+│   │   │   ├── HardConstraintValidatorTest.java
+│   │   │   └── SoftConstraintScorerTest.java
+│   │   └── scheduling
+│   │   ├── BacktrackingSchedulerTest.java
+│   │   ├── GreedySchedulerTest.java
+│   │   ├── optimization
+│   │   │   ├── HybridMetaheuristicStrategyTest.java
+│   │   │   ├── SchedulingMoveUtilsTest.java
+│   │   │   └── TabuSearchStrategyTest.java
+│   │   ├── PartialScheduleTest.java
+│   │   ├── SchedulingContextTest.java
+│   │   ├── TimetableGenerationResultTest.java
+│   │   └── TimetableGeneratorTest.java
+│   └── target
+│   ├── classes
+│   │   └── com
+│   │   └── thorium
+│   │   └── domain
+│   │   ├── constraint
+│   │   │   ├── HardConstraintValidator$ValidationResult.class
+│   │   │   ├── HardConstraintValidator.class
+│   │   │   └── SoftConstraintScorer.class
+│   │   ├── exception
+│   │   │   └── SchedulingException.class
+│   │   ├── model
+│   │   │   ├── BreakPeriod.class
+│   │   │   ├── ClassStream.class
+│   │   │   ├── Constraint.class
+│   │   │   ├── LessonDuration.class
+│   │   │   ├── Period.class
+│   │   │   ├── Room.class
+│   │   │   ├── RoomType.class
+│   │   │   ├── ScheduleSlot.class
+│   │   │   ├── SchoolSettings.class
+│   │   │   ├── Subject.class
+│   │   │   ├── TeacherAvailability.class
+│   │   │   ├── Teacher.class
+│   │   │   ├── TeacherSubject.class
+│   │   │   ├── TeachingAssignment.class
+│   │   │   ├── timeblock
+│   │   │   │   ├── BlockType.class
+│   │   │   │   ├── BreakBlock.class
+│   │   │   │   ├── EventBlock.class
+│   │   │   │   ├── LessonBlock.class
+│   │   │   │   └── TimeBlock.class
+│   │   │   ├── Timetable.class
+│   │   │   └── TimetableEntry.class
+│   │   ├── scheduling
+│   │   │   ├── BacktrackingScheduler$DomainTracker.class
+│   │   │   ├── BacktrackingScheduler$PrunedPair.class
+│   │   │   ├── BacktrackingScheduler$Tier.class
+│   │   │   ├── BacktrackingScheduler.class
+│   │   │   ├── DailyTimelineGenerator.class
+│   │   │   ├── GenerationProgressCallback.class
+│   │   │   ├── GreedyScheduler$AssignmentWorkItem.class
+│   │   │   ├── GreedyScheduler.class
+│   │   │   ├── optimization
+│   │   │   │   ├── GeneticAlgorithmStrategy.class
+│   │   │   │   ├── HillClimbingStrategy.class
+│   │   │   │   ├── HybridMetaheuristicStrategy.class
+│   │   │   │   ├── OptimizationStrategy.class
+│   │   │   │   ├── SchedulingMove.class
+│   │   │   │   ├── SchedulingMoveUtils.class
+│   │   │   │   ├── SimulatedAnnealingStrategy.class
+│   │   │   │   ├── TabuList.class
+│   │   │   │   └── TabuSearchStrategy.class
+│   │   │   ├── PartialSchedule.class
+│   │   │   ├── PlacedLesson.class
+│   │   │   ├── SchedulingContext$Builder.class
+│   │   │   ├── SchedulingContext.class
+│   │   │   ├── TimetableGenerationResult.class
+│   │   │   └── TimetableGenerator.class
+│   │   └── value
+│   │   ├── ConstraintType.class
+│   │   ├── DayOfWeek.class
+│   │   ├── SubjectColorPalette.class
+│   │   └── TimetableStatus.class
+│   ├── generated-sources
+│   │   └── annotations
+│   ├── generated-test-sources
+│   │   └── test-annotations
+│   ├── maven-status
+│   │   └── maven-compiler-plugin
+│   │   ├── compile
+│   │   │   └── default-compile
+│   │   │   ├── createdFiles.lst
+│   │   │   └── inputFiles.lst
+│   │   └── testCompile
+│   │   └── default-testCompile
+│   │   ├── createdFiles.lst
+│   │   └── inputFiles.lst
+│   ├── surefire-reports
+│   │   ├── com.thorium.domain.constraint.HardConstraintValidatorTest.txt
+│   │   ├── com.thorium.domain.constraint.SoftConstraintScorerTest.txt
+│   │   ├── com.thorium.domain.scheduling.BacktrackingSchedulerTest.txt
+│   │   ├── com.thorium.domain.scheduling.GreedySchedulerTest.txt
+│   │   ├── com.thorium.domain.scheduling.optimization.HybridMetaheuristicStrategyTest.txt
+│   │   ├── com.thorium.domain.scheduling.optimization.SchedulingMoveUtilsTest.txt
+│   │   ├── com.thorium.domain.scheduling.optimization.TabuSearchStrategyTest.txt
+│   │   ├── com.thorium.domain.scheduling.PartialScheduleTest.txt
+│   │   ├── com.thorium.domain.scheduling.SchedulingContextTest.txt
+│   │   ├── com.thorium.domain.scheduling.TimetableGenerationResultTest.txt
+│   │   ├── com.thorium.domain.scheduling.TimetableGeneratorTest.txt
+│   │   ├── TEST-com.thorium.domain.constraint.HardConstraintValidatorTest.xml
+│   │   ├── TEST-com.thorium.domain.constraint.SoftConstraintScorerTest.xml
+│   │   ├── TEST-com.thorium.domain.scheduling.BacktrackingSchedulerTest.xml
+│   │   ├── TEST-com.thorium.domain.scheduling.GreedySchedulerTest.xml
+│   │   ├── TEST-com.thorium.domain.scheduling.optimization.HybridMetaheuristicStrategyTest.xml
+│   │   ├── TEST-com.thorium.domain.scheduling.optimization.SchedulingMoveUtilsTest.xml
+│   │   ├── TEST-com.thorium.domain.scheduling.optimization.TabuSearchStrategyTest.xml
+│   │   ├── TEST-com.thorium.domain.scheduling.PartialScheduleTest.xml
+│   │   ├── TEST-com.thorium.domain.scheduling.SchedulingContextTest.xml
+│   │   ├── TEST-com.thorium.domain.scheduling.TimetableGenerationResultTest.xml
+│   │   └── TEST-com.thorium.domain.scheduling.TimetableGeneratorTest.xml
+│   └── test-classes
+│   └── com
+│   └── thorium
+│   └── domain
+│   ├── constraint
+│   │   ├── HardConstraintValidatorTest.class
+│   │   └── SoftConstraintScorerTest.class
+│   └── scheduling
+│   ├── BacktrackingSchedulerTest.class
+│   ├── GreedySchedulerTest.class
+│   ├── optimization
+│   │   ├── HybridMetaheuristicStrategyTest.class
+│   │   ├── SchedulingMoveUtilsTest.class
+│   │   └── TabuSearchStrategyTest.class
+│   ├── PartialScheduleTest.class
+│   ├── SchedulingContextTest.class
+│   ├── TimetableGenerationResultTest.class
+│   └── TimetableGeneratorTest.class
+├── thorium-infrastructure
+│   ├── pom.xml
+│   ├── src
+│   │   ├── main
+│   │   │   ├── java
+│   │   │   │   └── com
+│   │   │   │   └── thorium
+│   │   │   │   └── infrastructure
+│   │   │   │   ├── ApplicationBootstrap.java
+│   │   │   │   ├── export
+│   │   │   │   │   ├── AscStyleTeacherPdfExporter.java
+│   │   │   │   │   ├── CompositeTimetableExporter.java
+│   │   │   │   │   ├── ExcelTimetableExporter.java
+│   │   │   │   │   └── PdfTimetableExporter.java
+│   │   │   │   └── persistence
+│   │   │   │   ├── DatabaseInitializer.java
+│   │   │   │   ├── repository
+│   │   │   │   │   ├── AbstractRepository.java
+│   │   │   │   │   ├── SqliteBreakRepository.java
+│   │   │   │   │   ├── SqliteClassStreamRepository.java
+│   │   │   │   │   ├── SqliteConstraintRepository.java
+│   │   │   │   │   ├── SqliteDataRepository.java
+│   │   │   │   │   ├── SqlitePeriodRepository.java
+│   │   │   │   │   ├── SqliteRoomRepository.java
+│   │   │   │   │   ├── SqliteSchoolSettingsRepository.java
+│   │   │   │   │   ├── SqliteSubjectRepository.java
+│   │   │   │   │   ├── SqliteTeacherAvailabilityRepository.java
+│   │   │   │   │   ├── SqliteTeacherRepository.java
+│   │   │   │   │   ├── SqliteTeacherSubjectRepository.java
+│   │   │   │   │   ├── SqliteTeachingAssignmentRepository.java
+│   │   │   │   │   └── SqliteTimetableRepository.java
+│   │   │   │   └── SQLiteConnectionProvider.java
+│   │   │   └── resources
+│   │   │   └── schema.sql
+│   │   └── test
+│   │   └── java
+│   │   └── com
+│   │   └── thorium
+│   │   └── infrastructure
+│   │   ├── export
+│   │   │   └── ExportTimetableExporterTest.java
+│   │   ├── persistence
+│   │   │   ├── DatabaseInitializerTest.java
+│   │   │   ├── repository
+│   │   │   │   └── SqliteTeacherRepositoryTest.java
+│   │   │   └── TestDatabaseSupport.java
+│   │   └── TimetableGenerationIntegrationTest.java
+│   └── target
+│   ├── classes
+│   │   ├── com
+│   │   │   └── thorium
+│   │   │   └── infrastructure
+│   │   │   ├── ApplicationBootstrap.class
+│   │   │   ├── export
+│   │   │   │   ├── AscStyleTeacherPdfExporter$ColType.class
+│   │   │   │   ├── AscStyleTeacherPdfExporter.class
+│   │   │   │   ├── CompositeTimetableExporter.class
+│   │   │   │   ├── ExcelTimetableExporter.class
+│   │   │   │   ├── PdfTimetableExporter$Filter.class
+│   │   │   │   ├── PdfTimetableExporter$Layout.class
+│   │   │   │   └── PdfTimetableExporter.class
+│   │   │   └── persistence
+│   │   │   ├── DatabaseInitializer.class
+│   │   │   ├── repository
+│   │   │   │   ├── AbstractRepository$SqlOperation.class
+│   │   │   │   ├── AbstractRepository$SqlVoidOperation.class
+│   │   │   │   ├── AbstractRepository.class
+│   │   │   │   ├── SqliteBreakRepository.class
+│   │   │   │   ├── SqliteClassStreamRepository.class
+│   │   │   │   ├── SqliteConstraintRepository.class
+│   │   │   │   ├── SqliteDataRepository.class
+│   │   │   │   ├── SqlitePeriodRepository.class
+│   │   │   │   ├── SqliteRoomRepository.class
+│   │   │   │   ├── SqliteSchoolSettingsRepository.class
+│   │   │   │   ├── SqliteSubjectRepository.class
+│   │   │   │   ├── SqliteTeacherAvailabilityRepository.class
+│   │   │   │   ├── SqliteTeacherRepository.class
+│   │   │   │   ├── SqliteTeacherSubjectRepository.class
+│   │   │   │   ├── SqliteTeachingAssignmentRepository.class
+│   │   │   │   └── SqliteTimetableRepository.class
+│   │   │   └── SQLiteConnectionProvider.class
+│   │   └── schema.sql
+│   ├── generated-sources
+│   │   └── annotations
+│   ├── generated-test-sources
+│   │   └── test-annotations
+│   ├── maven-status
+│   │   └── maven-compiler-plugin
+│   │   ├── compile
+│   │   │   └── default-compile
+│   │   │   ├── createdFiles.lst
+│   │   │   └── inputFiles.lst
+│   │   └── testCompile
+│   │   └── default-testCompile
+│   │   ├── createdFiles.lst
+│   │   └── inputFiles.lst
+│   ├── surefire-reports
+│   │   ├── com.thorium.infrastructure.export.ExportTimetableExporterTest.txt
+│   │   ├── com.thorium.infrastructure.persistence.DatabaseInitializerTest.txt
+│   │   ├── com.thorium.infrastructure.persistence.repository.SqliteTeacherRepositoryTest.txt
+│   │   ├── com.thorium.infrastructure.TimetableGenerationIntegrationTest.txt
+│   │   ├── TEST-com.thorium.infrastructure.export.ExportTimetableExporterTest.xml
+│   │   ├── TEST-com.thorium.infrastructure.persistence.DatabaseInitializerTest.xml
+│   │   ├── TEST-com.thorium.infrastructure.persistence.repository.SqliteTeacherRepositoryTest.xml
+│   │   └── TEST-com.thorium.infrastructure.TimetableGenerationIntegrationTest.xml
+│   └── test-classes
+│   └── com
+│   └── thorium
+│   └── infrastructure
+│   ├── export
+│   │   └── ExportTimetableExporterTest.class
+│   ├── persistence
+│   │   ├── DatabaseInitializerTest.class
+│   │   ├── repository
+│   │   │   └── SqliteTeacherRepositoryTest.class
+│   │   └── TestDatabaseSupport.class
+│   └── TimetableGenerationIntegrationTest.class
+├── thorium-ui
+│   ├── gitignore
+│   ├── pom.xml
+│   ├── src
+│   │   ├── main
+│   │   │   ├── java
+│   │   │   │   └── com
+│   │   │   │   └── thorium
+│   │   │   │   └── ui
+│   │   │   │   ├── controller
+│   │   │   │   │   ├── AssignmentManagementController.java
+│   │   │   │   │   ├── AvailabilityManagementController.java
+│   │   │   │   │   ├── BreakConfigurationController.java
+│   │   │   │   │   ├── ClassManagementController.java
+│   │   │   │   │   ├── DashboardController.java
+│   │   │   │   │   ├── ExportCenterController.java
+│   │   │   │   │   ├── MainController.java
+│   │   │   │   │   ├── PdfPreviewDialog.java
+│   │   │   │   │   ├── PeriodConfigurationController.java
+│   │   │   │   │   ├── RoomManagementController.java
+│   │   │   │   │   ├── SettingsController.java
+│   │   │   │   │   ├── StreamAssignmentController.java
+│   │   │   │   │   ├── SubjectManagementController.java
+│   │   │   │   │   ├── TeacherManagementController.java
+│   │   │   │   │   ├── TeacherSubjectController.java
+│   │   │   │   │   ├── TimetableGenerationController.java
+│   │   │   │   │   └── TimetableViewerController.java
+│   │   │   │   ├── di
+│   │   │   │   │   └── AppContext.java
+│   │   │   │   ├── ThoriumApp.java
+│   │   │   │   └── util
+│   │   │   │   ├── IconUtil.java
+│   │   │   │   └── Messages.java
+│   │   │   └── resources
+│   │   │   ├── css
+│   │   │   │   ├── app.css
+│   │   │   │   └── dark.css
+│   │   │   ├── fxml
+│   │   │   │   ├── assignments.fxml
+│   │   │   │   ├── availability.fxml
+│   │   │   │   ├── breaks.fxml
+│   │   │   │   ├── classes.fxml
+│   │   │   │   ├── dashboard.fxml
+│   │   │   │   ├── export.fxml
+│   │   │   │   ├── generate.fxml
+│   │   │   │   ├── main.fxml
+│   │   │   │   ├── periods.fxml
+│   │   │   │   ├── rooms.fxml
+│   │   │   │   ├── settings.fxml
+│   │   │   │   ├── stream-assignment.fxml
+│   │   │   │   ├── subjects.fxml
+│   │   │   │   ├── teachers.fxml
+│   │   │   │   ├── teacher-subjects.fxml
+│   │   │   │   └── viewer.fxml
+│   │   │   └── i18n
+│   │   │   ├── messages.properties
+│   │   │   └── messages_sw.properties
+│   │   └── test
+│   │   └── java
+│   │   └── com
+│   │   └── thorium
+│   │   └── ui
+│   │   └── AppLaunchSmokeTest.java
+│   └── target
+│   ├── classes
+│   │   ├── com
+│   │   │   └── thorium
+│   │   │   └── ui
+│   │   │   ├── controller
+│   │   │   │   ├── AssignmentManagementController.class
+│   │   │   │   ├── AvailabilityManagementController$1.class
+│   │   │   │   ├── AvailabilityManagementController.class
+│   │   │   │   ├── BreakConfigurationController$BreakSpec.class
+│   │   │   │   ├── BreakConfigurationController.class
+│   │   │   │   ├── ClassManagementController.class
+│   │   │   │   ├── DashboardController.class
+│   │   │   │   ├── ExportCenterController$1.class
+│   │   │   │   ├── ExportCenterController$2.class
+│   │   │   │   ├── ExportCenterController$3.class
+│   │   │   │   ├── ExportCenterController.class
+│   │   │   │   ├── MainController$NavItem.class
+│   │   │   │   ├── MainController.class
+│   │   │   │   ├── PdfPreviewDialog.class
+│   │   │   │   ├── PeriodConfigurationController$1.class
+│   │   │   │   ├── PeriodConfigurationController$2.class
+│   │   │   │   ├── PeriodConfigurationController.class
+│   │   │   │   ├── RoomManagementController.class
+│   │   │   │   ├── SettingsController.class
+│   │   │   │   ├── StreamAssignmentController$1.class
+│   │   │   │   ├── StreamAssignmentController.class
+│   │   │   │   ├── SubjectManagementController.class
+│   │   │   │   ├── TeacherManagementController$1.class
+│   │   │   │   ├── TeacherManagementController$2.class
+│   │   │   │   ├── TeacherManagementController$3.class
+│   │   │   │   ├── TeacherManagementController$4.class
+│   │   │   │   ├── TeacherManagementController$5.class
+│   │   │   │   ├── TeacherManagementController$6.class
+│   │   │   │   ├── TeacherManagementController$7.class
+│   │   │   │   ├── TeacherManagementController.class
+│   │   │   │   ├── TeacherSubjectController$1.class
+│   │   │   │   ├── TeacherSubjectController.class
+│   │   │   │   ├── TimetableGenerationController$1.class
+│   │   │   │   ├── TimetableGenerationController$2.class
+│   │   │   │   ├── TimetableGenerationController.class
+│   │   │   │   ├── TimetableViewerController$1.class
+│   │   │   │   ├── TimetableViewerController$SelectionType.class
+│   │   │   │   ├── TimetableViewerController$TreeItemValue.class
+│   │   │   │   └── TimetableViewerController.class
+│   │   │   ├── di
+│   │   │   │   └── AppContext.class
+│   │   │   ├── ThoriumApp.class
+│   │   │   └── util
+│   │   │   ├── IconUtil.class
+│   │   │   └── Messages.class
+│   │   ├── css
+│   │   │   ├── app.css
+│   │   │   └── dark.css
+│   │   ├── fxml
+│   │   │   ├── assignments.fxml
+│   │   │   ├── availability.fxml
+│   │   │   ├── breaks.fxml
+│   │   │   ├── classes.fxml
+│   │   │   ├── dashboard.fxml
+│   │   │   ├── export.fxml
+│   │   │   ├── generate.fxml
+│   │   │   ├── main.fxml
+│   │   │   ├── periods.fxml
+│   │   │   ├── rooms.fxml
+│   │   │   ├── settings.fxml
+│   │   │   ├── stream-assignment.fxml
+│   │   │   ├── subjects.fxml
+│   │   │   ├── teachers.fxml
+│   │   │   ├── teacher-subjects.fxml
+│   │   │   └── viewer.fxml
+│   │   └── i18n
+│   │   ├── messages.properties
+│   │   └── messages_sw.properties
+│   ├── generated-sources
+│   │   └── annotations
+│   ├── generated-test-sources
+│   │   └── test-annotations
+│   ├── maven-status
+│   │   └── maven-compiler-plugin
+│   │   ├── compile
+│   │   │   └── default-compile
+│   │   │   ├── createdFiles.lst
+│   │   │   └── inputFiles.lst
+│   │   └── testCompile
+│   │   └── default-testCompile
+│   │   ├── createdFiles.lst
+│   │   └── inputFiles.lst
+│   ├── surefire-reports
+│   │   ├── com.thorium.ui.AppLaunchSmokeTest.txt
+│   │   └── TEST-com.thorium.ui.AppLaunchSmokeTest.xml
+│   └── test-classes
+│   └── com
+│   └── thorium
+│   └── ui
+│   └── AppLaunchSmokeTest.class
+├── Timetable 2026-07-08 10:21.pdf
+└── todo.txt
+
+217 directories, 466 files
+(base) thorium@thorium234:~/Desktop/programming/2026/javacore/timetable$
