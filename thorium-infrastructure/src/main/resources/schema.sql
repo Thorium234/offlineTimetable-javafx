@@ -35,7 +35,8 @@ CREATE TABLE IF NOT EXISTS teaching_assignments (
     teacher_id      INTEGER NOT NULL REFERENCES teachers(id) ON DELETE CASCADE,
     subject_id      INTEGER NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
     class_stream_id INTEGER NOT NULL REFERENCES class_streams(id) ON DELETE CASCADE,
-    lessons_per_week INTEGER NOT NULL CHECK (lessons_per_week > 0),
+    duration          TEXT    NOT NULL DEFAULT 'SINGLE' CHECK (duration IN ('SINGLE', 'DOUBLE')),
+    lessons_per_week  INTEGER NOT NULL CHECK (lessons_per_week > 0),
     UNIQUE (teacher_id, subject_id, class_stream_id)
 );
 

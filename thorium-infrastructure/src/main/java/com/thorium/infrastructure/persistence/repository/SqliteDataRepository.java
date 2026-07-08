@@ -68,6 +68,7 @@ public class SqliteDataRepository extends AbstractRepository implements DataRepo
             insertConstraints(conn);
             List<Long> assignmentIds = insertAssignments(conn, classIds, subjectIds, teacherIds);
             insertTeacherAvailability(conn, teacherIds);
+            updateSchoolSettings(conn);
 
             enableForeignKeys(conn);
             LOG.info("Sample data generated: " + classIds.size() + " classes, "
@@ -353,6 +354,13 @@ public class SqliteDataRepository extends AbstractRepository implements DataRepo
         try (var rs = conn.createStatement().executeQuery("SELECT last_insert_rowid()")) {
             rs.next();
             return rs.getLong(1);
+        }
+    }
+
+    private void updateSchoolSettings(Connection conn) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "INSERT OR REPLACE INTO school_settings (id, school_name, total_periods, school_start_time, school_end_time, period_duration_min, spread_weight, consecutive_weight, balance_weight) VALUES (1, 'My School', 15, '07:00', '18:25', 40, 0.50, 0.40, 0.10)")) {
+            ps.executeUpdate();
         }
     }
 }
