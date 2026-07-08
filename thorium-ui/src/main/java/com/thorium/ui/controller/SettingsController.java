@@ -54,8 +54,8 @@ public class SettingsController {
     private void onClearDatabase() {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
         confirm.setTitle("Clear All Data");
-        confirm.setHeaderText("Delete all teachers, subjects, classes, and timetable data?");
-        confirm.setContentText("This cannot be undone. Seed configuration (periods, breaks, settings) will be preserved.");
+        confirm.setHeaderText("Delete all teachers, subjects, classes, periods, breaks, and timetable data?");
+        confirm.setContentText("This cannot be undone. Only school settings will be preserved.");
         Optional<ButtonType> result = confirm.showAndWait();
         if (result.isEmpty() || result.get() != ButtonType.OK) return;
 

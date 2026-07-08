@@ -30,24 +30,22 @@ public class PdfTimetableExporter implements TimetableExporter {
         final int totalColumns;
         final ColType[] colTypes;
         final String[] colLabels;
-        final int[] colPeriodNumbers;    // DB period_number for lesson cols, -1 for break/day
+        final String[] colBreakFullLabels;
+        final int[] colPeriodNumbers;
         final boolean[] colIsBreak;
 
-        ColLayout(int total, ColType[] types, String[] labels, int[] pns, boolean[] breaks) {
+        ColLayout(int total, ColType[] types, String[] labels, String[] breakFull,
+                   int[] pns, boolean[] breaks) {
             this.totalColumns = total;
             this.colTypes = types;
             this.colLabels = labels;
+            this.colBreakFullLabels = breakFull;
             this.colPeriodNumbers = pns;
             this.colIsBreak = breaks;
         }
     }
 
     private static final String[] DAY_ABBREVIATIONS = {"Mo", "Tu", "We", "Th", "Fr"};
-
-    private static final String[] BREAK_FULL_LABELS = {
-            "", "ASSEMBLY/PREPS", "", "", "", "TEA BREAK", "", "", "SHORT BREAK", "", "",
-            "LUNCH BREAK", "", "", "", "GAMES", ""
-    };
 
     // ---- Layout constants (mm to pt: 1mm = 2.83465pt) ----
 
@@ -229,11 +227,13 @@ public class PdfTimetableExporter implements TimetableExporter {
         int total = 1 + periods.size(); // day col + one per DB period
         ColType[] types = new ColType[total];
         String[] labels = new String[total];
+        String[] breakFull = new String[total];
         int[] pns = new int[total];
         boolean[] breaks = new boolean[total];
 
         types[0] = ColType.DAY_LABEL;
         labels[0] = "";
+        breakFull[0] = "";
         pns[0] = -1;
         breaks[0] = false;
 
@@ -244,45 +244,48 @@ public class PdfTimetableExporter implements TimetableExporter {
             if (p.isBreak()) {
                 types[colIdx] = ColType.BREAK_COL;
                 labels[colIdx] = shortLabel(p.getLabel());
+                breakFull[colIdx] = p.getLabel() != null ? p.getLabel().toUpperCase() : "BREAK";
                 pns[colIdx] = -1;
                 breaks[colIdx] = true;
             } else {
                 lessonNum++;
                 types[colIdx] = ColType.LESSON_COL;
                 labels[colIdx] = shortLessonLabel(lessonNum, p.getLabel());
+                breakFull[colIdx] = "";
                 pns[colIdx] = p.getPeriodNumber();
                 breaks[colIdx] = false;
             }
         }
-        return new ColLayout(total, types, labels, pns, breaks);
+        return new ColLayout(total, types, labels, breakFull, pns, breaks);
     }
 
     private ColLayout buildFallbackLayout() {
         int total = 17;
         ColType[] types = new ColType[total];
         String[] labels = new String[total];
+        String[] breakFull = new String[total];
         int[] pns = new int[total];
         boolean[] breaks = new boolean[total];
 
-        types[0] = ColType.DAY_LABEL; labels[0] = ""; pns[0] = -1; breaks[0] = false;
+        types[0] = ColType.DAY_LABEL; labels[0] = ""; breakFull[0] = ""; pns[0] = -1; breaks[0] = false;
 
-        // colIdx, type(0=break,1=lesson), label, periodNumber(DB)
+        // colIdx, type(0=break,1=lesson), label, fullLabel, periodNumber(DB)
         Object[][] def = {
-                {1, 0, "Ass.", -1},        // Assembly
-                {2, 1, "1", 2},            // P1 (DB period_number=2)
-                {3, 1, "2", 3},
-                {4, 1, "3", 4},
-                {5, 0, "Tea", -1},         // Tea Break
-                {6, 1, "4", 6},
-                {7, 1, "5", 7},
-                {8, 0, "SB", -1},          // Short Break
-                {9, 1, "6", 9},
-                {10, 1, "7", 10},
-                {11, 0, "Lunch", -1},      // Lunch
-                {12, 1, "8", 12},
-                {13, 1, "9", 13},
-                {14, 1, "10", 14},
-                {15, 0, "Games", -1},      // Games
+                {1, 0, "Ass.", "ASSEMBLY/PREPS", -1},
+                {2, 1, "1", "", 2},
+                {3, 1, "2", "", 3},
+                {4, 1, "3", "", 4},
+                {5, 0, "Tea", "TEA BREAK", -1},
+                {6, 1, "4", "", 6},
+                {7, 1, "5", "", 7},
+                {8, 0, "SB", "SHORT BREAK", -1},
+                {9, 1, "6", "", 9},
+                {10, 1, "7", "", 10},
+                {11, 0, "Lunch", "LUNCH BREAK", -1},
+                {12, 1, "8", "", 12},
+                {13, 1, "9", "", 13},
+                {14, 1, "10", "", 14},
+                {15, 0, "Games", "GAMES", -1},
         };
 
         for (Object[] d : def) {
@@ -290,10 +293,11 @@ public class PdfTimetableExporter implements TimetableExporter {
             boolean isBreak = (int) d[1] == 0;
             types[idx] = isBreak ? ColType.BREAK_COL : ColType.LESSON_COL;
             labels[idx] = (String) d[2];
-            pns[idx] = (int) d[3];
+            breakFull[idx] = (String) d[3];
+            pns[idx] = (int) d[4];
             breaks[idx] = isBreak;
         }
-        return new ColLayout(total, types, labels, pns, breaks);
+        return new ColLayout(total, types, labels, breakFull, pns, breaks);
     }
 
     private String shortLabel(String periodLabel) {
@@ -317,18 +321,6 @@ public class PdfTimetableExporter implements TimetableExporter {
             return u.length() <= 4 ? u : u.substring(0, 3);
         }
         return String.valueOf(lessonNum);
-    }
-
-    private String breakFullLabel(String colLabel) {
-        if (colLabel == null || colLabel.isEmpty()) return "BREAK";
-        return switch (colLabel) {
-            case "Ass." -> "ASSEMBLY/PREPS";
-            case "Tea" -> "TEA BREAK";
-            case "SB" -> "SHORT BREAK";
-            case "Lunch" -> "LUNCH BREAK";
-            case "Games" -> "GAMES";
-            default -> colLabel.toUpperCase();
-        };
     }
 
     private ColLayout layout() {
@@ -613,7 +605,7 @@ public class PdfTimetableExporter implements TimetableExporter {
             float cw = colWidth(ly, i);
             dr(cs, cx, y, cw, rowsTotalH, WHITE, GRID_LINE, 0.5f);
 
-            String fullLabel = breakFullLabel(ly.colLabels[i]);
+            String fullLabel = ly.colBreakFullLabels[i];
 
             cs.saveGraphicsState();
             float centerX = cx + cw / 2f;

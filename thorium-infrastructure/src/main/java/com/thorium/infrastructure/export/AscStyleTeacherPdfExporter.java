@@ -22,81 +22,32 @@ import java.util.stream.Collectors;
 
 /**
  * aSc Timetables-style teacher PDF exporter.
- * <p>
- * Produces A4 landscape PDFs matching the exact aSc Timetables printed layout:
- * <pre>
- *  --------------------------------------------------------------
- * | School Name                                                  |
- * |                     Teacher Name                             |
- *  --------------------------------------------------------------
- * |      |Ass.|1|2|3|Tea|4|5|SB|6|7|Lunch|8|9|10|Games|11|
- *  --------------------------------------------------------------
- * |Mon   |    | | | |   | | |  | | |     | | |  |     |  |
- *  --------------------------------------------------------------
- * </pre>
- * <p>
- * Times loaded from DB PeriodRepository, falling back to standard Kenyan timings.
- * Break columns are merged vertically across all 5 day rows with rotated text.
- * Lesson cells show subject code on top, class/stream below.
+ * Column layout is built dynamically from DB periods.
  */
 public class AscStyleTeacherPdfExporter implements TimetableExporter {
 
     private static final DateTimeFormatter TIME_FMT_NO_LEAD = DateTimeFormatter.ofPattern("H:mm");
 
-    // ---- Fixed column structure (16 timetable cols + 1 day col = 17) ----
-
-    private static final int TOTAL_COLUMNS = 17;
-
     private enum ColType { DAY_LABEL, LESSON_COL, BREAK_COL }
 
-    private static final ColType[] COL_TYPES = {
-            ColType.DAY_LABEL,      // 0: Day labels
-            ColType.BREAK_COL,      // 1: Assembly
-            ColType.LESSON_COL,     // 2: Period 1
-            ColType.LESSON_COL,     // 3: Period 2
-            ColType.LESSON_COL,     // 4: Period 3
-            ColType.BREAK_COL,      // 5: Tea Break
-            ColType.LESSON_COL,     // 6: Period 4
-            ColType.LESSON_COL,     // 7: Period 5
-            ColType.BREAK_COL,      // 8: Short Break
-            ColType.LESSON_COL,     // 9: Period 6
-            ColType.LESSON_COL,     // 10: Period 7
-            ColType.BREAK_COL,      // 11: Lunch
-            ColType.LESSON_COL,     // 12: Period 8
-            ColType.LESSON_COL,     // 13: Period 9
-            ColType.LESSON_COL,     // 14: Period 10
-            ColType.BREAK_COL,      // 15: Games
-            ColType.LESSON_COL      // 16: Period 11
-    };
+    private static final class ColLayout {
+        final int totalColumns;
+        final ColType[] colTypes;
+        final String[] colLabels;
+        final String[] colBreakFullLabels;
+        final int[] colPeriodNumbers;
+        final boolean[] colIsBreak;
 
-    // Header labels (short, matching aSc printed style)
-    private static final String[] COL_LABELS = {
-            "",          // Day (empty — aSc leaves it blank)
-            "Ass.",
-            "1", "2", "3",
-            "Tea",
-            "4", "5",
-            "SB",
-            "6", "7",
-            "Lunch",
-            "8", "9", "10",
-            "Games",
-            "11"
-    };
-
-    private static final int[] COL_PERIOD_NUMBERS = {
-            -1,  // Day
-            -1,  // Assembly
-            1, 2, 3,
-            -1,  // Tea Break
-            4, 5,
-            -1,  // Short Break
-            6, 7,
-            -1,  // Lunch
-            8, 9, 10,
-            -1,  // Games
-            11
-    };
+        ColLayout(int total, ColType[] types, String[] labels, String[] breakFull,
+                   int[] pns, boolean[] breaks) {
+            this.totalColumns = total;
+            this.colTypes = types;
+            this.colLabels = labels;
+            this.colBreakFullLabels = breakFull;
+            this.colPeriodNumbers = pns;
+            this.colIsBreak = breaks;
+        }
+    }
 
     private static final String[] DAY_ABBREVIATIONS = {"Mon", "Tue", "Wed", "Thu", "Fri"};
 
@@ -163,7 +114,9 @@ public class AscStyleTeacherPdfExporter implements TimetableExporter {
 
     @Override
     public byte[] renderAllTeachersPdfToBytes(TimetableRepository.TimetableWithEntries data) {
-        return renderAscAllTeachersPdfToBytes(data);
+        ByteArrayOutputStream bos = new ByteArrayOutputStream(65536);
+        writeAscAllTeachersPdf(data, bos);
+        return bos.toByteArray();
     }
 
     @Override
@@ -171,18 +124,14 @@ public class AscStyleTeacherPdfExporter implements TimetableExporter {
         throw new UnsupportedOperationException("Use PdfTimetableExporter for class timetables");
     }
 
-    // ---- aSc-style public methods ----
-
+    @Override
     public byte[] renderAscTeacherPdfToBytes(TimetableRepository.TimetableWithEntries data, Long teacherId) {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream(65536);
-        writeAscTeacherPdf(data, teacherId, bos);
-        return bos.toByteArray();
+        return renderTeacherPdfToBytes(data, teacherId);
     }
 
+    @Override
     public byte[] renderAscAllTeachersPdfToBytes(TimetableRepository.TimetableWithEntries data) {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream(65536);
-        writeAscAllTeachersPdf(data, bos);
-        return bos.toByteArray();
+        return renderAllTeachersPdfToBytes(data);
     }
 
     // ---- Layout ----
@@ -280,28 +229,154 @@ public class AscStyleTeacherPdfExporter implements TimetableExporter {
         cs.moveTo(x, y1); cs.lineTo(x, y2); cs.stroke();
     }
 
-    // ---- Column layout ----
+    // ---- DB-driven column layout ----
+
+    private volatile ColLayout layout = null;
+
+    private ColLayout layout() {
+        if (layout == null) {
+            synchronized (this) {
+                if (layout == null) {
+                    layout = loadLayout();
+                }
+            }
+        }
+        return layout;
+    }
+
+    private ColLayout loadLayout() {
+        List<Period> periods;
+        try {
+            periods = periodRepository.findAll().stream()
+                    .sorted(Comparator.comparingInt(Period::getPeriodNumber))
+                    .toList();
+        } catch (Exception e) {
+            periods = List.of();
+        }
+        if (periods.isEmpty()) {
+            return buildFallbackLayout();
+        }
+
+        int total = 1 + periods.size();
+        ColType[] types = new ColType[total];
+        String[] labels = new String[total];
+        String[] breakFull = new String[total];
+        int[] pns = new int[total];
+        boolean[] breaks = new boolean[total];
+
+        types[0] = ColType.DAY_LABEL;
+        labels[0] = "";
+        breakFull[0] = "";
+        pns[0] = -1;
+        breaks[0] = false;
+
+        int lessonNum = 0;
+        for (int i = 0; i < periods.size(); i++) {
+            Period p = periods.get(i);
+            int colIdx = i + 1;
+            if (p.isBreak()) {
+                types[colIdx] = ColType.BREAK_COL;
+                labels[colIdx] = shortLabel(p.getLabel());
+                breakFull[colIdx] = p.getLabel() != null ? p.getLabel().toUpperCase() : "BREAK";
+                pns[colIdx] = -1;
+                breaks[colIdx] = true;
+            } else {
+                lessonNum++;
+                types[colIdx] = ColType.LESSON_COL;
+                labels[colIdx] = shortLessonLabel(lessonNum, p.getLabel());
+                breakFull[colIdx] = "";
+                pns[colIdx] = p.getPeriodNumber();
+                breaks[colIdx] = false;
+            }
+        }
+        return new ColLayout(total, types, labels, breakFull, pns, breaks);
+    }
+
+    private ColLayout buildFallbackLayout() {
+        int total = 17;
+        ColType[] types = new ColType[total];
+        String[] labels = new String[total];
+        String[] breakFull = new String[total];
+        int[] pns = new int[total];
+        boolean[] breaks = new boolean[total];
+
+        types[0] = ColType.DAY_LABEL; labels[0] = ""; breakFull[0] = ""; pns[0] = -1; breaks[0] = false;
+
+        // colIdx, type(0=break,1=lesson), label, fullLabel, periodNumber(DB)
+        Object[][] def = {
+                {1, 0, "Ass.", "ASSEMBLY/PREPS", -1},
+                {2, 1, "1", "", 2},
+                {3, 1, "2", "", 3},
+                {4, 1, "3", "", 4},
+                {5, 0, "Tea", "TEA BREAK", -1},
+                {6, 1, "4", "", 6},
+                {7, 1, "5", "", 7},
+                {8, 0, "SB", "SHORT BREAK", -1},
+                {9, 1, "6", "", 9},
+                {10, 1, "7", "", 10},
+                {11, 0, "Lunch", "LUNCH BREAK", -1},
+                {12, 1, "8", "", 12},
+                {13, 1, "9", "", 13},
+                {14, 1, "10", "", 14},
+                {15, 0, "Games", "GAMES", -1},
+                {16, 1, "11", "", 15},
+        };
+
+        for (Object[] d : def) {
+            int idx = (int) d[0];
+            boolean isBreak = (int) d[1] == 0;
+            types[idx] = isBreak ? ColType.BREAK_COL : ColType.LESSON_COL;
+            labels[idx] = (String) d[2];
+            breakFull[idx] = (String) d[3];
+            pns[idx] = (int) d[4];
+            breaks[idx] = isBreak;
+        }
+        return new ColLayout(total, types, labels, breakFull, pns, breaks);
+    }
+
+    private String shortLabel(String periodLabel) {
+        if (periodLabel == null) return "";
+        return switch (periodLabel.toLowerCase()) {
+            case "assembly" -> "Ass.";
+            case "tea break" -> "Tea";
+            case "short break" -> "SB";
+            case "lunch break", "lunch" -> "Lunch";
+            case "games time", "games" -> "Games";
+            default -> periodLabel.length() <= 5 ? periodLabel : periodLabel.substring(0, 4) + ".";
+        };
+    }
+
+    private String shortLessonLabel(int lessonNum, String periodLabel) {
+        if (periodLabel != null && !periodLabel.isBlank()) {
+            String u = periodLabel.toUpperCase();
+            if (u.matches("P\\d+")) return u.substring(1);
+            return u.length() <= 4 ? u : u.substring(0, 3);
+        }
+        return String.valueOf(lessonNum);
+    }
 
     private float[] computeColStarts(float tableLeft) {
-        float[] starts = new float[TOTAL_COLUMNS];
+        ColLayout ly = layout();
+        float[] starts = new float[ly.totalColumns];
         starts[0] = tableLeft;
         float cx = tableLeft + DAY_COL_W;
-        for (int i = 1; i < TOTAL_COLUMNS; i++) {
+        for (int i = 1; i < ly.totalColumns; i++) {
             starts[i] = cx;
-            cx += colWidth(i);
+            cx += colWidth(ly, i);
         }
         return starts;
     }
 
-    private float colWidth(int colIdx) {
+    private float colWidth(ColLayout ly, int colIdx) {
         if (colIdx == 0) return DAY_COL_W;
-        return COL_TYPES[colIdx] == ColType.BREAK_COL ? BREAK_COL_W : LESSON_COL_W;
+        return ly.colTypes[colIdx] == ColType.BREAK_COL ? BREAK_COL_W : LESSON_COL_W;
     }
 
     private float tableWidth() {
+        ColLayout ly = layout();
         float w = DAY_COL_W;
-        for (int i = 1; i < TOTAL_COLUMNS; i++) {
-            w += colWidth(i);
+        for (int i = 1; i < ly.totalColumns; i++) {
+            w += colWidth(ly, i);
         }
         return w;
     }
@@ -357,6 +432,9 @@ public class AscStyleTeacherPdfExporter implements TimetableExporter {
             List<Period> periods = periodRepository.findAll();
             for (Period p : periods) {
                 if (Period.TYPE_LESSON.equals(p.getType())) {
+                    map.put(p.getPeriodNumber(),
+                            formatTimeNoLeading(p.getStartTime()) + " - " + formatTimeNoLeading(p.getEndTime()));
+                } else {
                     map.put(p.getPeriodNumber(),
                             formatTimeNoLeading(p.getStartTime()) + " - " + formatTimeNoLeading(p.getEndTime()));
                 }
@@ -465,7 +543,6 @@ public class AscStyleTeacherPdfExporter implements TimetableExporter {
         float ph = pageSize.getHeight();
         float tableW = tableWidth();
 
-        // Center the table horizontally on page
         float tableLeft = (pw - tableW) / 2f;
         float yTop = ph - MARGIN_TOP;
 
@@ -473,50 +550,43 @@ public class AscStyleTeacherPdfExporter implements TimetableExporter {
         String school = schoolName();
         float y = yTop;
 
-        // ---- School name (top-left small uppercase) ----
         if (!school.isBlank()) {
             setFill(cs, SCHOOL_NAME_C);
             txt(cs, tableLeft, y, school.toUpperCase(), fb, 9);
             y -= SCHOOL_NAME_H;
         }
 
-        // ---- Teacher name (centered large bold) ----
         String teacherHeading = "Teacher " + teacherName.toUpperCase();
         setFill(cs, TITLE_TEXT_C);
         txc(cs, tableLeft, tableLeft + tableW, y, teacherHeading, fb, 17);
         y -= TEACHER_NAME_H;
 
-        // ---- Top border before header ----
         setStroke(cs, GRID_LINE, 0.8f);
         hline(cs, tableLeft, tableLeft + tableW, y);
 
-        // ---- Column headers ----
         renderAscHeaders(cs, y, colStarts, fb, f);
         y -= HEADER_ROW_H;
 
-        // ---- Day rows (with merged break columns) ----
         renderAscDayRows(cs, y, colStarts, entries, aMap, fb, f, fi);
     }
 
     private void renderAscHeaders(PDPageContentStream cs, float y, float[] colStarts,
                                    PDType1Font fb, PDType1Font f) throws IOException {
-        // Day header cell — leave empty (aSc style)
+        ColLayout ly = layout();
         dr(cs, colStarts[0], y, DAY_COL_W, HEADER_ROW_H, HEADER_BG, null, 0);
 
-        // Column headers: time at top, label below
-        for (int i = 1; i < TOTAL_COLUMNS; i++) {
+        for (int i = 1; i < ly.totalColumns; i++) {
             float cx = colStarts[i];
-            float cw = colWidth(i);
+            float cw = colWidth(ly, i);
             dr(cs, cx, y, cw, HEADER_ROW_H, HEADER_BG, null, 0);
             setFill(cs, HEADER_TEXT);
 
-            boolean isBreak = COL_TYPES[i] == ColType.BREAK_COL;
-            int pn = COL_PERIOD_NUMBERS[i];
+            boolean isBreak = ly.colTypes[i] == ColType.BREAK_COL;
+            int pn = ly.colPeriodNumbers[i];
 
-            // Time label (small, top)
             String timeLabel;
             if (isBreak) {
-                timeLabel = breakTimeForColumn(i);
+                timeLabel = breakTimeForColumn(pn);
             } else {
                 timeLabel = timeForPeriod(pn);
             }
@@ -524,31 +594,25 @@ public class AscStyleTeacherPdfExporter implements TimetableExporter {
                 txc(cs, cx, cx + cw, y + HEADER_ROW_H - 8, timeLabel, f, 7);
             }
 
-            // Period / break label (bold, below time)
-            txc(cs, cx, cx + cw, y + 6, COL_LABELS[i], fb, 10);
+            txc(cs, cx, cx + cw, y + 6, ly.colLabels[i], fb, 10);
         }
 
-        // Bottom border of header row
         setStroke(cs, GRID_LINE, 0.8f);
         hline(cs, colStarts[0], colStarts[0] + tableWidth(), y);
     }
 
-    private String breakTimeForColumn(int colIdx) {
-        // Standard break times matching the spec
-        switch (colIdx) {
-            case 1:  return "7:10 - 8:00";  // Assembly
-            case 5:  return "10:00 - 10:20"; // Tea Break
-            case 8:  return "11:40 - 11:50"; // Short Break
-            case 11: return "13:10 - 14:00"; // Lunch
-            case 15: return "16:00 - 16:40"; // Games
-            default: return "";
+    private String breakTimeForColumn(int periodNumber) {
+        if (periodNumber > 0) {
+            String t = timeForPeriod(periodNumber);
+            if (!t.isBlank()) return t;
         }
+        return "";
     }
 
     private void renderAscDayRows(PDPageContentStream cs, float y, float[] colStarts,
                                    List<TimetableEntry> entries, Map<Long, TeachingAssignment> aMap,
                                    PDType1Font fb, PDType1Font f, PDType1Font fi) throws IOException {
-        // Build lookup: day.name -> (periodNumber -> entry)
+        ColLayout ly = layout();
         Map<String, Map<Integer, TimetableEntry>> dayLookup = new HashMap<>();
         for (TimetableEntry e : entries) {
             dayLookup.computeIfAbsent(e.getDayOfWeek().name(), _k -> new HashMap<>())
@@ -559,99 +623,70 @@ public class AscStyleTeacherPdfExporter implements TimetableExporter {
         float tableLeft = colStarts[0];
         float tableRight = tableLeft + tableWidth();
 
-        // ---- Pre-render: merged break columns across all rows ----
-        for (int i = 1; i < TOTAL_COLUMNS; i++) {
-            if (COL_TYPES[i] != ColType.BREAK_COL) continue;
+        for (int i = 1; i < ly.totalColumns; i++) {
+            if (ly.colTypes[i] != ColType.BREAK_COL) continue;
             float cx = colStarts[i];
-            float cw = colWidth(i);
-            // Fill background for merged column
+            float cw = colWidth(ly, i);
             dr(cs, cx, y, cw, rowsTotalH, BREAK_BG, BREAK_BORDER_C, 0.8f);
 
-            // Rotated text, centered in merged cell
-            String label = COL_LABELS[i];
-            String fullLabel;
-            switch (i) {
-                case 1:  fullLabel = "ASSEMBLY/PREPS"; break;
-                case 5:  fullLabel = "TEA BREAK"; break;
-                case 8:  fullLabel = "SHORT BREAK"; break;
-                case 11: fullLabel = "LUNCH BREAK"; break;
-                case 15: fullLabel = "GAMES"; break;
-                default: fullLabel = label.toUpperCase();
-            }
-
+            String fullLabel = ly.colBreakFullLabels[i];
             cs.saveGraphicsState();
             float centerX = cx + cw / 2f;
             float centerY = y - rowsTotalH / 2f;
-            // Rotate 90° CCW
             cs.transform(new org.apache.pdfbox.util.Matrix(0, -1, 1, 0, centerX, centerY));
+            setFill(cs, BREAK_BORDER_C);
             float tw = fb.getStringWidth(fullLabel) / 1000f * 10;
             txc(cs, -tw / 2f, tw / 2f, -cw / 2f + 3, fullLabel, fb, 10);
             cs.restoreGraphicsState();
         }
 
-        // ---- Render day rows ----
         for (int ri = 0; ri < 5; ri++) {
             DayOfWeek day = DayOfWeek.workingDays().get(ri);
             float[] bg = ri % 2 == 1 ? ODD_ROW : EVEN_ROW;
 
-            // Day column
             dr(cs, colStarts[0], y, DAY_COL_W, DAY_ROW_H, bg, GRID_LINE, 0.5f);
             setFill(cs, DAY_TEXT);
             txc(cs, colStarts[0], colStarts[0] + DAY_COL_W, y + DAY_ROW_H / 2f - 5,
                     DAY_ABBREVIATIONS[ri], fb, 12);
 
-            // Lesson columns
             Map<Integer, TimetableEntry> dayEntries = dayLookup.getOrDefault(day.name(), new HashMap<>());
             float midY = y + DAY_ROW_H / 2f;
 
-            for (int i = 1; i < TOTAL_COLUMNS; i++) {
+            for (int i = 1; i < ly.totalColumns; i++) {
                 float cx = colStarts[i];
-                float cw = colWidth(i);
+                float cw = colWidth(ly, i);
 
-                if (COL_TYPES[i] == ColType.LESSON_COL) {
-                    int pn = COL_PERIOD_NUMBERS[i];
+                if (ly.colTypes[i] == ColType.LESSON_COL) {
+                    int pn = ly.colPeriodNumbers[i];
                     TimetableEntry match = dayEntries.get(pn);
 
-                    // Use subject color if lesson exists, otherwise alternating row bg
-                    float[] cellBg;
-                    if (match != null) {
-                        TeachingAssignment a = aMap.get(match.getTeachingAssignmentId());
-                        cellBg = a != null ? subjectBg(a.getSubjectId()) : bg;
-                    } else {
-                        cellBg = bg;
-                    }
-                    dr(cs, cx, y, cw, DAY_ROW_H, cellBg, GRID_LINE, 0.5f);
+                    dr(cs, cx, y, cw, DAY_ROW_H, bg, GRID_LINE, 0.5f);
 
                     if (match != null) {
                         TeachingAssignment a = aMap.get(match.getTeachingAssignmentId());
                         if (a != null) {
                             String sc = subjectCode(a.getSubjectId());
                             String cn = classDisplayName(a.getClassStreamId());
-
-                            // Subject code (top line) — dark text for readability on pastel
+                            float[] subBg = subjectBg(a.getSubjectId());
+                            float pad = 1f;
+                            dr(cs, cx + pad, y - pad, cw - 2 * pad, DAY_ROW_H - 2 * pad, subBg, null, 0);
                             setFill(cs, SUBJECT_TEXT_C);
                             txc(cs, cx, cx + cw, midY + 10, sc, fb, 9);
-
-                            // Class name (bottom line)
                             setFill(cs, CLASS_TEXT_C);
                             txc(cs, cx, cx + cw, midY - 6, cn, f, 7);
                         }
                     }
                 } else {
-                    // Break column — draw vertical border on right side
-                    setStroke(cs, BREAK_BORDER_C, 0.6f);
+                    setStroke(cs, GRID_LINE, 0.4f);
                     vline(cs, cx + cw, y, y - DAY_ROW_H);
                 }
             }
 
-            // Bottom border for this row
             setStroke(cs, GRID_LINE, 0.4f);
             hline(cs, tableLeft, tableRight, y - DAY_ROW_H);
-
             y -= DAY_ROW_H;
         }
 
-        // ---- Outer border (thicker) ----
         setStroke(cs, GRID_LINE, 1.2f);
         strokeR(cs, tableLeft, y + rowsTotalH, tableWidth(), rowsTotalH);
     }

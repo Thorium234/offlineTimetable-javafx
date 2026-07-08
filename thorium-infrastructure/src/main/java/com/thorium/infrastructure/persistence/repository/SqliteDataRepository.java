@@ -37,7 +37,7 @@ public class SqliteDataRepository extends AbstractRepository implements DataRepo
             deleteAll(conn, "rooms");
             enableForeignKeys(conn);
         }, "clearAllData");
-        LOG.info("All user data cleared successfully");
+        LOG.info("All data cleared successfully");
     }
 
     @Override
