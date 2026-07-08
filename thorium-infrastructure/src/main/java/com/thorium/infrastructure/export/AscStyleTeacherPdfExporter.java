@@ -646,11 +646,11 @@ public class AscStyleTeacherPdfExporter implements TimetableExporter {
 
             dr(cs, colStarts[0], y, DAY_COL_W, DAY_ROW_H, bg, GRID_LINE, 0.5f);
             setFill(cs, DAY_TEXT);
-            txc(cs, colStarts[0], colStarts[0] + DAY_COL_W, y + DAY_ROW_H / 2f - 5,
+            txc(cs, colStarts[0], colStarts[0] + DAY_COL_W, y - DAY_ROW_H / 2f + 5,
                     DAY_ABBREVIATIONS[ri], fb, 12);
 
             Map<Integer, TimetableEntry> dayEntries = dayLookup.getOrDefault(day.name(), new HashMap<>());
-            float midY = y + DAY_ROW_H / 2f;
+            float midY = y - DAY_ROW_H / 2f;
 
             for (int i = 1; i < ly.totalColumns; i++) {
                 float cx = colStarts[i];
