@@ -338,10 +338,10 @@ public class TimetableViewerController {
 
         for (PeriodDto period : periods) {
             periodToRowMap.put(period.periodNumber(), currentRow);
-            currentRow++;
             if ("BREAK".equals(period.type())) {
                 breakRows.put(currentRow, period);
             }
+            currentRow++;
         }
 
         // Draw Period Rows
