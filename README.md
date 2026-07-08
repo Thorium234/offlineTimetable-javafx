@@ -11,7 +11,7 @@ Offline desktop school timetable generator built with Java 21, JavaFX, SQLite, a
 | `thorium-infrastructure` | SQLite persistence, PDF/Excel export |
 | `thorium-ui` | JavaFX views and controllers |
 
-Design documentation: `.ai/design/`
+Design documentation: `.thor/design/`
 
 ## Requirements
 
