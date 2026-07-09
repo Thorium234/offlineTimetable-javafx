@@ -6,6 +6,7 @@ import com.thorium.application.usecase.availability.AvailabilityManagementUseCas
 import com.thorium.application.usecase.breaks.BreakConfigurationUseCase;
 import com.thorium.application.usecase.classstream.ClassStreamManagementUseCase;
 import com.thorium.application.usecase.dashboard.DashboardUseCase;
+import com.thorium.application.usecase.export.ExportTimetableUseCase;
 import com.thorium.application.usecase.period.PeriodConfigurationUseCase;
 import com.thorium.application.usecase.room.RoomManagementUseCase;
 import com.thorium.application.usecase.settings.SchoolSettingsUseCase;
@@ -29,5 +30,6 @@ public interface Bootstrap {
     TimetableEditorUseCase timetableEditorUseCase();
     RoomManagementUseCase roomManagementUseCase();
     SchoolSettingsUseCase schoolSettingsUseCase();
+    ExportTimetableUseCase exportTimetableUseCase();
     DataManagementUseCase dataManagementUseCase();
 }

@@ -7,7 +7,9 @@ import com.thorium.application.usecase.availability.AvailabilityManagementUseCas
 import com.thorium.application.usecase.breaks.BreakConfigurationUseCase;
 import com.thorium.application.usecase.classstream.ClassStreamManagementUseCase;
 import com.thorium.application.usecase.dashboard.DashboardUseCase;
+import com.thorium.application.usecase.export.ExportTimetableUseCase;
 import com.thorium.application.usecase.period.PeriodConfigurationUseCase;
+import com.thorium.infrastructure.export.TeacherTimetablePdfExporter;
 import com.thorium.application.usecase.room.RoomManagementUseCase;
 import com.thorium.application.usecase.settings.SchoolSettingsUseCase;
 import com.thorium.application.usecase.subject.SubjectManagementUseCase;
@@ -39,6 +41,7 @@ public final class ApplicationBootstrap implements Bootstrap {
     private final SchoolSettingsRepository schoolSettingsRepository;
     private final SchoolSettingsUseCase schoolSettingsUseCase;
     private final DataManagementUseCase dataManagementUseCase;
+    private final TimetableExporter timetableExporter;
 
     private ApplicationBootstrap(Path databasePath) {
         this.connectionProvider = new SQLiteConnectionProvider(databasePath);
@@ -59,6 +62,9 @@ public final class ApplicationBootstrap implements Bootstrap {
         this.schoolSettingsUseCase = new SchoolSettingsUseCase(schoolSettingsRepository);
         this.dataManagementUseCase = new DataManagementUseCase(
                 new SqliteDataRepository(connectionProvider));
+        this.timetableExporter = new TeacherTimetablePdfExporter(
+                assignmentRepository, subjectRepository, classStreamRepository,
+                teacherRepository, schoolSettingsRepository);
     }
 
     public static ApplicationBootstrap create(Path databasePath) {
@@ -114,6 +120,10 @@ public final class ApplicationBootstrap implements Bootstrap {
 
     public RoomManagementUseCase roomManagementUseCase() {
         return new RoomManagementUseCase(roomRepository);
+    }
+
+    public ExportTimetableUseCase exportTimetableUseCase() {
+        return new ExportTimetableUseCase(timetableRepository, teacherRepository, timetableExporter);
     }
 
     public DashboardUseCase dashboardUseCase() {

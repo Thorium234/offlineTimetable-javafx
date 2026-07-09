@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<StackPane xmlns="http://javafx.com/javafx/21"
+           xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.thorium.ui.controller.ExportCenterController"
+           style="-fx-background-color: #ffffff;">
+
+    <VBox spacing="20" maxWidth="600" alignment="TOP_CENTER">
+        <padding>
+            <Insets top="40" right="32" bottom="32" left="32"/>
+        </padding>
+
+        <Label style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #1a1a1a;"
+               text="Export Timetable"/>
+
+        <Label style="-fx-font-size: 12px; -fx-text-fill: #666666;"
+               text="Generate a professional per-teacher timetable PDF for printing."/>
+
+        <Separator/>
+
+        <VBox spacing="8">
+            <Label style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #333333;"
+                   text="Select Teacher"/>
+            <ComboBox fx:id="teacherCombo" maxWidth="400" promptText="Choose a teacher..."/>
+        </VBox>
+
+        <HBox spacing="12" alignment="CENTER" VBox.vgrow="NEVER">
+            <Button fx:id="exportPdfBtn"
+                    text="Export PDF"
+                    style="-fx-background-color: #16a34a; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 28; -fx-font-size: 14px; -fx-background-radius: 6;"/>
+        </HBox>
+
+        <Label fx:id="statusLabel" style="-fx-font-size: 11px; -fx-text-fill: #888888;"/>
+    </VBox>
+</StackPane>
