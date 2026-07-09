@@ -22,12 +22,9 @@ public class TeacherTimetablePdfExporter implements TimetableExporter {
     private static final PDType1Font FONT_BOLD = new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD);
 
     private static final float MM = 72f / 25.4f;
-    private static final float TOP_MARGIN = 15 * MM;
-    private static final float BOTTOM_MARGIN = 15 * MM;
-    private static final float LEFT_MARGIN = 12 * MM;
-    private static final float RIGHT_MARGIN = 12 * MM;
-    private static final float PAGE_W = PDRectangle.A4.getHeight();
-    private static final float PAGE_H = PDRectangle.A4.getWidth();
+    private static final float MARGIN = 10 * MM;
+    private static final float PAGE_W = 842;
+    private static final float PAGE_H = 595;
 
     private record ColDef(String label, String time, boolean isBreak) {}
     private static final List<ColDef> COLS = List.of(
@@ -72,6 +69,16 @@ public class TeacherTimetablePdfExporter implements TimetableExporter {
     }
 
     @Override
+    public byte[] renderClassPdfToBytes(TimetableWithEntries data, Long classStreamId) {
+        throw new UnsupportedOperationException("Use ClassTimetablePdfExporter for class PDFs");
+    }
+
+    @Override
+    public byte[] renderAllClassesPdfToBytes(TimetableWithEntries data) {
+        throw new UnsupportedOperationException("Use ClassTimetablePdfExporter for all-classes PDF");
+    }
+
+    @Override
     public byte[] renderTeacherPdfToBytes(TimetableWithEntries data, Long teacherId) {
         Teacher teacher = teacherRepo.findById(teacherId)
                 .orElseThrow(() -> new IllegalArgumentException("Teacher not found: " + teacherId));
@@ -98,47 +105,46 @@ public class TeacherTimetablePdfExporter implements TimetableExporter {
         Map<Long, ClassStream> clsCache = new HashMap<>();
 
         try (PDDocument doc = new PDDocument()) {
-            PDPage page = new PDPage(PDRectangle.A4);
-            page.setRotation(90);
+            PDPage page = new PDPage(new PDRectangle(PAGE_W, PAGE_H));
             doc.addPage(page);
 
             try (PDPageContentStream cs = new PDPageContentStream(doc, page)) {
-                float usableW = PAGE_W - LEFT_MARGIN - RIGHT_MARGIN;
-                float usableH = PAGE_H - TOP_MARGIN - BOTTOM_MARGIN;
+                float usableW = PAGE_W - 2 * MARGIN;
+                float usableH = PAGE_H - 2 * MARGIN;
 
-                float dayColW = 48;
-                float periodColW = Math.max(40, (usableW - dayColW) / COLS.size());
+                float dayColW = 40;
+                float periodColW = (usableW - dayColW) / COLS.size();
                 float totalW = dayColW + periodColW * COLS.size();
-                float tableLeft = LEFT_MARGIN + (usableW - totalW) / 2f;
+                float tableLeft = MARGIN;
 
                 float[] colX = new float[1 + COLS.size()];
                 colX[0] = tableLeft;
                 for (int i = 0; i < COLS.size(); i++)
                     colX[i + 1] = colX[i] + (i == 0 ? dayColW : periodColW);
 
-                float headerH = 46;
-                float rowH = Math.min(72, (usableH - headerH - 30) / DAYS.size());
+                float headerH = 36;
+                float rowH = (usableH - headerH - 24) / DAYS.size();
 
-                float startY = PAGE_H - TOP_MARGIN - 10;
+                float startY = PAGE_H - MARGIN - 8;
 
                 // School name
-                cs.setFont(FONT_BOLD, 9);
+                cs.setFont(FONT_BOLD, 8);
                 cs.beginText();
                 cs.newLineAtOffset(tableLeft, startY);
                 cs.showText(schoolName);
                 cs.endText();
 
                 // Teacher name
-                float teacherY = startY - 20;
-                cs.setFont(FONT_BOLD, 16);
+                float titleY = startY - 16;
+                cs.setFont(FONT_BOLD, 13);
                 String teacherLabel = "Teacher " + teacher.getName().toUpperCase();
-                float tw = FONT_BOLD.getStringWidth(teacherLabel) / 1000f * 16;
+                float tw = FONT_BOLD.getStringWidth(teacherLabel) / 1000f * 13;
                 cs.beginText();
-                cs.newLineAtOffset(tableLeft + (totalW - tw) / 2f, teacherY);
+                cs.newLineAtOffset(MARGIN + (usableW - tw) / 2f, titleY);
                 cs.showText(teacherLabel);
                 cs.endText();
 
-                float tableTopY = teacherY - 26;
+                float tableTopY = titleY - 20;
 
                 // Horizontal lines
                 cs.setLineWidth(0.5f);
@@ -183,19 +189,19 @@ public class TeacherTimetablePdfExporter implements TimetableExporter {
                     float cy = tableTopY;
                     float ch = headerH;
 
-                    cs.setFont(FONT_BOLD, 8);
+                    cs.setFont(FONT_BOLD, 7);
                     String num = (c + 1) + "";
-                    float nw = FONT_BOLD.getStringWidth(num) / 1000f * 8;
+                    float nw = FONT_BOLD.getStringWidth(num) / 1000f * 7;
                     cs.beginText();
-                    cs.newLineAtOffset(cx + (cw - nw) / 2f, cy + ch / 2f + 5);
+                    cs.newLineAtOffset(cx + (cw - nw) / 2f, cy + ch / 2f + 4);
                     cs.showText(num);
                     cs.endText();
 
-                    cs.setFont(FONT, 5.5f);
+                    cs.setFont(FONT, 4.5f);
                     String t = COLS.get(c).time();
-                    float tw2 = FONT.getStringWidth(t) / 1000f * 5.5f;
+                    float tw2 = FONT.getStringWidth(t) / 1000f * 4.5f;
                     cs.beginText();
-                    cs.newLineAtOffset(cx + (cw - tw2) / 2f, cy + ch / 2f - 8);
+                    cs.newLineAtOffset(cx + (cw - tw2) / 2f, cy + ch / 2f - 7);
                     cs.showText(t);
                     cs.endText();
                 }
@@ -206,11 +212,11 @@ public class TeacherTimetablePdfExporter implements TimetableExporter {
                     float rowCenterY = ry - rowH / 2f;
 
                     // Day abbreviation
-                    cs.setFont(FONT_BOLD, 11);
+                    cs.setFont(FONT_BOLD, 9);
                     String abbr = DAY_ABBR.get(r);
-                    float aw = FONT_BOLD.getStringWidth(abbr) / 1000f * 11;
+                    float aw = FONT_BOLD.getStringWidth(abbr) / 1000f * 9;
                     cs.beginText();
-                    cs.newLineAtOffset(colX[0] + (dayColW - aw) / 2f, rowCenterY - 4);
+                    cs.newLineAtOffset(colX[0] + (dayColW - aw) / 2f, rowCenterY - 3);
                     cs.showText(abbr);
                     cs.endText();
 
@@ -218,9 +224,7 @@ public class TeacherTimetablePdfExporter implements TimetableExporter {
 
                     for (int c = 0; c < COLS.size(); c++) {
                         if (COLS.get(c).isBreak()) continue;
-                        float cx = colX[c + 1];
-                        float cw = periodColW;
-                        float cellCenterX = cx + cw / 2f;
+                        float cellCenterX = colX[c + 1] + periodColW / 2f;
 
                         int pn = c + 1;
                         TimetableEntry entry = dayMap.get(pn);
@@ -239,23 +243,23 @@ public class TeacherTimetablePdfExporter implements TimetableExporter {
                             String s = subj.getCode();
                             float sw = FONT_BOLD.getStringWidth(s) / 1000f * 7;
                             cs.beginText();
-                            cs.newLineAtOffset(cellCenterX - sw / 2f, rowCenterY + 10);
+                            cs.newLineAtOffset(cellCenterX - sw / 2f, rowCenterY + 8);
                             cs.showText(s);
                             cs.endText();
                         }
                         if (cls != null) {
-                            cs.setFont(FONT, 7);
+                            cs.setFont(FONT, 6.5f);
                             String f = "F" + cls.getForm();
-                            float fw = FONT.getStringWidth(f) / 1000f * 7;
+                            float fw = FONT.getStringWidth(f) / 1000f * 6.5f;
                             cs.beginText();
                             cs.newLineAtOffset(cellCenterX - fw / 2f, rowCenterY - 2);
                             cs.showText(f);
                             cs.endText();
 
                             String st = cls.getStream();
-                            float stw = FONT.getStringWidth(st) / 1000f * 7;
+                            float stw = FONT.getStringWidth(st) / 1000f * 6.5f;
                             cs.beginText();
-                            cs.newLineAtOffset(cellCenterX - stw / 2f, rowCenterY - 12);
+                            cs.newLineAtOffset(cellCenterX - stw / 2f, rowCenterY - 11);
                             cs.showText(st);
                             cs.endText();
                         }
@@ -272,13 +276,13 @@ public class TeacherTimetablePdfExporter implements TimetableExporter {
                     float mergeCenterY = (mergeTop + mergeBot) / 2f;
                     float labelX = cx + cw / 2f;
 
-                    cs.setFont(FONT_BOLD, 6.5f);
+                    cs.setFont(FONT_BOLD, 5.5f);
                     String label = COLS.get(c).label();
-                    float charH = 8;
+                    float charH = 7;
                     float textTopY = mergeCenterY + (label.length() * charH) / 2f;
                     for (int i = 0; i < label.length(); i++) {
                         String ch = String.valueOf(label.charAt(i));
-                        float cw2 = FONT_BOLD.getStringWidth(ch) / 1000f * 6.5f;
+                        float cw2 = FONT_BOLD.getStringWidth(ch) / 1000f * 5.5f;
                         cs.beginText();
                         cs.newLineAtOffset(labelX - cw2 / 2f, textTopY - i * charH);
                         cs.showText(ch);

@@ -10,6 +10,7 @@ import com.thorium.application.usecase.dashboard.DashboardUseCase;
 import com.thorium.application.usecase.export.ExportTimetableUseCase;
 import com.thorium.application.usecase.period.PeriodConfigurationUseCase;
 import com.thorium.infrastructure.export.TeacherTimetablePdfExporter;
+import com.thorium.infrastructure.export.ClassTimetablePdfExporter;
 import com.thorium.application.usecase.room.RoomManagementUseCase;
 import com.thorium.application.usecase.settings.SchoolSettingsUseCase;
 import com.thorium.application.usecase.subject.SubjectManagementUseCase;
@@ -41,7 +42,8 @@ public final class ApplicationBootstrap implements Bootstrap {
     private final SchoolSettingsRepository schoolSettingsRepository;
     private final SchoolSettingsUseCase schoolSettingsUseCase;
     private final DataManagementUseCase dataManagementUseCase;
-    private final TimetableExporter timetableExporter;
+    private final TimetableExporter teacherExporter;
+    private final TimetableExporter classExporter;
 
     private ApplicationBootstrap(Path databasePath) {
         this.connectionProvider = new SQLiteConnectionProvider(databasePath);
@@ -62,9 +64,12 @@ public final class ApplicationBootstrap implements Bootstrap {
         this.schoolSettingsUseCase = new SchoolSettingsUseCase(schoolSettingsRepository);
         this.dataManagementUseCase = new DataManagementUseCase(
                 new SqliteDataRepository(connectionProvider));
-        this.timetableExporter = new TeacherTimetablePdfExporter(
+        this.teacherExporter = new TeacherTimetablePdfExporter(
                 assignmentRepository, subjectRepository, classStreamRepository,
                 teacherRepository, schoolSettingsRepository);
+        this.classExporter = new ClassTimetablePdfExporter(
+                assignmentRepository, subjectRepository, teacherRepository,
+                classStreamRepository, schoolSettingsRepository);
     }
 
     public static ApplicationBootstrap create(Path databasePath) {
@@ -123,7 +128,8 @@ public final class ApplicationBootstrap implements Bootstrap {
     }
 
     public ExportTimetableUseCase exportTimetableUseCase() {
-        return new ExportTimetableUseCase(timetableRepository, teacherRepository, timetableExporter);
+        return new ExportTimetableUseCase(timetableRepository, teacherRepository,
+                classStreamRepository, teacherExporter, classExporter);
     }
 
     public DashboardUseCase dashboardUseCase() {

@@ -113,6 +113,24 @@ public class SqliteTeachingAssignmentRepository extends AbstractRepository imple
     }
 
     @Override
+    public List<TeachingAssignment> findByClassStreamId(Long classStreamId) {
+        try (Connection conn = connection();
+             PreparedStatement ps = conn.prepareStatement(
+                     "SELECT * FROM teaching_assignments WHERE class_stream_id = ? ORDER BY id")) {
+            ps.setLong(1, classStreamId);
+            try (ResultSet rs = ps.executeQuery()) {
+                List<TeachingAssignment> list = new ArrayList<>();
+                while (rs.next()) {
+                    list.add(map(rs));
+                }
+                return list;
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to find assignments by class stream", e);
+        }
+    }
+
+    @Override
     public void deleteById(Long id) {
         try (Connection conn = connection();
              PreparedStatement ps = conn.prepareStatement("DELETE FROM teaching_assignments WHERE id = ?")) {

@@ -15,6 +15,8 @@ public interface TeachingAssignmentRepository {
 
     List<TeachingAssignment> findByTeacherId(Long teacherId);
 
+    List<TeachingAssignment> findByClassStreamId(Long classStreamId);
+
     void deleteById(Long id);
 
     long count();
