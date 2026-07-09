@@ -7,7 +7,6 @@ import com.thorium.application.usecase.availability.AvailabilityManagementUseCas
 import com.thorium.application.usecase.breaks.BreakConfigurationUseCase;
 import com.thorium.application.usecase.classstream.ClassStreamManagementUseCase;
 import com.thorium.application.usecase.dashboard.DashboardUseCase;
-import com.thorium.application.usecase.export.ExportTimetableUseCase;
 import com.thorium.application.usecase.period.PeriodConfigurationUseCase;
 import com.thorium.application.usecase.room.RoomManagementUseCase;
 import com.thorium.application.usecase.settings.SchoolSettingsUseCase;
@@ -16,10 +15,7 @@ import com.thorium.application.usecase.teacher.TeacherManagementUseCase;
 import com.thorium.application.usecase.data.DataManagementUseCase;
 import com.thorium.application.usecase.timetable.GenerateTimetableUseCase;
 import com.thorium.application.usecase.timetable.TimetableEditorUseCase;
-import com.thorium.infrastructure.export.AscStyleTeacherPdfExporter;
-import com.thorium.infrastructure.export.CompositeTimetableExporter;
-import com.thorium.infrastructure.export.ExcelTimetableExporter;
-import com.thorium.infrastructure.export.PdfTimetableExporter;
+
 import com.thorium.infrastructure.persistence.DatabaseInitializer;
 import com.thorium.infrastructure.persistence.SQLiteConnectionProvider;
 import com.thorium.infrastructure.persistence.repository.*;
@@ -43,7 +39,6 @@ public final class ApplicationBootstrap implements Bootstrap {
     private final SchoolSettingsRepository schoolSettingsRepository;
     private final SchoolSettingsUseCase schoolSettingsUseCase;
     private final DataManagementUseCase dataManagementUseCase;
-    private final TimetableExporter timetableExporter;
 
     private ApplicationBootstrap(Path databasePath) {
         this.connectionProvider = new SQLiteConnectionProvider(databasePath);
@@ -64,25 +59,10 @@ public final class ApplicationBootstrap implements Bootstrap {
         this.schoolSettingsUseCase = new SchoolSettingsUseCase(schoolSettingsRepository);
         this.dataManagementUseCase = new DataManagementUseCase(
                 new SqliteDataRepository(connectionProvider));
-        this.timetableExporter = createExporter();
     }
 
     public static ApplicationBootstrap create(Path databasePath) {
         return new ApplicationBootstrap(databasePath);
-    }
-
-    private TimetableExporter createExporter() {
-        PdfTimetableExporter pdfExporter = new PdfTimetableExporter(
-                assignmentRepository, subjectRepository, classStreamRepository,
-                teacherRepository, periodRepository, roomRepository,
-                breakRepository, schoolSettingsRepository);
-        ExcelTimetableExporter excelExporter = new ExcelTimetableExporter(
-                assignmentRepository, subjectRepository, teacherRepository, classStreamRepository);
-        AscStyleTeacherPdfExporter ascExporter = new AscStyleTeacherPdfExporter(
-                assignmentRepository, subjectRepository, classStreamRepository,
-                teacherRepository, roomRepository, periodRepository, breakRepository,
-                schoolSettingsRepository);
-        return new CompositeTimetableExporter(pdfExporter, excelExporter, ascExporter);
     }
 
     public TeacherManagementUseCase teacherManagementUseCase() {
@@ -134,10 +114,6 @@ public final class ApplicationBootstrap implements Bootstrap {
 
     public RoomManagementUseCase roomManagementUseCase() {
         return new RoomManagementUseCase(roomRepository);
-    }
-
-    public ExportTimetableUseCase exportTimetableUseCase() {
-        return new ExportTimetableUseCase(timetableRepository, timetableExporter);
     }
 
     public DashboardUseCase dashboardUseCase() {
