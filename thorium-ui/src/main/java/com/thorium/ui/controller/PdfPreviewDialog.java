@@ -1,8 +1,8 @@
 package com.thorium.ui.controller;
 
 import com.thorium.ui.di.AppContext;
-import com.thorium.ui.util.IconUtil;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -50,37 +50,35 @@ public class PdfPreviewDialog {
         Stage stage = new Stage();
         stage.initOwner(parent);
         stage.initModality(Modality.WINDOW_MODAL);
-        stage.setTitle("PDF Preview — " + timetableName);
+        stage.setTitle("Preview — " + timetableName);
 
         Button exportBtn = new Button("Export PDF");
-        IconUtil.addIcon(exportBtn, IconUtil.EXPORT, "#ffffff");
-        exportBtn.setStyle("-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-padding: 8 16; -fx-cursor: hand;");
+        exportBtn.setStyle("-fx-background-color: #333333; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 4; -fx-padding: 8 16; -fx-cursor: hand;");
         exportBtn.setOnAction(e -> {
             exportPdf();
             stage.close();
         });
 
         Button closeBtn = new Button("Close");
-        closeBtn.setStyle("-fx-background-color: #e2e8f0; -fx-text-fill: #334155; -fx-font-weight: bold; -fx-background-radius: 6; -fx-padding: 8 16; -fx-cursor: hand;");
+        closeBtn.setStyle("-fx-background-color: #e0e0e0; -fx-text-fill: #333333; -fx-font-weight: bold; -fx-background-radius: 4; -fx-padding: 8 16; -fx-cursor: hand;");
         closeBtn.setOnAction(e -> stage.close());
+
+        Label pageCount = new Label("Pages: " + countPages());
+        pageCount.setStyle("-fx-font-weight: bold; -fx-text-fill: #333333;");
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        ToolBar toolBar = new ToolBar(
-                new Label("Pages: " + countPages()),
-                spacer,
-                exportBtn,
-                closeBtn
-        );
-        toolBar.setStyle("-fx-background-color: #f8fafc; -fx-padding: 8 12; -fx-border-color: #e2e8f0; -fx-border-width: 0 0 1 0;");
+        ToolBar toolBar = new ToolBar(pageCount, spacer, exportBtn, closeBtn);
+        toolBar.setStyle("-fx-background-color: #f5f5f5; -fx-padding: 8 12; -fx-border-color: #d0d0d0; -fx-border-width: 0 0 1 0;");
 
         VBox pagesBox = new VBox(12);
         pagesBox.setPadding(new Insets(16));
+        pagesBox.setStyle("-fx-background-color: #f5f5f5;");
         renderPages(pagesBox);
 
         ScrollPane scrollPane = new ScrollPane(pagesBox);
         scrollPane.setFitToWidth(true);
-        scrollPane.setStyle("-fx-background-color: #f1f5f9;");
+        scrollPane.setStyle("-fx-background-color: #f5f5f5;");
 
         VBox root = new VBox(toolBar, scrollPane);
         VBox.setVgrow(scrollPane, Priority.ALWAYS);
