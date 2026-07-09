@@ -127,7 +127,7 @@ public final class SchedulingContext {
     }
 
     public int totalSlots() {
-        return workingDays.size() * periodsPerDay;
+        return workingDays.size() * lessonPeriodNumbers.size();
     }
 
     public ScheduleSlot nextLessonSlot(ScheduleSlot slot) {

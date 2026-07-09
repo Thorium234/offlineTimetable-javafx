@@ -53,7 +53,18 @@ public class GreedyScheduler {
                 schedule.place(new PlacedLesson(item.assignment(), bestSlot));
                 if (item.requiresConsecutive) {
                     ScheduleSlot second = context.nextLessonSlot(bestSlot);
-                    schedule.place(new PlacedLesson(item.assignment(), second));
+                    if (second != null) {
+                        schedule.place(new PlacedLesson(item.assignment(), second));
+                    } else {
+                        schedule.removeLast();
+                        rejectedCount++;
+                        String summary = "teacher=" + item.assignment().getTeacherId()
+                                + " subject=" + item.assignment().getSubjectId()
+                                + " class=" + item.assignment().getClassStreamId()
+                                + " lessonIndex=" + item.lessonIndex();
+                        if (callback != null) callback.itemRejected(summary, "no consecutive slot available");
+                        continue;
+                    }
                 }
                 if (callback != null) {
                     callback.progress(schedule.size(), required);
@@ -169,7 +180,7 @@ public class GreedyScheduler {
         ScheduleSlot best = null;
         double bestScore = Double.NEGATIVE_INFINITY;
 
-        int maxIdx = context.periodsPerDay() - (requiresConsecutive ? 1 : 0);
+        int maxIdx = context.lessonPeriodNumbers().size() - (requiresConsecutive ? 1 : 0);
         List<ScheduleSlot> allSlots = context.allSlots();
         double maxLookAheadPenalty = 0.0;
 

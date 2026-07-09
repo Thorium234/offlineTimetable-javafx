@@ -161,50 +161,175 @@ public class BacktrackingScheduler {
                             GenerationProgressCallback callback) {
         if (tracker.allAssigned()) return true;
 
-        iterations[0]++;
-        if (iterations[0] >= MAX_ITERATIONS) return false;
-
-        if (callback != null && callback.isCancelled()) {
-            LOG.info("Backtracking search cancelled at iteration " + iterations[0]);
-            if (callback != null) callback.log("INFO", "Backtracking search cancelled");
-            return false;
+        if (tier == Tier.RELAXED) {
+            return relaxedSearch(tracker, schedule, context, iterations, callback);
         }
 
+        Deque<SearchFrame> stack = new ArrayDeque<>();
+        SearchFrame initial = buildSearchFrameStrict(tracker, schedule, context, callback);
+        if (initial == null) return false;
+        stack.push(initial);
+
+        while (!stack.isEmpty()) {
+            iterations[0]++;
+            if (iterations[0] >= MAX_ITERATIONS) return false;
+
+            if (callback != null && callback.isCancelled()) {
+                LOG.info("Backtracking search cancelled at iteration " + iterations[0]);
+                callback.log("INFO", "Backtracking search cancelled");
+                return false;
+            }
+
+            SearchFrame frame = stack.peek();
+
+            if (frame.candidateIndex >= frame.candidates.size()) {
+                stack.pop();
+                if (!stack.isEmpty()) {
+                    SearchFrame parent = stack.peek();
+                    if (parent.pruned != null) {
+                        tracker.restore(parent.pruned, parent.item);
+                    }
+                    int lessonsToRemove = schedule.size() - parent.lessonsBeforePlacing;
+                    for (int i = 0; i < lessonsToRemove; i++) {
+                        schedule.removeLast();
+                    }
+                }
+                continue;
+            }
+
+            ScheduleSlot slot = frame.candidates.get(frame.candidateIndex);
+            frame.candidateIndex++;
+
+            schedule.place(new PlacedLesson(frame.item.assignment(), slot));
+
+            if (frame.item.requiresConsecutive()) {
+                ScheduleSlot next = context.nextLessonSlot(slot);
+                if (next == null || !hardValidator.canPlace(frame.item.assignment(), next, schedule, context)) {
+                    schedule.removeLast();
+                    continue;
+                }
+                schedule.place(new PlacedLesson(frame.item.assignment(), next));
+            }
+
+            List<PrunedPair> pruned = tracker.placeAndPrune(frame.item, slot);
+            frame.pruned = pruned;
+
+            if (iterations[0] % 1000 == 0 && callback != null) {
+                int required = context.assignments().stream().mapToInt(a -> a.getLessonsPerWeek()).sum();
+                callback.progress(schedule.size(), required);
+                callback.log("INFO", "Search iteration " + iterations[0] + ": placed=" + schedule.size()
+                        + " trying " + itemSummary(frame.item) + " at " + slot);
+            }
+
+            if (tracker.hasEmptyDomain()) {
+                tracker.restore(pruned, frame.item);
+                int lessonsToRemove = schedule.size() - frame.lessonsBeforePlacing;
+                for (int i = 0; i < lessonsToRemove; i++) {
+                    schedule.removeLast();
+                }
+                continue;
+            }
+
+            if (tracker.allAssigned()) return true;
+
+            SearchFrame next = buildSearchFrameStrict(tracker, schedule, context, callback);
+            if (next == null) {
+                tracker.restore(pruned, frame.item);
+                int lessonsToRemove = schedule.size() - frame.lessonsBeforePlacing;
+                for (int i = 0; i < lessonsToRemove; i++) {
+                    schedule.removeLast();
+                }
+                continue;
+            }
+            stack.push(next);
+        }
+
+        return false;
+    }
+
+    private boolean relaxedSearch(DomainTracker tracker, PartialSchedule schedule,
+                                   SchedulingContext context, int[] iterations,
+                                   GenerationProgressCallback callback) {
+        while (!tracker.allAssigned()) {
+            iterations[0]++;
+            if (iterations[0] >= MAX_ITERATIONS) return false;
+
+            if (callback != null && callback.isCancelled()) {
+                LOG.info("Relaxed search cancelled at iteration " + iterations[0]);
+                callback.log("INFO", "Relaxed search cancelled");
+                return false;
+            }
+
+            GreedyScheduler.AssignmentWorkItem item = tracker.selectMRV();
+            if (item == null) continue;
+
+            Set<ScheduleSlot> domain = tracker.domains.get(item);
+            if (domain == null || domain.isEmpty()) {
+                tracker.markSkipped(item);
+                continue;
+            }
+
+            ScheduleSlot bestSlot = null;
+            double bestScore = Double.NEGATIVE_INFINITY;
+            int bestPruned = Integer.MAX_VALUE;
+
+            for (ScheduleSlot slot : domain) {
+                if (!passesCoreConstraints(item.assignment(), slot, schedule, context)) continue;
+                if (item.requiresConsecutive()) {
+                    ScheduleSlot next = context.nextLessonSlot(slot);
+                    if (next == null || !passesCoreConstraints(item.assignment(), next, schedule, context)) continue;
+                }
+
+                double score = softScorer.scorePlacement(item.assignment(), slot, schedule, context);
+                int pruned = tracker.countPrunedByPlacement(item, slot);
+                if (score > bestScore || (score == bestScore && pruned < bestPruned)) {
+                    bestScore = score;
+                    bestPruned = pruned;
+                    bestSlot = slot;
+                }
+            }
+
+            if (bestSlot == null) {
+                tracker.markSkipped(item);
+                int required = context.assignments().stream().mapToInt(a -> a.getLessonsPerWeek()).sum();
+                if (callback != null) callback.progress(schedule.size(), required);
+                continue;
+            }
+
+            schedule.place(new PlacedLesson(item.assignment(), bestSlot));
+            if (item.requiresConsecutive()) {
+                ScheduleSlot next = context.nextLessonSlot(bestSlot);
+                if (next != null) {
+                    schedule.place(new PlacedLesson(item.assignment(), next));
+                }
+            }
+
+            List<PrunedPair> pruned = tracker.placeAndPrune(item, bestSlot);
+
+            int required = context.assignments().stream().mapToInt(a -> a.getLessonsPerWeek()).sum();
+            if (callback != null) callback.progress(schedule.size(), required);
+        }
+        return true;
+    }
+
+    private SearchFrame buildSearchFrameStrict(DomainTracker tracker, PartialSchedule schedule,
+                                                SchedulingContext context,
+                                                GenerationProgressCallback callback) {
         GreedyScheduler.AssignmentWorkItem item = tracker.selectMRV();
-        if (item == null) {
-            String msg = "MRV returned null at iteration " + iterations[0] + " (empty domain detected)";
-            LOG.fine(msg);
-            if (callback != null) callback.log("WARN", msg);
-            if (tier == Tier.RELAXED) return true;
-            return false;
-        }
+        if (item == null) return null;
 
         Set<ScheduleSlot> domain = tracker.domains.get(item);
-        if (domain == null || domain.isEmpty()) {
-            String msg = "Empty domain for item " + item.assignment().getId()
-                    + " (lessonIndex=" + item.lessonIndex() + ") at iteration " + iterations[0];
-            LOG.fine(msg);
-            if (tier == Tier.RELAXED) {
-                if (callback != null) callback.log("WARN", "Skipping " + itemSummary(item) + " — " + msg);
-                tracker.markSkipped(item);
-                return search(tracker, schedule, context, iterations, tier, callback);
-            }
-            return false;
-        }
+        if (domain == null || domain.isEmpty()) return null;
 
         List<ScheduleSlot> candidates = domain.stream()
                 .filter(slot -> {
-                    if (tier == Tier.STRICT) {
-                        if (!hardValidator.canPlace(item.assignment(), slot, schedule, context)) return false;
-                        if (item.requiresConsecutive()) {
-                            ScheduleSlot next = context.nextLessonSlot(slot);
-                            if (next == null) return false;
-                            if (!hardValidator.canPlace(item.assignment(), next, schedule, context)) return false;
-                        }
-                        return true;
-                    } else {
-                        return passesCoreConstraints(item.assignment(), slot, schedule, context);
+                    if (!hardValidator.canPlace(item.assignment(), slot, schedule, context)) return false;
+                    if (item.requiresConsecutive()) {
+                        ScheduleSlot next = context.nextLessonSlot(slot);
+                        if (next == null) return false;
+                        if (!hardValidator.canPlace(item.assignment(), next, schedule, context)) return false;
                     }
+                    return true;
                 })
                 .sorted(Comparator.<ScheduleSlot, Double>comparing(
                         slot -> -softScorer.scorePlacement(item.assignment(), slot, schedule, context))
@@ -212,60 +337,9 @@ public class BacktrackingScheduler {
                         .thenComparingInt(slot -> countPlacedOnDay(item.assignment().getId(), slot.dayOfWeek(), schedule)))
                 .toList();
 
-        if (tier == Tier.RELAXED && candidates.isEmpty()) {
-            if (callback != null) callback.log("WARN", "Skipping " + itemSummary(item)
-                    + " — no candidates after core filter");
-            tracker.markSkipped(item);
-            int required = context.assignments().stream().mapToInt(a -> a.getLessonsPerWeek()).sum();
-            if (callback != null) callback.progress(schedule.size(), required);
-            return search(tracker, schedule, context, iterations, tier, callback);
-        }
+        if (candidates.isEmpty()) return null;
 
-        for (ScheduleSlot slot : candidates) {
-            PlacedLesson placed = new PlacedLesson(item.assignment(), slot);
-            schedule.place(placed);
-
-            if (item.requiresConsecutive()) {
-                ScheduleSlot next = context.nextLessonSlot(slot);
-                if (next == null || !hardValidator.canPlace(item.assignment(), next, schedule, context)) {
-                    schedule.removeLast();
-                    continue;
-                }
-                schedule.place(new PlacedLesson(item.assignment(), next));
-            }
-
-            List<PrunedPair> pruned = tracker.placeAndPrune(item, slot);
-
-            if (iterations[0] % 1000 == 0 && callback != null) {
-                int required = context.assignments().stream().mapToInt(a -> a.getLessonsPerWeek()).sum();
-                callback.progress(schedule.size(), required);
-                callback.log("INFO", "Search iteration " + iterations[0] + ": placed=" + schedule.size()
-                        + " trying " + itemSummary(item) + " at " + slot);
-            }
-
-            if (!tracker.hasEmptyDomain()) {
-                if (search(tracker, schedule, context, iterations, tier, callback)) {
-                    return true;
-                }
-            }
-
-            tracker.restore(pruned, item);
-            PlacedLesson removed = schedule.removeLast();
-            if (item.requiresConsecutive()) {
-                schedule.removeLast();
-            }
-        }
-
-        if (tier == Tier.RELAXED) {
-            LOG.fine("RELAXED: no valid slot for item " + item.assignment().getId()
-                    + " (lessonIndex=" + item.lessonIndex()
-                    + "), skipping. Placed so far: " + schedule.size());
-            tracker.markSkipped(item);
-            int required = context.assignments().stream().mapToInt(a -> a.getLessonsPerWeek()).sum();
-            if (callback != null) callback.progress(schedule.size(), required);
-            return search(tracker, schedule, context, iterations, tier, callback);
-        }
-        return false;
+        return new SearchFrame(item, candidates, 0, schedule.size(), null);
     }
 
     private int countPlacedOnDay(long assignmentId, DayOfWeek day, PartialSchedule schedule) {
@@ -284,6 +358,23 @@ public class BacktrackingScheduler {
     private enum Tier { STRICT, RELAXED }
 
     private record PrunedPair(GreedyScheduler.AssignmentWorkItem item, ScheduleSlot slot) {}
+
+    private static class SearchFrame {
+        final GreedyScheduler.AssignmentWorkItem item;
+        final List<ScheduleSlot> candidates;
+        int candidateIndex;
+        final int lessonsBeforePlacing;
+        List<PrunedPair> pruned;
+
+        SearchFrame(GreedyScheduler.AssignmentWorkItem item, List<ScheduleSlot> candidates,
+                    int candidateIndex, int lessonsBeforePlacing, List<PrunedPair> pruned) {
+            this.item = item;
+            this.candidates = candidates;
+            this.candidateIndex = candidateIndex;
+            this.lessonsBeforePlacing = lessonsBeforePlacing;
+            this.pruned = pruned;
+        }
+    }
 
     private static class DomainTracker {
         final Map<GreedyScheduler.AssignmentWorkItem, Set<ScheduleSlot>> domains;
@@ -305,7 +396,7 @@ public class BacktrackingScheduler {
             this.context = context;
 
             List<ScheduleSlot> allSlots = context.allSlots();
-            int maxIdx = context.periodsPerDay();
+            int maxIdx = context.lessonPeriodNumbers().size();
 
             for (var item : items) {
                 TeachingAssignment ta = item.assignment();

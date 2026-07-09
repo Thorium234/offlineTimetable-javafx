@@ -3,11 +3,11 @@ package com.thorium.domain.scheduling.optimization;
 import com.thorium.domain.constraint.HardConstraintValidator;
 import com.thorium.domain.constraint.SoftConstraintScorer;
 import com.thorium.domain.scheduling.PartialSchedule;
-import com.thorium.domain.scheduling.PlacedLesson;
 import com.thorium.domain.scheduling.SchedulingContext;
 import com.thorium.domain.scheduling.TimetableGenerationResult;
 
-import java.util.*;
+import java.util.List;
+import java.util.Random;
 
 public class TabuSearchStrategy implements OptimizationStrategy {
 
@@ -89,44 +89,8 @@ public class TabuSearchStrategy implements OptimizationStrategy {
     }
 
     private List<SchedulingMove> generateCandidates(PartialSchedule schedule, SchedulingContext context,
-                                                      TabuList tabuList, int maxCandidates) {
-        List<PlacedLesson> lessons = new ArrayList<>(schedule.placedLessons());
-        if (lessons.size() < 2) return List.of();
-
-        Set<String> seen = new HashSet<>();
-        List<SchedulingMove> candidates = new ArrayList<>();
-        int attempts = 0;
-
-        while (candidates.size() < maxCandidates && attempts < maxCandidates * 5) {
-            attempts++;
-            int idx1 = random.nextInt(lessons.size());
-            int idx2 = random.nextInt(lessons.size());
-            if (idx1 == idx2) continue;
-
-            PlacedLesson l1 = lessons.get(idx1);
-            PlacedLesson l2 = lessons.get(idx2);
-            String key = Math.min(idx1, idx2) + "-" + Math.max(idx1, idx2);
-            if (!seen.add(key)) continue;
-
-            PartialSchedule trial = schedule.copy();
-            trial.remove(l1);
-            trial.remove(l2);
-
-            PlacedLesson swapped1 = new PlacedLesson(l1.assignment(), l2.slot());
-            PlacedLesson swapped2 = new PlacedLesson(l2.assignment(), l1.slot());
-
-            if (!hardValidator.canPlace(swapped1.assignment(), swapped1.slot(), trial, context)
-                    || !hardValidator.canPlace(swapped2.assignment(), swapped2.slot(), trial, context)) {
-                continue;
-            }
-            trial.place(swapped1);
-            trial.place(swapped2);
-            if (!SchedulingMoveUtils.countsValid(trial, context)) continue;
-
-            candidates.add(new SchedulingMove(idx1, idx2, l2.slot(), l1.slot()));
-        }
-
-        return candidates;
+                                                       TabuList tabuList, int maxCandidates) {
+        return SchedulingMoveUtils.generateSwapCandidates(schedule, context, hardValidator, maxCandidates);
     }
 
 }
