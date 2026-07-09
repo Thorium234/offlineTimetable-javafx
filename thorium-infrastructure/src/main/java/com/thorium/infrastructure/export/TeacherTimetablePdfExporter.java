@@ -26,25 +26,7 @@ public class TeacherTimetablePdfExporter implements TimetableExporter {
     private static final float PAGE_W = 842;
     private static final float PAGE_H = 595;
 
-    private record ColDef(String label, String time, boolean isBreak) {}
-    private static final List<ColDef> COLS = List.of(
-            new ColDef("ASSEMBLY/PREPS", "7:10-8:00", true),
-            new ColDef("P1", "8:00-8:40", false),
-            new ColDef("P2", "8:40-9:20", false),
-            new ColDef("P3", "9:20-10:00", false),
-            new ColDef("TEA BREAK", "10:00-10:20", true),
-            new ColDef("P4", "10:20-11:00", false),
-            new ColDef("P5", "11:00-11:40", false),
-            new ColDef("SHORT BREAK", "11:40-11:50", true),
-            new ColDef("P6", "11:50-12:30", false),
-            new ColDef("P7", "12:30-13:10", false),
-            new ColDef("LUNCH BREAK", "13:10-14:00", true),
-            new ColDef("P8", "14:00-14:40", false),
-            new ColDef("P9", "14:40-15:20", false),
-            new ColDef("P10", "15:20-16:00", false),
-            new ColDef("GAMES", "16:00-16:40", true),
-            new ColDef("P11", "16:40-17:20", false)
-    );
+    private record PeriodCol(int periodNumber, String label, String startTime, String endTime, boolean isBreak) {}
 
     private static final List<DayOfWeek> DAYS = DayOfWeek.workingDays();
     private static final List<String> DAY_ABBR = List.of("Mo", "Tu", "We", "Th", "Fr");
@@ -54,18 +36,34 @@ public class TeacherTimetablePdfExporter implements TimetableExporter {
     private final ClassStreamRepository classRepo;
     private final TeacherRepository teacherRepo;
     private final SchoolSettingsRepository settingsRepo;
+    private final PeriodRepository periodRepo;
 
     public TeacherTimetablePdfExporter(
             TeachingAssignmentRepository assignmentRepo,
             SubjectRepository subjectRepo,
             ClassStreamRepository classRepo,
             TeacherRepository teacherRepo,
-            SchoolSettingsRepository settingsRepo) {
+            SchoolSettingsRepository settingsRepo,
+            PeriodRepository periodRepo) {
         this.assignmentRepo = assignmentRepo;
         this.subjectRepo = subjectRepo;
         this.classRepo = classRepo;
         this.teacherRepo = teacherRepo;
         this.settingsRepo = settingsRepo;
+        this.periodRepo = periodRepo;
+    }
+
+    private List<PeriodCol> loadPeriods() {
+        return periodRepo.findAll().stream()
+                .sorted(Comparator.comparingInt(Period::getPeriodNumber))
+                .map(p -> new PeriodCol(
+                        p.getPeriodNumber(),
+                        p.getLabel(),
+                        p.getStartTime().toString(),
+                        p.getEndTime().toString(),
+                        "BREAK".equals(p.getType())
+                ))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -85,6 +83,9 @@ public class TeacherTimetablePdfExporter implements TimetableExporter {
         SchoolSettings settings = settingsRepo.get();
         String schoolName = settings != null && settings.getSchoolName() != null
                 ? settings.getSchoolName().toUpperCase() : "";
+
+        List<PeriodCol> periods = loadPeriods();
+        int numPeriods = periods.size();
 
         List<TeachingAssignment> assignments = assignmentRepo.findByTeacherId(teacherId);
         Set<Long> taIds = assignments.stream().map(TeachingAssignment::getId).collect(Collectors.toSet());
@@ -113,13 +114,13 @@ public class TeacherTimetablePdfExporter implements TimetableExporter {
                 float usableH = PAGE_H - 2 * MARGIN;
 
                 float dayColW = 40;
-                float periodColW = (usableW - dayColW) / COLS.size();
-                float totalW = dayColW + periodColW * COLS.size();
+                float periodColW = Math.min((usableW - dayColW) / numPeriods, 55);
+                float totalW = dayColW + periodColW * numPeriods;
                 float tableLeft = MARGIN;
 
-                float[] colX = new float[1 + COLS.size()];
+                float[] colX = new float[1 + numPeriods];
                 colX[0] = tableLeft;
-                for (int i = 0; i < COLS.size(); i++)
+                for (int i = 0; i < numPeriods; i++)
                     colX[i + 1] = colX[i] + (i == 0 ? dayColW : periodColW);
 
                 float headerH = 36;
@@ -151,7 +152,7 @@ public class TeacherTimetablePdfExporter implements TimetableExporter {
                 cs.setStrokingColor(0, 0, 0);
 
                 // Vertical grid lines
-                for (int c = 0; c <= COLS.size(); c++) {
+                for (int c = 0; c <= numPeriods; c++) {
                     cs.moveTo(colX[c], tableTopY);
                     cs.lineTo(colX[c], tableTopY - headerH - DAYS.size() * rowH);
                     cs.stroke();
@@ -160,14 +161,14 @@ public class TeacherTimetablePdfExporter implements TimetableExporter {
                 // Header bottom line
                 float headBot = tableTopY - headerH;
                 cs.moveTo(colX[0], headBot);
-                cs.lineTo(colX[COLS.size()], headBot);
+                cs.lineTo(colX[numPeriods], headBot);
                 cs.stroke();
 
                 // Day row lines
                 for (int r = 0; r <= DAYS.size(); r++) {
                     float ry = tableTopY - headerH - r * rowH;
                     cs.moveTo(colX[0], ry);
-                    cs.lineTo(colX[COLS.size()], ry);
+                    cs.lineTo(colX[numPeriods], ry);
                     cs.stroke();
                 }
 
@@ -175,22 +176,23 @@ public class TeacherTimetablePdfExporter implements TimetableExporter {
                 cs.setLineWidth(1.2f);
                 float tableBot = tableTopY - headerH - DAYS.size() * rowH;
                 cs.moveTo(colX[0], tableTopY);
-                cs.lineTo(colX[COLS.size()], tableTopY);
-                cs.lineTo(colX[COLS.size()], tableBot);
+                cs.lineTo(colX[numPeriods], tableTopY);
+                cs.lineTo(colX[numPeriods], tableBot);
                 cs.lineTo(colX[0], tableBot);
                 cs.closePath();
                 cs.stroke();
                 cs.setLineWidth(0.5f);
 
-                // Header cells — period numbers + times
-                for (int c = 0; c < COLS.size(); c++) {
+                // Header cells — period labels + times
+                for (int c = 0; c < numPeriods; c++) {
+                    PeriodCol p = periods.get(c);
                     float cx = colX[c + 1];
                     float cw = periodColW;
                     float cy = tableTopY;
                     float ch = headerH;
 
                     cs.setFont(FONT_BOLD, 7);
-                    String num = (c + 1) + "";
+                    String num = p.isBreak() ? "" : p.label();
                     float nw = FONT_BOLD.getStringWidth(num) / 1000f * 7;
                     cs.beginText();
                     cs.newLineAtOffset(cx + (cw - nw) / 2f, cy + ch / 2f + 4);
@@ -198,7 +200,7 @@ public class TeacherTimetablePdfExporter implements TimetableExporter {
                     cs.endText();
 
                     cs.setFont(FONT, 4.5f);
-                    String t = COLS.get(c).time();
+                    String t = p.startTime() + "-" + p.endTime();
                     float tw2 = FONT.getStringWidth(t) / 1000f * 4.5f;
                     cs.beginText();
                     cs.newLineAtOffset(cx + (cw - tw2) / 2f, cy + ch / 2f - 7);
@@ -222,12 +224,12 @@ public class TeacherTimetablePdfExporter implements TimetableExporter {
 
                     Map<Integer, TimetableEntry> dayMap = grid.get(r);
 
-                    for (int c = 0; c < COLS.size(); c++) {
-                        if (COLS.get(c).isBreak()) continue;
+                    for (int c = 0; c < numPeriods; c++) {
+                        PeriodCol p = periods.get(c);
+                        if (p.isBreak()) continue;
                         float cellCenterX = colX[c + 1] + periodColW / 2f;
 
-                        int pn = c + 1;
-                        TimetableEntry entry = dayMap.get(pn);
+                        TimetableEntry entry = dayMap.get(p.periodNumber());
                         if (entry == null) continue;
 
                         TeachingAssignment ta = taMap.get(entry.getTeachingAssignmentId());
@@ -267,8 +269,9 @@ public class TeacherTimetablePdfExporter implements TimetableExporter {
                 }
 
                 // Break column labels drawn character by character vertically
-                for (int c = 0; c < COLS.size(); c++) {
-                    if (!COLS.get(c).isBreak()) continue;
+                for (int c = 0; c < numPeriods; c++) {
+                    PeriodCol p = periods.get(c);
+                    if (!p.isBreak()) continue;
                     float cx = colX[c + 1];
                     float cw = periodColW;
                     float mergeTop = tableTopY - headerH;
@@ -277,7 +280,7 @@ public class TeacherTimetablePdfExporter implements TimetableExporter {
                     float labelX = cx + cw / 2f;
 
                     cs.setFont(FONT_BOLD, 5.5f);
-                    String label = COLS.get(c).label();
+                    String label = p.label().toUpperCase();
                     float charH = 7;
                     float textTopY = mergeCenterY + (label.length() * charH) / 2f;
                     for (int i = 0; i < label.length(); i++) {

@@ -66,10 +66,10 @@ public final class ApplicationBootstrap implements Bootstrap {
                 new SqliteDataRepository(connectionProvider));
         this.teacherExporter = new TeacherTimetablePdfExporter(
                 assignmentRepository, subjectRepository, classStreamRepository,
-                teacherRepository, schoolSettingsRepository);
+                teacherRepository, schoolSettingsRepository, periodRepository);
         this.classExporter = new ClassTimetablePdfExporter(
                 assignmentRepository, subjectRepository, teacherRepository,
-                classStreamRepository, schoolSettingsRepository);
+                classStreamRepository, schoolSettingsRepository, periodRepository);
     }
 
     public static ApplicationBootstrap create(Path databasePath) {

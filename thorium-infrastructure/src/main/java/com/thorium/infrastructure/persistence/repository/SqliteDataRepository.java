@@ -359,7 +359,7 @@ public class SqliteDataRepository extends AbstractRepository implements DataRepo
 
     private void updateSchoolSettings(Connection conn) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement(
-                "INSERT OR REPLACE INTO school_settings (id, school_name, total_periods, school_start_time, school_end_time, period_duration_min, spread_weight, consecutive_weight, balance_weight) VALUES (1, 'My School', 10, '07:10', '16:40', 40, 0.50, 0.40, 0.10)")) {
+                "INSERT OR REPLACE INTO school_settings (id, school_name, total_periods, school_start_time, school_end_time, period_duration_min, spread_weight, consecutive_weight, balance_weight) VALUES (1, 'My School', 15, '07:10', '16:40', 40, 0.50, 0.40, 0.10)")) {
             ps.executeUpdate();
         }
     }
