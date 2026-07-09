@@ -115,7 +115,6 @@ public class TeacherTimetablePdfExporter implements TimetableExporter {
 
                 float dayColW = 40;
                 float periodColW = Math.min((usableW - dayColW) / numPeriods, 55);
-                float totalW = dayColW + periodColW * numPeriods;
                 float tableLeft = MARGIN;
 
                 float[] colX = new float[1 + numPeriods];
@@ -126,17 +125,19 @@ public class TeacherTimetablePdfExporter implements TimetableExporter {
                 float headerH = 36;
                 float rowH = (usableH - headerH - 24) / DAYS.size();
 
-                float startY = PAGE_H - MARGIN - 8;
+                float schoolNameY = PAGE_H - MARGIN - 8;
+                float titleY = schoolNameY - 16;
+                float tableTopY = titleY - 28;
+                float headBot = tableTopY - headerH;
+                float tableBot = tableTopY - headerH - DAYS.size() * rowH;
 
-                // School name
+                // ---- TITLES (independent of grid) ----
                 cs.setFont(FONT_BOLD, 8);
                 cs.beginText();
-                cs.newLineAtOffset(tableLeft, startY);
+                cs.newLineAtOffset(tableLeft, schoolNameY);
                 cs.showText(schoolName);
                 cs.endText();
 
-                // Teacher name
-                float titleY = startY - 16;
                 cs.setFont(FONT_BOLD, 13);
                 String teacherLabel = "Teacher " + teacher.getName().toUpperCase();
                 float tw = FONT_BOLD.getStringWidth(teacherLabel) / 1000f * 13;
@@ -145,26 +146,46 @@ public class TeacherTimetablePdfExporter implements TimetableExporter {
                 cs.showText(teacherLabel);
                 cs.endText();
 
-                float tableTopY = titleY - 20;
+                // ---- CELL FILLS (before grid lines, so lines stay on top) ----
+                // Header fill
+                cs.setNonStrokingColor(0.f);
 
-                // Horizontal lines
-                cs.setLineWidth(0.5f);
-                cs.setStrokingColor(0, 0, 0);
+                // Day row fills (alternating)
+                for (int r = 0; r < DAYS.size(); r++) {
+                    float ry = tableTopY - headerH - r * rowH;
+                    float tint = (r % 2 == 0) ? 0.97f : 1.0f;
+                    cs.setNonStrokingColor(tint, tint, tint);
+                    cs.addRect(colX[0], ry - rowH, colX[numPeriods] - colX[0], rowH);
+                    cs.fill();
+                }
 
-                // Vertical grid lines
-                for (int c = 0; c <= numPeriods; c++) {
+                // Break column fills (amber tint)
+                cs.setNonStrokingColor(1.0f, 0.97f, 0.85f);
+                for (int c = 0; c < numPeriods; c++) {
+                    if (!periods.get(c).isBreak()) continue;
+                    cs.addRect(colX[c + 1], headBot, periodColW, tableBot - headBot);
+                    cs.fill();
+                }
+
+                // ---- GRID LINES ----
+                cs.setStrokingColor(0.8f, 0.8f, 0.8f);
+                cs.setLineWidth(0.4f);
+
+                // Vertical grid lines (period column edges)
+                for (int c = 1; c < numPeriods; c++) {
                     cs.moveTo(colX[c], tableTopY);
-                    cs.lineTo(colX[c], tableTopY - headerH - DAYS.size() * rowH);
+                    cs.lineTo(colX[c], tableBot);
                     cs.stroke();
                 }
 
                 // Header bottom line
-                float headBot = tableTopY - headerH;
+                cs.setLineWidth(0.6f);
                 cs.moveTo(colX[0], headBot);
                 cs.lineTo(colX[numPeriods], headBot);
                 cs.stroke();
 
                 // Day row lines
+                cs.setLineWidth(0.4f);
                 for (int r = 0; r <= DAYS.size(); r++) {
                     float ry = tableTopY - headerH - r * rowH;
                     cs.moveTo(colX[0], ry);
@@ -173,17 +194,13 @@ public class TeacherTimetablePdfExporter implements TimetableExporter {
                 }
 
                 // Outer border (thicker)
-                cs.setLineWidth(1.2f);
-                float tableBot = tableTopY - headerH - DAYS.size() * rowH;
-                cs.moveTo(colX[0], tableTopY);
-                cs.lineTo(colX[numPeriods], tableTopY);
-                cs.lineTo(colX[numPeriods], tableBot);
-                cs.lineTo(colX[0], tableBot);
-                cs.closePath();
+                cs.setLineWidth(1.0f);
+                cs.setStrokingColor(0, 0, 0);
+                cs.addRect(colX[0], tableBot, colX[numPeriods] - colX[0], tableTopY - tableBot);
                 cs.stroke();
-                cs.setLineWidth(0.5f);
 
-                // Header cells — period labels + times
+                // ---- HEADER TEXT (period numbers + times, using exact colX) ----
+                cs.setNonStrokingColor(1, 1, 1);
                 for (int c = 0; c < numPeriods; c++) {
                     PeriodCol p = periods.get(c);
                     float cx = colX[c + 1];
@@ -191,24 +208,26 @@ public class TeacherTimetablePdfExporter implements TimetableExporter {
                     float cy = tableTopY;
                     float ch = headerH;
 
+                    String label = p.isBreak() ? "" : p.label();
+                    String time = p.startTime() + "-" + p.endTime();
+
                     cs.setFont(FONT_BOLD, 7);
-                    String num = p.isBreak() ? "" : p.label();
-                    float nw = FONT_BOLD.getStringWidth(num) / 1000f * 7;
+                    float nw = FONT_BOLD.getStringWidth(label) / 1000f * 7;
                     cs.beginText();
                     cs.newLineAtOffset(cx + (cw - nw) / 2f, cy + ch / 2f + 4);
-                    cs.showText(num);
+                    cs.showText(label);
                     cs.endText();
 
                     cs.setFont(FONT, 4.5f);
-                    String t = p.startTime() + "-" + p.endTime();
-                    float tw2 = FONT.getStringWidth(t) / 1000f * 4.5f;
+                    float tw2 = FONT.getStringWidth(time) / 1000f * 4.5f;
                     cs.beginText();
                     cs.newLineAtOffset(cx + (cw - tw2) / 2f, cy + ch / 2f - 7);
-                    cs.showText(t);
+                    cs.showText(time);
                     cs.endText();
                 }
 
-                // Day rows
+                // ---- BODY CELL TEXT (centered within each column with padding) ----
+                cs.setNonStrokingColor(0, 0, 0);
                 for (int r = 0; r < DAYS.size(); r++) {
                     float ry = tableTopY - headerH - r * rowH;
                     float rowCenterY = ry - rowH / 2f;
@@ -241,42 +260,46 @@ public class TeacherTimetablePdfExporter implements TimetableExporter {
                                 id -> classRepo.findById(id).orElse(null));
 
                         if (subj != null) {
-                            cs.setFont(FONT_BOLD, 7);
+                            cs.setFont(FONT_BOLD, 6.5f);
                             String s = subj.getCode();
-                            float sw = FONT_BOLD.getStringWidth(s) / 1000f * 7;
+                            float sw = FONT_BOLD.getStringWidth(s) / 1000f * 6.5f;
+                            float maxW = periodColW - 4;
+                            if (sw > maxW) {
+                                cs.setFont(FONT_BOLD, 5.5f);
+                                sw = FONT_BOLD.getStringWidth(s) / 1000f * 5.5f;
+                            }
                             cs.beginText();
-                            cs.newLineAtOffset(cellCenterX - sw / 2f, rowCenterY + 8);
+                            cs.newLineAtOffset(cellCenterX - sw / 2f, rowCenterY + 7);
                             cs.showText(s);
                             cs.endText();
                         }
                         if (cls != null) {
-                            cs.setFont(FONT, 6.5f);
+                            cs.setFont(FONT, 5.5f);
                             String f = "F" + cls.getForm();
-                            float fw = FONT.getStringWidth(f) / 1000f * 6.5f;
-                            cs.beginText();
-                            cs.newLineAtOffset(cellCenterX - fw / 2f, rowCenterY - 2);
-                            cs.showText(f);
-                            cs.endText();
-
                             String st = cls.getStream();
-                            float stw = FONT.getStringWidth(st) / 1000f * 6.5f;
+                            String combined = f + " " + st;
+                            float cw2 = FONT.getStringWidth(combined) / 1000f * 5.5f;
+                            float maxW = periodColW - 4;
+                            if (cw2 > maxW) {
+                                cs.setFont(FONT, 4.5f);
+                                cw2 = FONT.getStringWidth(combined) / 1000f * 4.5f;
+                            }
                             cs.beginText();
-                            cs.newLineAtOffset(cellCenterX - stw / 2f, rowCenterY - 11);
-                            cs.showText(st);
+                            cs.newLineAtOffset(cellCenterX - cw2 / 2f, rowCenterY - 6);
+                            cs.showText(combined);
                             cs.endText();
                         }
                     }
                 }
 
-                // Break column labels drawn character by character vertically
+                // ---- BREAK COLUMN VERTICAL LABELS (spans exactly day rows) ----
+                cs.setNonStrokingColor(0, 0, 0);
                 for (int c = 0; c < numPeriods; c++) {
                     PeriodCol p = periods.get(c);
                     if (!p.isBreak()) continue;
                     float cx = colX[c + 1];
                     float cw = periodColW;
-                    float mergeTop = tableTopY - headerH;
-                    float mergeBot = tableBot;
-                    float mergeCenterY = (mergeTop + mergeBot) / 2f;
+                    float mergeCenterY = (headBot + tableBot) / 2f;
                     float labelX = cx + cw / 2f;
 
                     cs.setFont(FONT_BOLD, 5.5f);
