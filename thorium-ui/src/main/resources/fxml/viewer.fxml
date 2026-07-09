@@ -28,8 +28,8 @@
                     <Label text="RESOURCE EXPLORER" styleClass="viewer-panel-title"/>
                     <TreeView fx:id="entityTreeView" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent; -fx-border-width: 0;"/>
                 </VBox>
-                <VBox spacing="12" styleClass="viewer-grid-panel">
-                    <HBox alignment="CENTER_LEFT" spacing="10">
+                <VBox spacing="0" styleClass="viewer-grid-panel">
+                    <HBox alignment="CENTER_LEFT" spacing="10" style="-fx-padding: 6 0 10 0; -fx-border-color: transparent transparent #d0d0d0 transparent; -fx-border-width: 0 0 1 0;">
                         <Label fx:id="gridTitleLabel" text="Weekly Timetable Grid" styleClass="card-title" style="-fx-font-size: 16px;"/>
                         <Region HBox.hgrow="ALWAYS"/>
                         <Label fx:id="conflictWarningLabel" text="" style="-fx-text-fill: #ef4444; -fx-font-weight: 500;"/>

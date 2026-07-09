@@ -309,15 +309,23 @@ public class TimetableViewerController {
         List<DayOfWeek> days = DayOfWeek.workingDays();
 
         // Column 0: day label; remaining: one per period
-        timetableGrid.getColumnConstraints().add(new ColumnConstraints(80));
+        ColumnConstraints dayCol = new ColumnConstraints(80);
+        dayCol.setFillWidth(true);
+        timetableGrid.getColumnConstraints().add(dayCol);
         for (int i = 0; i < periods.size(); i++) {
-            timetableGrid.getColumnConstraints().add(new ColumnConstraints(90));
+            ColumnConstraints pc = new ColumnConstraints(90);
+            pc.setFillWidth(true);
+            timetableGrid.getColumnConstraints().add(pc);
         }
 
         // 6 rows: header + 5 days
-        timetableGrid.getRowConstraints().add(new RowConstraints(38));
+        RowConstraints headerRow = new RowConstraints(38);
+        headerRow.setFillHeight(true);
+        timetableGrid.getRowConstraints().add(headerRow);
         for (int i = 0; i < 5; i++) {
-            timetableGrid.getRowConstraints().add(new RowConstraints(44));
+            RowConstraints dr = new RowConstraints(44);
+            dr.setFillHeight(true);
+            timetableGrid.getRowConstraints().add(dr);
         }
 
         // ---- Row 0: Header row (period names + times) ----
@@ -326,9 +334,15 @@ public class TimetableViewerController {
             int col = pi + 1;
 
             VBox headerCell = new VBox(2);
+            headerCell.setMaxWidth(Double.MAX_VALUE);
+            headerCell.setMaxHeight(Double.MAX_VALUE);
             Label periodLabel = new Label(p.label());
+            periodLabel.setMaxWidth(Double.MAX_VALUE);
+            periodLabel.setAlignment(javafx.geometry.Pos.CENTER);
             periodLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 11px; -fx-text-fill: #ffffff;");
             Label timeLabel = new Label(p.startTime() + " - " + p.endTime());
+            timeLabel.setMaxWidth(Double.MAX_VALUE);
+            timeLabel.setAlignment(javafx.geometry.Pos.CENTER);
             timeLabel.setStyle("-fx-font-size: 9px; -fx-text-fill: #d0d0d0;");
             headerCell.getChildren().addAll(periodLabel, timeLabel);
             headerCell.setAlignment(javafx.geometry.Pos.CENTER);
@@ -365,9 +379,13 @@ public class TimetableViewerController {
                 LessonCardDto lesson = findMatchedLesson(day, p.periodNumber());
                 if (lesson != null) {
                     VBox card = createCardNode(lesson, false, isMonday);
+                    card.setMaxWidth(Double.MAX_VALUE);
+                    card.setMaxHeight(Double.MAX_VALUE);
                     timetableGrid.add(card, col, row);
                 } else {
                     Pane empty = createEmptySlotNode(day, p.periodNumber(), isMonday);
+                    empty.setMaxWidth(Double.MAX_VALUE);
+                    empty.setMaxHeight(Double.MAX_VALUE);
                     timetableGrid.add(empty, col, row);
                 }
             }
@@ -381,12 +399,18 @@ public class TimetableViewerController {
 
             String breakText = p.label().toUpperCase() + "\n" + p.startTime() + " - " + p.endTime();
             Label breakLabel = new Label(breakText);
-            breakLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 11px; -fx-text-fill: #333333;");
+            breakLabel.setMaxWidth(Double.MAX_VALUE);
+            breakLabel.setMaxHeight(Double.MAX_VALUE);
             breakLabel.setAlignment(javafx.geometry.Pos.CENTER);
+            breakLabel.setWrapText(true);
+            breakLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 11px; -fx-text-fill: #333333;");
             breakLabel.setRotate(-90);
 
             StackPane breakPane = new StackPane(breakLabel);
-            breakPane.setStyle("-fx-background-color: #f5f5f5; -fx-border-color: #000000; -fx-border-width: 0.5px; -fx-padding: 6; -fx-alignment: center;");
+            breakPane.setMaxWidth(Double.MAX_VALUE);
+            breakPane.setMaxHeight(Double.MAX_VALUE);
+            breakPane.setStyle("-fx-background-color: #f5f5f5; -fx-border-color: #000000; -fx-border-width: 0.5px; -fx-padding: 6;");
+            StackPane.setAlignment(breakLabel, javafx.geometry.Pos.CENTER);
             timetableGrid.add(breakPane, col, 1, 1, 5);
         }
     }
@@ -492,13 +516,17 @@ public class TimetableViewerController {
 
         // Subject code (bold, centered, large)
         Label subjectLabel = new Label(card.subjectCode());
-        subjectLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 13px; -fx-text-fill: " + (isMonday ? "#ffffff" : "#000000") + ";");
+        subjectLabel.setMaxWidth(Double.MAX_VALUE);
         subjectLabel.setAlignment(javafx.geometry.Pos.CENTER);
+        subjectLabel.setWrapText(true);
+        subjectLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 13px; -fx-text-fill: " + (isMonday ? "#ffffff" : "#000000") + ";");
 
         // Teacher initials below (smaller, lighter, centered)
         Label teacherLabel = new Label(card.teacherInitials() != null ? card.teacherInitials() : "");
-        teacherLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: " + (isMonday ? "#d0d0d0" : "#666666") + ";");
+        teacherLabel.setMaxWidth(Double.MAX_VALUE);
         teacherLabel.setAlignment(javafx.geometry.Pos.CENTER);
+        teacherLabel.setWrapText(true);
+        teacherLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: " + (isMonday ? "#d0d0d0" : "#666666") + ";");
 
         VBox contentBox = new VBox(subjectLabel, teacherLabel);
         contentBox.setSpacing(1);
@@ -695,7 +723,8 @@ public class TimetableViewerController {
         String defaultBg = isMonday ? "#333333" : "#ffffff";
         String defaultBorder = "#000000";
         slot.setStyle("-fx-background-color: " + defaultBg + "; -fx-border-color: " + defaultBorder + "; -fx-border-width: 0.5px;");
-        slot.setPrefSize(90, 44);
+        slot.setMaxWidth(Double.MAX_VALUE);
+        slot.setMaxHeight(Double.MAX_VALUE);
 
         slot.setOnMouseEntered(e -> {
             if (slot.getChildren().isEmpty()) {
