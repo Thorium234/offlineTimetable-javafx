@@ -52,20 +52,20 @@ public class ExportCenterController {
     @FXML
     private void initialize() {
         IconUtil.addIcon(exportPdfBtn, IconUtil.EXPORT, "#ffffff");
-        IconUtil.addIcon(previewPdfBtn, IconUtil.PREVIEW, "#2563eb");
-        IconUtil.addIcon(exportExcelBtn, IconUtil.EXPORT, "#16a34a");
-        IconUtil.addIcon(previewAllTeachersBtn, IconUtil.PREVIEW, "#2563eb");
+        IconUtil.addIcon(previewPdfBtn, IconUtil.PREVIEW, "#333333");
+        IconUtil.addIcon(exportExcelBtn, IconUtil.EXPORT, "#ffffff");
+        IconUtil.addIcon(previewAllTeachersBtn, IconUtil.PREVIEW, "#333333");
         IconUtil.addIcon(exportAllTeachersBtn, IconUtil.EXPORT, "#ffffff");
-        IconUtil.addIcon(previewAllClassesBtn, IconUtil.PREVIEW, "#2563eb");
+        IconUtil.addIcon(previewAllClassesBtn, IconUtil.PREVIEW, "#333333");
         IconUtil.addIcon(exportAllClassesBtn, IconUtil.EXPORT, "#ffffff");
-        IconUtil.addIcon(previewTeacherBtn, IconUtil.PREVIEW, "#2563eb");
+        IconUtil.addIcon(previewTeacherBtn, IconUtil.PREVIEW, "#333333");
         IconUtil.addIcon(exportTeacherBtn, IconUtil.EXPORT, "#ffffff");
-        IconUtil.addIcon(previewClassBtn, IconUtil.PREVIEW, "#2563eb");
+        IconUtil.addIcon(previewClassBtn, IconUtil.PREVIEW, "#333333");
         IconUtil.addIcon(exportClassBtn, IconUtil.EXPORT, "#ffffff");
 
-        IconUtil.addIcon(previewAscTeacherBtn, IconUtil.PREVIEW, "#2563eb");
+        IconUtil.addIcon(previewAscTeacherBtn, IconUtil.PREVIEW, "#333333");
         IconUtil.addIcon(exportAscTeacherBtn, IconUtil.EXPORT, "#ffffff");
-        IconUtil.addIcon(previewAscAllTeachersBtn, IconUtil.PREVIEW, "#2563eb");
+        IconUtil.addIcon(previewAscAllTeachersBtn, IconUtil.PREVIEW, "#333333");
         IconUtil.addIcon(exportAscAllTeachersBtn, IconUtil.EXPORT, "#ffffff");
 
         refreshTimetables();

@@ -64,24 +64,24 @@
 }
 
 .primary-button {
-    -fx-background-color: #3b82f6;
+    -fx-background-color: #111111;
     -fx-text-fill: white;
 }
 
 .btn-primary {
-    -fx-background-color: #3b82f6;
+    -fx-background-color: #111111;
 }
 
 .btn-secondary {
-    -fx-background-color: #475569;
+    -fx-background-color: #333333;
 }
 
 .btn-danger {
-    -fx-background-color: #ef4444;
+    -fx-background-color: #cc3333;
 }
 
 .btn-success {
-    -fx-background-color: #22c55e;
+    -fx-background-color: #444444;
 }
 
 .btn-active-nav {
@@ -127,7 +127,7 @@
 }
 
 .text-field:focused, .form-textfield:focused {
-    -fx-border-color: #3b82f6;
+    -fx-border-color: #666666;
 }
 
 .search-field {
@@ -380,7 +380,7 @@
 }
 
 .generate-btn {
-    -fx-background-color: #16a34a;
+    -fx-background-color: #111111;
     -fx-text-fill: white;
     -fx-font-weight: bold;
     -fx-background-radius: 6;
@@ -491,12 +491,12 @@
 }
 
 .slider .thumb {
-    -fx-background-color: #3b82f6;
+    -fx-background-color: #666666;
 }
 
 /* Progress bar */
 .progress-bar {
-    -fx-accent: #3b82f6;
+    -fx-accent: #666666;
 }
 
 .progress-bar .track {
@@ -510,7 +510,7 @@
 
 /* Hyperlink */
 .hyperlink {
-    -fx-text-fill: #60a5fa;
+    -fx-text-fill: #999999;
 }
 
 /* ScrollPane corner */
@@ -607,8 +607,8 @@
 }
 
 .avail-cell-available-hover {
-    -fx-background-color: #166534;
-    -fx-border-color: #22c55e;
+    -fx-background-color: #333333;
+    -fx-border-color: #666666;
     -fx-border-width: 1.5;
     -fx-border-radius: 6;
     -fx-background-radius: 6;
@@ -642,12 +642,12 @@
 }
 
 .dialog-pane .button-bar .button:default {
-    -fx-background-color: #3b82f6;
+    -fx-background-color: #111111;
     -fx-text-fill: white;
 }
 
 .dialog-pane .button-bar .button:default:hover {
-    -fx-background-color: #2563eb;
+    -fx-background-color: #333333;
 }
 
 /* Separator dark mode */
@@ -724,12 +724,12 @@
 
 /* Hyperlink hover */
 .hyperlink:hover {
-    -fx-text-fill: #93c5fd;
+    -fx-text-fill: #cccccc;
 }
 
 /* CheckBox selected state enhancement */
 .check-box:selected .box {
-    -fx-background-color: #3b82f6;
+    -fx-background-color: #666666;
 }
 
 .check-box:selected .mark {
@@ -743,7 +743,7 @@
 
 /* RadioButton selected state enhancement */
 .radio-button:selected .radio {
-    -fx-background-color: #3b82f6;
+    -fx-background-color: #666666;
 }
 
 .radio-button .radio {

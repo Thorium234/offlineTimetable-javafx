@@ -85,12 +85,12 @@
 
 /* Buttons */
 .primary-button {
-    -fx-background-color: #2563eb;
+    -fx-background-color: #333333;
     -fx-text-fill: white;
 }
 
 .btn-primary {
-    -fx-background-color: #2563eb;
+    -fx-background-color: #333333;
     -fx-text-fill: white;
     -fx-font-weight: bold;
     -fx-background-radius: 6;
@@ -99,8 +99,8 @@
 }
 
 .btn-secondary {
-    -fx-background-color: #64748b;
-    -fx-text-fill: white;
+    -fx-background-color: #e0e0e0;
+    -fx-text-fill: #333333;
     -fx-font-weight: bold;
     -fx-background-radius: 6;
     -fx-padding: 8 20 8 20;
@@ -117,7 +117,7 @@
 }
 
 .btn-success {
-    -fx-background-color: #16a34a;
+    -fx-background-color: #666666;
     -fx-text-fill: white;
     -fx-font-weight: bold;
     -fx-background-radius: 6;
@@ -139,7 +139,7 @@
 }
 
 .msg-success {
-    -fx-text-fill: #16a34a;
+    -fx-text-fill: #333333;
 }
 
 .msg-warning {
@@ -178,7 +178,7 @@
 }
 
 .text-field:focused, .form-textfield:focused {
-    -fx-border-color: #3b82f6;
+    -fx-border-color: #666666;
 }
 
 /* Combo boxes */
@@ -230,11 +230,11 @@
 }
 
 .table-view .table-row-cell:selected {
-    -fx-background-color: #eff6ff;
+    -fx-background-color: #e0e0e0;
 }
 
 .table-view .table-row-cell:selected .table-cell {
-    -fx-text-fill: #1e40af;
+    -fx-text-fill: #000000;
 }
 
 /* Table with border radius */
@@ -591,7 +591,7 @@
 
 .avail-cell-label-available {
     -fx-font-weight: bold;
-    -fx-text-fill: #16a34a;
+    -fx-text-fill: #333333;
     -fx-font-size: 11px;
 }
 
@@ -634,19 +634,19 @@
 }
 
 .toggle-card:selected {
-    -fx-background-color: #eff6ff;
-    -fx-border-color: #3b82f6;
-    -fx-text-fill: #1e40af;
+    -fx-background-color: #e0e0e0;
+    -fx-border-color: #333333;
+    -fx-text-fill: #000000;
 }
 
 .toggle-card:hover {
-    -fx-border-color: #94a3b8;
-    -fx-background-color: #f8fafc;
+    -fx-border-color: #666666;
+    -fx-background-color: #f5f5f5;
 }
 
 .toggle-card:selected:hover {
-    -fx-border-color: #2563eb;
-    -fx-background-color: #dbeafe;
+    -fx-border-color: #333333;
+    -fx-background-color: #d0d0d0;
 }
 
 /* Subject toggle card */
@@ -673,9 +673,9 @@
 }
 
 .teacher-card:hover {
-    -fx-border-color: #3b82f6;
-    -fx-background-color: #f8faff;
-    -fx-effect: dropshadow(three-pass-box, rgba(59,130,246,0.1), 8, 0, 0, 2);
+    -fx-border-color: #666666;
+    -fx-background-color: #f5f5f5;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 8, 0, 0, 2);
 }
 
 /* Subject cards (for stream assignment step) */
@@ -746,7 +746,7 @@
 
 /* Generate button in status bar */
 .generate-btn {
-    -fx-background-color: #16a34a;
+    -fx-background-color: #333333;
     -fx-text-fill: white;
     -fx-font-weight: bold;
     -fx-background-radius: 6;
