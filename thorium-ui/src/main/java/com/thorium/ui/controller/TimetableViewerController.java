@@ -379,15 +379,14 @@ public class TimetableViewerController {
             if (!"BREAK".equals(p.type())) continue;
             int col = pi + 1;
 
-            String breakText = "\u2615 " + p.label().toUpperCase() + "\n" + p.startTime() + " - " + p.endTime();
+            String breakText = p.label().toUpperCase() + "\n" + p.startTime() + " - " + p.endTime();
             Label breakLabel = new Label(breakText);
             breakLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 11px; -fx-text-fill: #333333;");
             breakLabel.setAlignment(javafx.geometry.Pos.CENTER);
-            breakLabel.setMaxWidth(Double.MAX_VALUE);
-            breakLabel.setMaxHeight(Double.MAX_VALUE);
+            breakLabel.setRotate(-90);
 
             StackPane breakPane = new StackPane(breakLabel);
-            breakPane.setStyle("-fx-background-color: #e0e0e0; -fx-border-color: #000000; -fx-border-width: 0.5px; -fx-padding: 6; -fx-alignment: center;");
+            breakPane.setStyle("-fx-background-color: #f5f5f5; -fx-border-color: #000000; -fx-border-width: 0.5px; -fx-padding: 6; -fx-alignment: center;");
             timetableGrid.add(breakPane, col, 1, 1, 5);
         }
     }

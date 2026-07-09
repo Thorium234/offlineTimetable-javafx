@@ -35,7 +35,7 @@
                         <Label fx:id="conflictWarningLabel" text="" style="-fx-text-fill: #ef4444; -fx-font-weight: 500;"/>
                     </HBox>
                     <ScrollPane fitToWidth="true" fitToHeight="true" VBox.vgrow="ALWAYS" styleClass="view-scroll">
-                        <GridPane fx:id="timetableGrid" alignment="TOP_LEFT" hgap="6" vgap="6" style="-fx-background-color: transparent;"/>
+                        <GridPane fx:id="timetableGrid" alignment="TOP_LEFT" hgap="0" vgap="0" style="-fx-background-color: transparent;"/>
                     </ScrollPane>
                 </VBox>
                 <VBox fx:id="poolContainer" spacing="10" styleClass="viewer-panel">
